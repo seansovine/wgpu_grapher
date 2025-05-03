@@ -121,3 +121,25 @@ impl UnitSquareTesselation {
     MeshData { vertices, indices }
   }
 }
+
+// function modification helpers
+
+pub fn shift_scale_input<F>(
+  f: F,
+  x_shift: f32,
+  x_scale: f32,
+  z_shift: f32,
+  z_scale: f32,
+) -> impl Fn(f32, f32) -> f32
+where
+  F: Fn(f32, f32) -> f32,
+{
+  move |x: f32, z: f32| f((x - x_shift) * x_scale, (z - z_shift) * z_scale)
+}
+
+pub fn shift_scale_output<F>(f: F, y_shift: f32, y_scale: f32) -> impl Fn(f32, f32) -> f32
+where
+  F: Fn(f32, f32) -> f32,
+{
+  move |x: f32, z: f32| f(x, z) * y_scale + y_shift
+}

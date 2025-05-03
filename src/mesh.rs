@@ -143,7 +143,9 @@ pub fn graph_scene(state: &RenderState) -> Scene {
   let matrix = MatrixUniform::_translation(&[-0.5, -0.5, -0.5]);
 
   // example function
-  let f = |x: f32, z: f32| 0.5f32 * (0.5f32 + x * x + z * z);
+  let mut f = |x: f32, z: f32| x.sin() * z.cos();
+  let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
+  let f = graph::shift_scale_output(f, 0.55, 0.5);
 
   let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
     .apply_function(f)
