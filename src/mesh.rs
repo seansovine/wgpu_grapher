@@ -138,8 +138,16 @@ pub fn test_scene(state: &RenderState) -> Scene {
 pub fn graph_scene(state: &RenderState) -> Scene {
   static SUBDIVISIONS: u16 = 64;
 
-  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS).mesh_data();
-  let matrix = MatrixUniform::_translation(&[-0.5, 0.0, -0.5]);
+  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
+    .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
+  let matrix = MatrixUniform::_translation(&[-0.5, -0.5, -0.5]);
 
-  build_scene(state, vec![(floor_mesh, matrix)])
+  // example function
+  let f = |x: f32, z: f32| 0.5f32 * (0.5f32 + x * x + z * z);
+
+  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
+    .apply_function(f)
+    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+
+  build_scene(state, vec![(floor_mesh, matrix), (func_mesh, matrix)])
 }

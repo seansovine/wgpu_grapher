@@ -1,4 +1,4 @@
-// TODO: Add code to build mesh(es) for graphing a function z = f(x, y).
+// TODO: Add code to build mesh(es) for graphing a function y = f(x, z).
 //
 // This will include:
 //
@@ -45,6 +45,9 @@ pub struct UnitSquareTesselation {
 }
 
 impl UnitSquareTesselation {
+  pub const FLOOR_COLOR: [f32; 3] = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
+  pub const FUNCT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
+
   /// build tesselation of (x, z) coordinate system
   pub fn generate(n: u16) -> Self {
     let mut ticks: Vec<f32> = vec![];
@@ -88,15 +91,24 @@ impl UnitSquareTesselation {
     }
   }
 
-  const FLOOR_COLOR: [f32; 3] = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
+  pub fn apply_function<F>(&mut self, f: F) -> &mut Self
+  where
+    F: Fn(f32, f32) -> f32,
+  {
+    for vertex in &mut self.vertices {
+      vertex.0[1] = f(vertex.0[0], vertex.0[2])
+    }
 
-  pub fn mesh_data(&self) -> MeshData {
+    self
+  }
+
+  pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
     let mut vertices = vec![];
 
     for vertex in &self.vertices {
       vertices.push(mesh::Vertex {
         position: vertex.0,
-        color: Self::FLOOR_COLOR,
+        color,
       });
     }
 
