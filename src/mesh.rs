@@ -1,11 +1,6 @@
-// TODO:
-//
-// - Add structures needed to render a mesh.
-// - Add structures to hold current render data,
-//   including meshes and render pipline(s).
-// - We will also want a function to generate the
-//   meshes for plotting a function.
+// Data representing a mesh and the vertices that they're made of.
 
+use crate::graph;
 use crate::matrix;
 use crate::matrix::{MatrixState, MatrixUniform};
 use crate::pipeline;
@@ -75,41 +70,6 @@ pub struct Scene {
   pub pipeline: RenderPipeline,
 }
 
-// test data
-
-#[allow(unused)]
-static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
-  vertices: Vec::from([
-    Vertex {
-      position: [0.0, 1.0, 0.0],
-      color: [1.0, 0.0, 0.0],
-    },
-    Vertex {
-      position: [-0.5, 0.0, 0.0],
-      color: [1.0, 0.0, 0.0],
-    },
-    Vertex {
-      position: [0.5, 0.0, 0.0],
-      color: [1.0, 0.0, 0.0],
-    },
-  ]),
-  indices: Vec::from([0, 1, 2, 0, 2, 1]),
-});
-
-pub fn test_scene(state: &RenderState) -> Scene {
-  let mut meshes: Vec<(MeshData, MatrixUniform)> = vec![];
-
-  let mut back_mesh = (*TEST_MESH).clone();
-  let gold = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
-  back_mesh.set_uniform_color(gold);
-  meshes.push((back_mesh, MatrixUniform::_translation(&[0.0, -0.5, -0.5])));
-
-  let front_mesh = (*TEST_MESH).clone();
-  meshes.push((front_mesh, MatrixUniform::_translation(&[0.0, -0.5, 0.5])));
-
-  build_scene(state, meshes)
-}
-
 // build scene from (mesh, vector) vector
 
 pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)>) -> Scene {
@@ -134,4 +94,52 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
   );
 
   Scene { meshes, pipeline }
+}
+
+// test data
+
+#[allow(unused)]
+static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
+  vertices: Vec::from([
+    Vertex {
+      position: [0.0, 1.0, 0.0],
+      color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+      position: [-0.5, 0.0, 0.0],
+      color: [1.0, 0.0, 0.0],
+    },
+    Vertex {
+      position: [0.5, 0.0, 0.0],
+      color: [1.0, 0.0, 0.0],
+    },
+  ]),
+  indices: Vec::from([0, 1, 2, 0, 2, 1]),
+});
+
+#[allow(unused)]
+pub fn test_scene(state: &RenderState) -> Scene {
+  let mut meshes: Vec<(MeshData, MatrixUniform)> = vec![];
+
+  let mut back_mesh = (*TEST_MESH).clone();
+  let gold = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
+  back_mesh.set_uniform_color(gold);
+  meshes.push((back_mesh, MatrixUniform::_translation(&[0.0, -0.5, -0.5])));
+
+  let front_mesh = (*TEST_MESH).clone();
+  meshes.push((front_mesh, MatrixUniform::_translation(&[0.0, -0.5, 0.5])));
+
+  build_scene(state, meshes)
+}
+
+// graph data
+
+#[allow(unused)]
+pub fn graph_scene(state: &RenderState) -> Scene {
+  static SUBDIVISIONS: u16 = 64;
+
+  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS).mesh_data();
+  let matrix = MatrixUniform::_translation(&[-0.5, 0.0, -0.5]);
+
+  build_scene(state, vec![(floor_mesh, matrix)])
 }

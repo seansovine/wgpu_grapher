@@ -26,7 +26,7 @@ pub async fn run_event_loop() {
   let window = WindowBuilder::new().build(&event_loop).unwrap();
 
   let mut state = render_state::RenderState::new(&window).await;
-  let scene = mesh::test_scene(&state);
+  let scene = mesh::graph_scene(&state);
 
   log::info!("Starting event loop!");
 

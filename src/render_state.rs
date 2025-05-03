@@ -42,7 +42,7 @@ impl<'a> RenderState<'a> {
     let (device, queue) = adapter
       .request_device(
         &wgpu::DeviceDescriptor {
-          required_features: wgpu::Features::empty(),
+          required_features: wgpu::Features::POLYGON_MODE_LINE,
           required_limits: wgpu::Limits::default(),
           label: None,
           memory_hints: Default::default(),

@@ -68,7 +68,7 @@ pub(crate) fn create_render_pipeline(
       front_face: wgpu::FrontFace::Ccw,
       cull_mode: Some(wgpu::Face::Back),
       // TODO: consider wireframe
-      polygon_mode: wgpu::PolygonMode::Fill,
+      polygon_mode: wgpu::PolygonMode::Line,
       unclipped_depth: false,
       conservative: false,
     },
