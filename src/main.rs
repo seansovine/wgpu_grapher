@@ -1,4 +1,5 @@
 mod camera;
+mod graph;
 mod matrix;
 mod mesh;
 mod pipeline;
@@ -16,12 +17,18 @@ fn main() {
   pollster::block_on(run_event_loop());
 }
 
+// implement main event loop
+
 pub async fn run_event_loop() {
   env_logger::init();
 
   let event_loop = EventLoop::new().unwrap();
   let window = WindowBuilder::new().build(&event_loop).unwrap();
+
   let mut state = render_state::RenderState::new(&window).await;
+  let scene = mesh::test_scene(&state);
+
+  log::info!("Starting event loop!");
 
   event_loop
     .run(move |event, control_flow| match event {
@@ -31,7 +38,7 @@ pub async fn run_event_loop() {
       } if window_id == state.window().id() => {
         if !state.input(event) {
           match event {
-            // close events
+            // window closed or escape pressed
             WindowEvent::CloseRequested
             | WindowEvent::KeyboardInput {
               event:
@@ -54,7 +61,7 @@ pub async fn run_event_loop() {
               state.window().request_redraw();
 
               state.update();
-              match render::render(&mut state) {
+              match render::render(&mut state, &scene) {
                 Ok(_) => {}
                 // ?
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
@@ -74,14 +81,12 @@ pub async fn run_event_loop() {
               }
             }
 
-            // other window event
-            _ => {}
+            _ => {} // other window event
           }
         }
       }
 
-      // non-window event
-      _ => {}
+      _ => {} // non-window event
     })
     .unwrap();
 }

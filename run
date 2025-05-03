@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# turn on env_log logging
+export RUST_LOG=wgpu_grapher=info
+
+target/debug/wgpu_grapher

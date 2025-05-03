@@ -1,18 +1,13 @@
+use crate::mesh::Vertex;
+
 use wgpu::{BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 
 // vertex data
 
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct _Vertex {
-  position: [f32; 3],
-  color: [f32; 3],
-}
-
-impl _Vertex {
-  pub fn _desc() -> wgpu::VertexBufferLayout<'static> {
+impl Vertex {
+  pub fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
     wgpu::VertexBufferLayout {
-      array_stride: std::mem::size_of::<_Vertex>() as wgpu::BufferAddress,
+      array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
       step_mode: wgpu::VertexStepMode::Vertex,
       attributes: &[
         wgpu::VertexAttribute {
@@ -32,29 +27,29 @@ impl _Vertex {
 
 // create a render pipeline
 
-pub(crate) fn _create_render_pipeline(
+pub(crate) fn create_render_pipeline(
   device: &Device,
   config: &SurfaceConfiguration,
   bind_group_layouts: &[&BindGroupLayout],
 ) -> RenderPipeline {
   let shader_texture = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-    label: Some("Shader"),
+    label: Some("shader"),
     source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
   });
 
   let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-    label: Some("Solid Color Render Pipeline Layout"),
+    label: Some("a solid color render pipeline layout"),
     bind_group_layouts,
     push_constant_ranges: &[],
   });
 
   device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-    label: Some("Solid Color Render Pipeline"),
+    label: Some("a solid color render pipeline"),
     layout: Some(&render_pipeline_layout),
     vertex: wgpu::VertexState {
       module: &shader_texture,
       entry_point: Some("vs_main"),
-      buffers: &[_Vertex::_desc()],
+      buffers: &[Vertex::buffer_layout()],
       compilation_options: wgpu::PipelineCompilationOptions::default(),
     },
     fragment: Some(wgpu::FragmentState {

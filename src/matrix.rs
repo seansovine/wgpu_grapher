@@ -34,8 +34,8 @@ impl MatrixUniform {
 pub struct MatrixState {
   pub uniform: MatrixUniform,
   pub buffer: Buffer,
-  pub _bind_group_layout: BindGroupLayout,
-  pub _bind_group: BindGroup,
+  pub bind_group_layout: BindGroupLayout,
+  pub bind_group: BindGroup,
 }
 
 pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) -> MatrixState {
@@ -56,7 +56,7 @@ pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) 
       },
       count: None,
     }],
-    label: Some("camera_bind_group_layout"),
+    label: Some("a matrix bind group layout"),
   });
 
   let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -65,13 +65,13 @@ pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) 
       binding: 0,
       resource: buffer.as_entire_binding(),
     }],
-    label: Some("camera_bind_group"),
+    label: Some("a matrix bind group"),
   });
 
   MatrixState {
     uniform: matrix_uniform,
     buffer,
-    _bind_group_layout: bind_group_layout,
-    _bind_group: bind_group,
+    bind_group_layout,
+    bind_group,
   }
 }
