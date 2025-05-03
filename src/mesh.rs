@@ -4,7 +4,7 @@ use crate::graph;
 use crate::matrix;
 use crate::matrix::{MatrixState, MatrixUniform};
 use crate::pipeline;
-use crate::render_state::RenderState;
+use crate::state::RenderState;
 
 use std::sync::LazyLock;
 
@@ -124,10 +124,10 @@ pub fn test_scene(state: &RenderState) -> Scene {
   let mut back_mesh = (*TEST_MESH).clone();
   let gold = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
   back_mesh.set_uniform_color(gold);
-  meshes.push((back_mesh, MatrixUniform::_translation(&[0.0, -0.5, -0.5])));
+  meshes.push((back_mesh, MatrixUniform::translation(&[0.0, -0.5, -0.5])));
 
   let front_mesh = (*TEST_MESH).clone();
-  meshes.push((front_mesh, MatrixUniform::_translation(&[0.0, -0.5, 0.5])));
+  meshes.push((front_mesh, MatrixUniform::translation(&[0.0, -0.5, 0.5])));
 
   build_scene(state, meshes)
 }
@@ -140,7 +140,7 @@ pub fn graph_scene(state: &RenderState) -> Scene {
 
   let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
     .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
-  let matrix = MatrixUniform::_translation(&[-0.5, -0.5, -0.5]);
+  let matrix = MatrixUniform::translation(&[-0.5, -0.5, -0.5]);
 
   // example function
   let mut f = |x: f32, z: f32| x.sin() * z.cos();

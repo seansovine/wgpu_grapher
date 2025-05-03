@@ -5,22 +5,28 @@ use winit::{
   keyboard::{KeyCode, PhysicalKey},
 };
 
+use std::f32::consts::PI;
+
 pub struct CameraController {
   pub speed: f32,
-  pub is_forward_pressed: bool,
-  pub is_backward_pressed: bool,
+  pub is_up_pressed: bool,
+  pub is_down_pressed: bool,
   pub is_left_pressed: bool,
   pub is_right_pressed: bool,
+  pub is_z_pressed: bool,
+  pub is_x_pressed: bool,
 }
 
 impl CameraController {
   pub fn new(speed: f32) -> Self {
     Self {
       speed,
-      is_forward_pressed: false,
-      is_backward_pressed: false,
+      is_up_pressed: false,
+      is_down_pressed: false,
       is_left_pressed: false,
       is_right_pressed: false,
+      is_z_pressed: false,
+      is_x_pressed: false,
     }
   }
 
@@ -30,23 +36,26 @@ impl CameraController {
     let forward_norm = forward.normalize();
     let forward_mag = forward.magnitude();
 
-    if self.is_forward_pressed && forward_mag > self.speed {
+    if self.is_z_pressed && forward_mag > self.speed {
       camera.eye += forward_norm * self.speed;
     }
-    if self.is_backward_pressed {
+    if self.is_x_pressed {
       camera.eye -= forward_norm * self.speed;
     }
 
-    let right = forward_norm.cross(camera.up);
-
-    let forward = camera.target - camera.eye;
-    let forward_mag = forward.magnitude();
+    let angle_incr = self.speed * PI / 4.0;
 
     if self.is_right_pressed {
-      camera.eye = camera.target - (forward + right * self.speed).normalize() * forward_mag;
+      camera.alpha += angle_incr;
     }
     if self.is_left_pressed {
-      camera.eye = camera.target - (forward - right * self.speed).normalize() * forward_mag;
+      camera.alpha -= angle_incr;
+    }
+    if self.is_up_pressed {
+      camera.gamma += angle_incr;
+    }
+    if self.is_down_pressed {
+      camera.gamma -= angle_incr;
     }
   }
 
@@ -64,7 +73,7 @@ impl CameraController {
         let is_pressed = *state == ElementState::Pressed;
         match keycode {
           KeyCode::KeyW | KeyCode::ArrowUp => {
-            self.is_forward_pressed = is_pressed;
+            self.is_up_pressed = is_pressed;
             true
           }
           KeyCode::KeyA | KeyCode::ArrowLeft => {
@@ -72,11 +81,19 @@ impl CameraController {
             true
           }
           KeyCode::KeyS | KeyCode::ArrowDown => {
-            self.is_backward_pressed = is_pressed;
+            self.is_down_pressed = is_pressed;
             true
           }
           KeyCode::KeyD | KeyCode::ArrowRight => {
             self.is_right_pressed = is_pressed;
+            true
+          }
+          KeyCode::KeyZ => {
+            self.is_z_pressed = is_pressed;
+            true
+          }
+          KeyCode::KeyX => {
+            self.is_x_pressed = is_pressed;
             true
           }
           _ => false,

@@ -15,7 +15,7 @@ impl MatrixUniform {
     }
   }
 
-  pub fn _translation(coords: &[f32]) -> MatrixUniform {
+  pub fn translation(coords: &[f32]) -> MatrixUniform {
     MatrixUniform {
       view_proj: cgmath::Matrix4::from_translation(cgmath::Vector3 {
         x: coords[0],

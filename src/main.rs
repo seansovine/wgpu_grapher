@@ -4,7 +4,7 @@ mod matrix;
 mod mesh;
 mod pipeline;
 mod render;
-mod render_state;
+mod state;
 
 use winit::{
   event::*,
@@ -25,7 +25,7 @@ pub async fn run_event_loop() {
   let event_loop = EventLoop::new().unwrap();
   let window = WindowBuilder::new().build(&event_loop).unwrap();
 
-  let mut state = render_state::RenderState::new(&window).await;
+  let mut state = state::RenderState::new(&window).await;
   let scene = mesh::graph_scene(&state);
 
   log::info!("Starting event loop!");

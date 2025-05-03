@@ -1,5 +1,5 @@
 use crate::mesh;
-use crate::render_state::RenderState;
+use crate::state::RenderState;
 
 pub fn render(state: &mut RenderState, scene: &mesh::Scene) -> Result<(), wgpu::SurfaceError> {
   let output = state.surface.get_current_texture()?;
