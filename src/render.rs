@@ -7,7 +7,7 @@ pub fn render(state: &mut RenderState, scene: &mesh::Scene) -> Result<(), wgpu::
     .texture
     .create_view(&wgpu::TextureViewDescriptor::default());
 
-  for (mesh, matrix) in scene.meshes.iter().zip(scene.matrices.iter()) {
+  for mesh in &scene.meshes {
     let mut encoder = state
       .device
       .create_command_encoder(&wgpu::CommandEncoderDescriptor {
@@ -32,7 +32,7 @@ pub fn render(state: &mut RenderState, scene: &mesh::Scene) -> Result<(), wgpu::
     render_pass.set_pipeline(&scene.pipeline);
 
     render_pass.set_bind_group(0, &state.camera_state.matrix.bind_group, &[]);
-    render_pass.set_bind_group(1, &matrix.bind_group, &[]);
+    render_pass.set_bind_group(1, &mesh.matrix.bind_group, &[]);
 
     render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
     render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);

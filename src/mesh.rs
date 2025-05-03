@@ -29,14 +29,23 @@ pub struct MeshData {
   pub indices: Vec<u16>,
 }
 
+impl MeshData {
+  pub fn set_uniform_color(&mut self, rgb: [f32; 3]) {
+    for vertex in &mut self.vertices {
+      vertex.color = rgb;
+    }
+  }
+}
+
 pub struct MeshRenderData {
   pub vertex_buffer: Buffer,
   pub index_buffer: Buffer,
   pub num_indices: u32,
+  pub matrix: MatrixState,
 }
 
 impl MeshRenderData {
-  fn from_mesh_data(device: &Device, mesh_data: MeshData) -> Self {
+  fn from_mesh_data(device: &Device, mesh_data: MeshData, matrix_uniform: MatrixUniform) -> Self {
     let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
       label: Some("Vertex Buffer"),
       contents: bytemuck::cast_slice(mesh_data.vertices.as_slice()),
@@ -50,17 +59,19 @@ impl MeshRenderData {
     });
     let num_indices = mesh_data.indices.len() as u32;
 
+    let matrix = matrix::make_matrix_state(device, matrix_uniform);
+
     MeshRenderData {
       vertex_buffer,
       index_buffer,
       num_indices,
+      matrix,
     }
   }
 }
 
 pub struct Scene {
   pub meshes: Vec<MeshRenderData>,
-  pub matrices: Vec<MatrixState>,
   pub pipeline: RenderPipeline,
 }
 
@@ -86,13 +97,31 @@ static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
 });
 
 pub fn test_scene(state: &RenderState) -> Scene {
-  let mut meshes = vec![];
-  let mut matrices = vec![];
+  let mut meshes: Vec<(MeshData, MatrixUniform)> = vec![];
 
-  let matrix = matrix::make_matrix_state(
-    &state.device,
-    MatrixUniform::_translation(&[0.0, -0.5, 0.5]),
-  );
+  let mut back_mesh = (*TEST_MESH).clone();
+  let gold = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
+  back_mesh.set_uniform_color(gold);
+  meshes.push((back_mesh, MatrixUniform::_translation(&[0.0, -0.5, -0.5])));
+
+  let front_mesh = (*TEST_MESH).clone();
+  meshes.push((front_mesh, MatrixUniform::_translation(&[0.0, -0.5, 0.5])));
+
+  build_scene(state, meshes)
+}
+
+// build scene from (mesh, vector) vector
+
+pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)>) -> Scene {
+  let mut meshes = vec![];
+
+  for (mesh, matrix) in mesh_data {
+    let mesh_render_data = MeshRenderData::from_mesh_data(&state.device, mesh, matrix);
+    meshes.push(mesh_render_data);
+  }
+  // TODO: we need to handle depth issues when rendering these
+
+  let last_mesh = meshes.last().unwrap();
 
   // only uses matrix layout, so should only need one
   let pipeline = pipeline::create_render_pipeline(
@@ -100,27 +129,9 @@ pub fn test_scene(state: &RenderState) -> Scene {
     &state.config,
     &[
       &state.camera_state.matrix.bind_group_layout,
-      &matrix.bind_group_layout,
+      &last_mesh.matrix.bind_group_layout,
     ],
   );
 
-  matrices.push(matrix);
-
-  let mesh_render_data = MeshRenderData::from_mesh_data(&state.device, (*TEST_MESH).clone());
-  meshes.push(mesh_render_data);
-
-  let matrix = matrix::make_matrix_state(
-    &state.device,
-    MatrixUniform::_translation(&[0.0, -0.5, -0.5]),
-  );
-  matrices.push(matrix);
-
-  let mesh_render_data = MeshRenderData::from_mesh_data(&state.device, (*TEST_MESH).clone());
-  meshes.push(mesh_render_data);
-
-  Scene {
-    meshes,
-    matrices,
-    pipeline,
-  }
+  Scene { meshes, pipeline }
 }
