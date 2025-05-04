@@ -36,6 +36,7 @@ impl CameraController {
     let forward_norm = forward.normalize();
     let forward_mag = forward.magnitude();
 
+    // use of look-at from Learn WGPU
     if self.is_z_pressed && forward_mag > self.speed {
       camera.eye += forward_norm * self.speed;
     }

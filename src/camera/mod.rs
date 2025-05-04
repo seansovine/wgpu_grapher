@@ -5,13 +5,16 @@ use crate::matrix::{self, MatrixState, MatrixUniform};
 use wgpu::{Device, SurfaceConfiguration};
 
 pub struct Camera {
+  // for look-at matrix
   pub eye: cgmath::Point3<f32>,
   pub target: cgmath::Point3<f32>,
   pub up: cgmath::Vector3<f32>,
+  // for perspective matrix
   pub aspect: f32,
   pub fovy: f32,
   pub znear: f32,
   pub zfar: f32,
+  // rotation euler angles
   pub alpha: f32,
   pub gamma: f32,
 }
@@ -51,7 +54,7 @@ impl CameraState {
     let camera = Camera {
       eye: (0.0, 0.0, 2.0).into(),
       target: (0.0, 0.0, 0.0).into(),
-      up: cgmath::Vector3::unit_y(),
+      up: Y_AXIS,
       aspect: config.width as f32 / config.height as f32,
       fovy: 45.0,
       znear: 0.1,
@@ -62,14 +65,13 @@ impl CameraState {
 
     let mut uniform = MatrixUniform::identity();
     uniform.update(camera.get_matrix());
-
-    let state = matrix::make_matrix_state(device, uniform);
+    let matrix = matrix::make_matrix_state(device, uniform);
 
     let controller = controller::CameraController::new(0.00125);
 
     CameraState {
       camera,
-      matrix: state,
+      matrix,
       controller,
     }
   }

@@ -70,7 +70,7 @@ pub struct Scene {
   pub pipeline: RenderPipeline,
 }
 
-// build scene from (mesh, vector) vector
+// build scene from (mesh, matrix) vector
 
 pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)>) -> Scene {
   let mut meshes = vec![];
@@ -83,7 +83,7 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
 
   let last_mesh = meshes.last().unwrap();
 
-  // only uses matrix layout, so should only need one
+  // only uses matrix layout, so only need one
   let pipeline = pipeline::create_render_pipeline(
     &state.device,
     &state.config,
@@ -132,7 +132,7 @@ pub fn test_scene(state: &RenderState) -> Scene {
   build_scene(state, meshes)
 }
 
-// graph data
+// make scene for function graph
 
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {

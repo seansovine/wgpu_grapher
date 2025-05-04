@@ -13,6 +13,8 @@ use winit::{
   window::WindowBuilder,
 };
 
+// program main
+
 fn main() {
   pollster::block_on(run_event_loop());
 }
@@ -24,6 +26,7 @@ pub async fn run_event_loop() {
 
   let event_loop = EventLoop::new().unwrap();
   let window = WindowBuilder::new().build(&event_loop).unwrap();
+  window.set_title("wgpu grapher");
 
   let mut state = state::RenderState::new(&window).await;
   let scene = mesh::graph_scene(&state);
@@ -36,7 +39,7 @@ pub async fn run_event_loop() {
         ref event,
         window_id,
       } if window_id == state.window().id() => {
-        if !state.input(event) {
+        if !state.handle_user_input(event) {
           match event {
             // window closed or escape pressed
             WindowEvent::CloseRequested
@@ -57,13 +60,13 @@ pub async fn run_event_loop() {
 
             // handle redraw
             WindowEvent::RedrawRequested => {
-              // ?
+              // request another redraw event after this one for continuous update
               state.window().request_redraw();
 
               state.update();
               match render::render(&mut state, &scene) {
                 Ok(_) => {}
-                // ?
+                // swap chain needs updated or recreated (wgpu docs)
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
                   state.resize(state.size)
                 }

@@ -1,11 +1,12 @@
-// TODO: Add code to build mesh(es) for graphing a function y = f(x, z).
+// Code to build mesh(es) for graphing a function y = f(x, z).
 //
-// This will include:
+// This includes:
 //
 //  - a function that tesselates the (x, z) unit square with uniform subsquares
 //  - a function to generate the vertex and index sets from squares
 //    - we'll want to consider front & back face rendering
-//  - a function to update the vertex sets above from an (x, y) -> z closure
+//  - a function to update the vertex sets above from an (x, z) -> y closure
+//    - (note we're working in OpenGL coordinate system)
 //  - mechanisms to decorate such closures to scale and shift inputs and outputs
 //
 // This will do:
@@ -15,24 +16,23 @@
 use crate::mesh::{self, MeshData};
 
 pub struct Square {
-  // vertex indices of corners
-  //  CCW from bottom-left
+  // vertex indices of corners CW from back-left
   corners: [u16; 4],
 }
 
 impl Square {
   #[rustfmt::skip]
   fn triangle_vertices(&self) -> [u16; 12] {
-		let c = &self.corners;
-		[
-			// top faces
-			c[0], c[2], c[3],
-			c[0], c[1], c[2],
-			// bottom faces
-			c[0], c[3], c[2],
-			c[0], c[2], c[1],
-		]
-	}
+    let c = &self.corners;
+    [
+      // top faces
+      c[0], c[2], c[3],
+      c[0], c[1], c[2],
+      // bottom faces
+      c[0], c[3], c[2],
+      c[0], c[2], c[1],
+    ]
+  }
 }
 
 struct Vertex([f32; 3]);
@@ -59,8 +59,7 @@ impl UnitSquareTesselation {
     let mut vertices = vec![];
 
     // flattened order is important here:
-    //  we go across rows from left to right,
-    //  visiting rows from bottom to top
+    //  we go across rows from left to right, visiting rows from back to front
     for z in &ticks {
       for x in &ticks {
         vertices.push(Vertex([*x, 0.0, *z]));
@@ -69,8 +68,8 @@ impl UnitSquareTesselation {
 
     let mut squares = vec![];
 
-    // x and y are indices here, not coordinates
-    // not n squares per row/column means n+1 ticks
+    // x and z are indices here, not coordinates.
+    //  note: n squares per row/column means n+1 ticks
     for z in 0..n {
       for x in 0..n {
         squares.push(Square {
@@ -134,6 +133,7 @@ pub fn shift_scale_input<F>(
 where
   F: Fn(f32, f32) -> f32,
 {
+  // new closure takes ownership of old one
   move |x: f32, z: f32| f((x - x_shift) * x_scale, (z - z_shift) * z_scale)
 }
 
@@ -141,5 +141,6 @@ pub fn shift_scale_output<F>(f: F, y_shift: f32, y_scale: f32) -> impl Fn(f32, f
 where
   F: Fn(f32, f32) -> f32,
 {
+  // new closure takes ownership of old one
   move |x: f32, z: f32| f(x, z) * y_scale + y_shift
 }

@@ -40,7 +40,7 @@ pub struct MatrixState {
 
 pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) -> MatrixState {
   let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-    label: Some("Camera Buffer"),
+    label: Some("camera buffer"),
     contents: bytemuck::cast_slice(&[matrix_uniform]),
     usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
   });

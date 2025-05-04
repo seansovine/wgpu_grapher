@@ -106,7 +106,7 @@ impl RenderState<'_> {
     }
   }
 
-  pub fn input(&mut self, event: &WindowEvent) -> bool {
+  pub fn handle_user_input(&mut self, event: &WindowEvent) -> bool {
     self.camera_state.controller.process_events(event)
   }
 
