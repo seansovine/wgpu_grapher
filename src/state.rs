@@ -110,7 +110,10 @@ impl RenderState<'_> {
     self.camera_state.controller.process_events(event)
   }
 
-  pub fn update(&mut self) {
+  pub fn update(&mut self, framerate: f32) {
+    // adjust controller speed based on framerate
+    self.camera_state.controller.speed = 2.125 / framerate;
+
     self
       .camera_state
       .controller

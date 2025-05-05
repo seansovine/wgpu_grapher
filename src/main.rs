@@ -13,6 +13,8 @@ use winit::{
   window::WindowBuilder,
 };
 
+use std::time::Instant;
+
 // program main
 
 fn main() {
@@ -32,6 +34,11 @@ pub async fn run_event_loop() {
   let scene = mesh::graph_scene(&state);
 
   log::info!("Starting event loop!");
+
+  let mut time = Instant::now();
+  let mut framecount = 0_usize;
+  #[allow(unused_assignments)]
+  let mut framerate = 1.0f32;
 
   event_loop
     .run(move |event, control_flow| match event {
@@ -60,10 +67,22 @@ pub async fn run_event_loop() {
 
             // handle redraw
             WindowEvent::RedrawRequested => {
+              // update framerate
+              let elapsed = time.elapsed().as_millis();
+              framecount += 1;
+              framerate = 1000_f32 * framecount as f32 / elapsed as f32;
+
+              // log framerate once per second
+              if elapsed > 1000 {
+                log::info!("FPS: {}", framerate);
+                framecount = 0;
+                time = Instant::now();
+              }
+
               // request another redraw event after this one for continuous update
               state.window().request_redraw();
 
-              state.update();
+              state.update(framerate);
               match render::render(&mut state, &scene) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)

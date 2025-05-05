@@ -3,4 +3,10 @@
 # turn on env_log logging
 export RUST_LOG=wgpu_grapher=info
 
-target/debug/wgpu_grapher
+if [[ "$1" != "debug" && "$1" != "release" ]]; then
+  echo "Required arg: debug or release."
+  exit 2
+fi
+
+target/$1/wgpu_grapher
+
