@@ -13,6 +13,8 @@ pub struct RenderState<'a> {
   pub window: &'a Window,
   // camera
   pub camera_state: CameraState,
+  // running framerate
+  pub framerate: f32,
 }
 
 impl<'a> RenderState<'a> {
@@ -88,6 +90,7 @@ impl<'a> RenderState<'a> {
       size,
       window,
       camera_state,
+      framerate: 1_f32,
     }
   }
 }
@@ -103,6 +106,10 @@ impl RenderState<'_> {
       self.config.width = new_size.width;
       self.config.height = new_size.height;
       self.surface.configure(&self.device, &self.config);
+
+      // update camera aspect ratio
+      self.camera_state.camera.aspect = self.config.width as f32 / self.config.height as f32;
+      self.update()
     }
   }
 
@@ -110,9 +117,9 @@ impl RenderState<'_> {
     self.camera_state.controller.process_events(event)
   }
 
-  pub fn update(&mut self, framerate: f32) {
+  pub fn update(&mut self) {
     // adjust controller speed based on framerate
-    self.camera_state.controller.speed = 2.125 / framerate;
+    self.camera_state.controller.speed = 2.125 / self.framerate;
 
     self
       .camera_state

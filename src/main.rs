@@ -37,8 +37,6 @@ pub async fn run_event_loop() {
 
   let mut time = Instant::now();
   let mut framecount = 0_usize;
-  #[allow(unused_assignments)]
-  let mut framerate = 1.0f32;
 
   event_loop
     .run(move |event, control_flow| match event {
@@ -70,11 +68,11 @@ pub async fn run_event_loop() {
               // update framerate
               let elapsed = time.elapsed().as_millis();
               framecount += 1;
-              framerate = 1000_f32 * framecount as f32 / elapsed as f32;
+              state.framerate = 1000_f32 * framecount as f32 / elapsed as f32;
 
               // log framerate once per second
               if elapsed > 1000 {
-                log::info!("FPS: {}", framerate);
+                log::info!("FPS: {}", state.framerate);
                 framecount = 0;
                 time = Instant::now();
               }
@@ -82,7 +80,7 @@ pub async fn run_event_loop() {
               // request another redraw event after this one for continuous update
               state.window().request_redraw();
 
-              state.update(framerate);
+              state.update();
               match render::render(&mut state, &scene) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)
