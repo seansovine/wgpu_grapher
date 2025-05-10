@@ -5,6 +5,9 @@ mod mesh;
 mod pipeline;
 mod render;
 mod state;
+mod wave_eqn;
+
+use crate::mesh::RenderScene;
 
 use winit::{
   event::*,
@@ -31,7 +34,8 @@ pub async fn run_event_loop() {
   window.set_title("wgpu grapher");
 
   let mut state = state::RenderState::new(&window).await;
-  let mut scene = mesh::melting_graph_scene(&state);
+  #[allow(unused_mut)]
+  let mut scene = mesh::wave_eqn_scene(&state);
 
   log::info!("Starting event loop!");
 
@@ -88,7 +92,7 @@ pub async fn run_event_loop() {
               scene.update(&state);
               state.update();
 
-              match render::render(&mut state, &scene.scene) {
+              match render::render(&mut state, scene.scene()) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {

@@ -26,3 +26,14 @@ loop were inspired by the _Learn WGPU_ tutorial.
 | `z`     | zoom in      |
 | `x`     | zoom out     |
 | `esc`   | exit         |
+
+## 2D wave equation simulation
+
+Now includes a finite-difference simulation of the 2D wave equation.
+The idea for the random disturbances and energy damping there came from
+[Beltoforion](https://beltoforion.de/en/recreational_mathematics/). (His
+work is awesome; it's definitely worth checking out.)
+
+<p align="center" margin="20px">
+	<img src="images/screenshot_wave_eqn.png" alt="drawing" width="600" style="padding-top: 15px; padding-bottom: 10px"/>
+</p>
