@@ -45,15 +45,19 @@ pub struct UnitSquareTesselation {
 }
 
 impl UnitSquareTesselation {
-  pub const FLOOR_COLOR: [f32; 3] = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
+  pub const FLOOR_COLOR: [f32; 3] = [
+    0.8 * 168.0f32 / 255.0f32,
+    0.8 * 125.0f32 / 255.0f32,
+    0.8 * 50.0f32 / 255.0f32,
+  ];
   pub const FUNCT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
   /// build tesselation of (x, z) coordinate system
-  pub fn generate(n: u16) -> Self {
+  pub fn generate(n: u16, width: f32) -> Self {
     let mut ticks: Vec<f32> = vec![];
 
     for i in 0..=n {
-      ticks.push(i as f32 * (1.0f32 / n as f32));
+      ticks.push(i as f32 * (width / n as f32));
     }
 
     let mut vertices = vec![];

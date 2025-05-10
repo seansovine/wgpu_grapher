@@ -31,7 +31,7 @@ pub async fn run_event_loop() {
   window.set_title("wgpu grapher");
 
   let mut state = state::RenderState::new(&window).await;
-  let scene = mesh::graph_scene(&state);
+  let mut scene = mesh::melting_graph_scene(&state);
 
   log::info!("Starting event loop!");
 
@@ -45,6 +45,7 @@ pub async fn run_event_loop() {
         window_id,
       } if window_id == state.window().id() => {
         if !state.handle_user_input(event) {
+          let elapsed = time.elapsed().as_millis();
           match event {
             // window closed or escape pressed
             WindowEvent::CloseRequested
@@ -65,23 +66,29 @@ pub async fn run_event_loop() {
 
             // handle redraw
             WindowEvent::RedrawRequested => {
+              // request another redraw event after this one for continuous update
+              state.window().request_redraw();
+
+              // limit framerate to keep things cool
+              if elapsed % 20 != 0 {
+                return;
+              }
+
               // update framerate
-              let elapsed = time.elapsed().as_millis();
               framecount += 1;
               state.framerate = 1000_f32 * framecount as f32 / elapsed as f32;
 
               // log framerate once per second
-              if elapsed > 1000 {
+              if elapsed >= 1000 {
                 log::info!("FPS: {}", state.framerate);
                 framecount = 0;
                 time = Instant::now();
               }
 
-              // request another redraw event after this one for continuous update
-              state.window().request_redraw();
-
+              scene.update(&state);
               state.update();
-              match render::render(&mut state, &scene) {
+
+              match render::render(&mut state, &scene.scene) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {

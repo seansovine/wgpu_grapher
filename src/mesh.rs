@@ -44,7 +44,7 @@ impl MeshRenderData {
     let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
       label: Some("Vertex Buffer"),
       contents: bytemuck::cast_slice(mesh_data.vertices.as_slice()),
-      usage: wgpu::BufferUsages::VERTEX,
+      usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
     });
 
     let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -68,6 +68,11 @@ impl MeshRenderData {
 pub struct Scene {
   pub meshes: Vec<MeshRenderData>,
   pub pipeline: RenderPipeline,
+}
+
+impl Scene {
+  #[allow(unused)]
+  pub fn update(&self, _: &RenderState) {}
 }
 
 // build scene from (mesh, matrix) vector
@@ -137,19 +142,68 @@ pub fn test_scene(state: &RenderState) -> Scene {
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
   static SUBDIVISIONS: u16 = 64;
+  static WIDTH: f32 = 2.0;
 
-  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
+  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
-  let matrix = MatrixUniform::translation(&[-0.5, -0.5, -0.5]);
+  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -WIDTH / 2.0_f32, -WIDTH / 2.0_f32]);
 
   // example function
   let mut f = |x: f32, z: f32| x.sin() * z.cos();
   let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
   let f = graph::shift_scale_output(f, 0.55, 0.5);
 
-  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS)
+  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)
     .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
 
   build_scene(state, vec![(floor_mesh, matrix), (func_mesh, matrix)])
+}
+
+// test a scene with changing buffers
+
+pub struct MeltingScene {
+  pub scene: Scene,
+  pub func_mesh: MeshData,
+}
+
+impl MeltingScene {
+  const SCALE_FACTOR: f32 = 0.9995;
+
+  pub fn update(&mut self, state: &RenderState) {
+    for vertex in &mut self.func_mesh.vertices {
+      vertex.position[1] *= MeltingScene::SCALE_FACTOR;
+    }
+
+    state.queue.write_buffer(
+      &self.scene.meshes[1].vertex_buffer,
+      0,
+      bytemuck::cast_slice(self.func_mesh.vertices.as_slice()),
+    );
+  }
+}
+
+#[allow(unused)]
+pub fn melting_graph_scene(state: &RenderState) -> MeltingScene {
+  static SUBDIVISIONS: u16 = 200;
+  static WIDTH: f32 = 2.0;
+
+  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
+  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -0.2_f32, -WIDTH / 2.0_f32]);
+
+  // example function
+  let mut f = |x: f32, z: f32| x.sin() * z.cos();
+  let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
+  let f = graph::shift_scale_output(f, 0.55, 0.5);
+
+  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .apply_function(f)
+    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+
+  let scene = build_scene(
+    state,
+    vec![(floor_mesh, matrix), (func_mesh.clone(), matrix)],
+  );
+  MeltingScene { scene, func_mesh }
 }
