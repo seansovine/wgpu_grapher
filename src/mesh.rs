@@ -5,6 +5,7 @@ use crate::matrix;
 use crate::matrix::{MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::state::RenderState;
+use crate::wave_eqn;
 
 use std::sync::LazyLock;
 
@@ -70,11 +71,6 @@ pub struct Scene {
   pub pipeline: RenderPipeline,
 }
 
-impl Scene {
-  #[allow(unused)]
-  pub fn update(&self, _: &RenderState) {}
-}
-
 // build scene from (mesh, matrix) vector
 
 pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)>) -> Scene {
@@ -99,6 +95,24 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
   );
 
   Scene { meshes, pipeline }
+}
+
+// trait to encapsulate scene behavior
+
+#[allow(unused)]
+pub trait RenderScene {
+  /// get associated Scene reference
+  fn scene(&self) -> &Scene;
+  /// perform any timestep state updates
+  fn update(&mut self, state: &RenderState);
+}
+
+impl RenderScene for Scene {
+  fn scene(&self) -> &Scene {
+    self
+  }
+
+  fn update(&mut self, _state: &RenderState) {}
 }
 
 // test data
@@ -169,8 +183,14 @@ pub struct MeltingScene {
 
 impl MeltingScene {
   const SCALE_FACTOR: f32 = 0.9995;
+}
 
-  pub fn update(&mut self, state: &RenderState) {
+impl RenderScene for MeltingScene {
+  fn scene(&self) -> &Scene {
+    &self.scene
+  }
+
+  fn update(&mut self, state: &RenderState) {
     for vertex in &mut self.func_mesh.vertices {
       vertex.position[1] *= MeltingScene::SCALE_FACTOR;
     }
@@ -205,5 +225,64 @@ pub fn melting_graph_scene(state: &RenderState) -> MeltingScene {
     state,
     vec![(floor_mesh, matrix), (func_mesh.clone(), matrix)],
   );
+
   MeltingScene { scene, func_mesh }
+}
+
+// create a scene for simulating the wave equation
+
+#[allow(unused)]
+pub struct WaveEquationScene {
+  pub scene: Scene,
+  pub func_mesh: MeshData,
+  pub wave_eqn: wave_eqn::WaveEquationData,
+}
+
+#[allow(unused)]
+pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
+  // number of squares is 1 less than number of gridpoints
+  // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
+  static SUBDIVISIONS: u16 = wave_eqn::X_SIZE as u16 - 1;
+  static WIDTH: f32 = 2.0;
+
+  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -0.2_f32, -WIDTH / 2.0_f32]);
+
+  let scene = build_scene(state, vec![(func_mesh.clone(), matrix)]);
+  let wave_eqn = wave_eqn::WaveEquationData::new();
+
+  WaveEquationScene {
+    scene,
+    func_mesh,
+    wave_eqn,
+  }
+}
+
+impl RenderScene for WaveEquationScene {
+  fn scene(&self) -> &Scene {
+    &self.scene
+  }
+
+  fn update(&mut self, state: &RenderState) {
+    // run next finite-difference timestep
+    self.wave_eqn.update();
+
+    static SCALE: f32 = 0.002;
+
+    // update vertex data
+    let n = wave_eqn::X_SIZE;
+    for i in 0..n {
+      for j in 0..n {
+        self.func_mesh.vertices[j + i * n].position[1] = SCALE * self.wave_eqn.u_0[i][j];
+      }
+    }
+
+    // update vertex buffer
+    state.queue.write_buffer(
+      &self.scene.meshes[0].vertex_buffer,
+      0,
+      bytemuck::cast_slice(self.func_mesh.vertices.as_slice()),
+    );
+  }
 }
