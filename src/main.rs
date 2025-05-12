@@ -18,7 +18,7 @@ use winit::{
   window::WindowBuilder,
 };
 
-use std::time::Instant;
+use std::{thread, time};
 
 // command line args
 
@@ -34,6 +34,10 @@ pub enum Command {
   MeltingGraph,
   WaveEquation,
 }
+
+// between-frame delay
+
+const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667);
 
 // program main
 
@@ -62,7 +66,7 @@ pub async fn run_event_loop() {
 
   log::info!("Starting event loop!");
 
-  let mut time = Instant::now();
+  let mut time = time::Instant::now();
   let mut framecount = 0_usize;
 
   event_loop
@@ -96,11 +100,6 @@ pub async fn run_event_loop() {
               // request another redraw event after this one for continuous update
               state.window().request_redraw();
 
-              // limit framerate to keep things cool
-              if elapsed % 20 != 0 {
-                return;
-              }
-
               // update framerate
               framecount += 1;
               state.framerate = 1000_f32 * framecount as f32 / elapsed as f32;
@@ -109,7 +108,7 @@ pub async fn run_event_loop() {
               if elapsed >= 1000 {
                 log::info!("FPS: {}", state.framerate);
                 framecount = 0;
-                time = Instant::now();
+                time = time::Instant::now();
               }
 
               scene.update(&state);
@@ -133,6 +132,8 @@ pub async fn run_event_loop() {
                   log::warn!("Surface timeout.")
                 }
               }
+
+              thread::sleep(RENDER_TIMEOUT);
             }
 
             _ => {} // other window event
