@@ -6,11 +6,11 @@ use rand::rngs::ThreadRng;
 pub const X_SIZE: usize = 256;
 pub const Y_SIZE: usize = 256;
 
-const PROP_SPEED: f32 = 0.0625;
+const PROP_SPEED: f32 = 0.25;
 const DAMPING_FACTOR: f32 = 0.995;
 
-const DISTURBANCE_PROB: f32 = 0.01;
-const DISTURBANCE_SIZE: f32 = 50.0;
+const DISTURBANCE_PROB: f32 = 0.02;
+const DISTURBANCE_SIZE: f32 = 80.0;
 
 pub struct WaveEquationData {
   // current timestep data
