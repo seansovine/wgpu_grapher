@@ -155,17 +155,17 @@ pub fn test_scene(state: &RenderState) -> Scene {
 
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
-  static SUBDIVISIONS: u16 = 64;
+  static SUBDIVISIONS: u16 = 128;
   static WIDTH: f32 = 2.0;
 
   let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
-  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -WIDTH / 2.0_f32, -WIDTH / 2.0_f32]);
+  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -WIDTH / 4.0_f32, -WIDTH / 2.0_f32]);
 
   // example function
-  let mut f = |x: f32, z: f32| x.sin() * z.cos();
-  let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
-  let f = graph::shift_scale_output(f, 0.55, 0.5);
+  let mut f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+  let f = graph::shift_scale_input(f, 1.0, 20.0, 1.0, 20.0);
+  let f = graph::shift_scale_output(f, 0.25, 0.85);
 
   let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)

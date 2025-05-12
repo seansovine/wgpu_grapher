@@ -2,10 +2,10 @@
 
 This is a 3D function grapher written in Rust using WGPU.
 
-__Example__ $y = \sin(x) \times \cos(z)$:
+__Example__ $y = \text{sinc}(\sqrt{x^2 + y^2})$:
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_1.png" alt="drawing" width="400" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="images/screenshot_1.png" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
 It has two main parts: A simple rendering engine to render a
@@ -29,11 +29,12 @@ loop were inspired by the _Learn WGPU_ tutorial.
 
 ## 2D wave equation simulation
 
-Now includes a finite-difference simulation of the 2D wave equation.
-The idea for the random disturbances and energy damping there came from
-[Beltoforion](https://beltoforion.de/en/recreational_mathematics/). (His
-work is awesome; it's definitely worth checking out.)
+It now includes a finite-difference simulation of the 2D wave equation.
 
 <p align="center" margin="20px">
 	<img src="images/screenshot_wave_eqn.png" alt="drawing" width="600" style="padding-top: 15px; padding-bottom: 10px"/>
 </p>
+
+The idea for the random disturbances and energy damping in this simulation
+came from [Beltoforion](https://beltoforion.de/en/recreational_mathematics/).
+(His work is awesome; it's definitely worth checking out.)

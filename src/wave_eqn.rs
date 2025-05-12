@@ -9,7 +9,7 @@ pub const Y_SIZE: usize = 256;
 const PROP_SPEED: f32 = 0.0625;
 const DAMPING_FACTOR: f32 = 0.995;
 
-const DISTURBANCE_PROP: f32 = 0.01;
+const DISTURBANCE_PROB: f32 = 0.01;
 const DISTURBANCE_SIZE: f32 = 50.0;
 
 pub struct WaveEquationData {
@@ -64,7 +64,7 @@ impl WaveEquationData {
   pub fn add_random_disturbance(&mut self) {
     // following Beltoforion's example,
     // add a random disturbance to the space
-    if self.rng.random::<f32>() < DISTURBANCE_PROP {
+    if self.rng.random::<f32>() < DISTURBANCE_PROB {
       let x: usize = self.rng.random_range(5..X_SIZE - 5);
       let y: usize = self.rng.random_range(5..Y_SIZE - 5);
 

@@ -9,6 +9,8 @@ mod wave_eqn;
 
 use crate::mesh::RenderScene;
 
+use clap::{Parser, Subcommand};
+
 use winit::{
   event::*,
   event_loop::EventLoop,
@@ -17,6 +19,21 @@ use winit::{
 };
 
 use std::time::Instant;
+
+// command line args
+
+#[derive(Debug, Parser)]
+pub struct CliArgs {
+  #[clap(subcommand)]
+  pub command: Command,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Command {
+  Graph,
+  MeltingGraph,
+  WaveEquation,
+}
 
 // program main
 
@@ -28,14 +45,20 @@ fn main() {
 
 pub async fn run_event_loop() {
   env_logger::init();
+  let args = CliArgs::parse();
 
   let event_loop = EventLoop::new().unwrap();
   let window = WindowBuilder::new().build(&event_loop).unwrap();
   window.set_title("wgpu grapher");
 
   let mut state = state::RenderState::new(&window).await;
+
   #[allow(unused_mut)]
-  let mut scene = mesh::wave_eqn_scene(&state);
+  let mut scene: Box<dyn RenderScene> = match args.command {
+    Command::Graph => Box::from(mesh::graph_scene(&state)),
+    Command::MeltingGraph => Box::from(mesh::melting_graph_scene(&state)),
+    Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
+  };
 
   log::info!("Starting event loop!");
 
