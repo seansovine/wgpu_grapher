@@ -4,6 +4,7 @@ mod matrix;
 mod mesh;
 mod pipeline;
 mod render;
+mod texture;
 
 use crate::mesh::RenderScene;
 

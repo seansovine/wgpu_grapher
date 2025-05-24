@@ -91,7 +91,11 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
     ],
   );
 
-  Scene { meshes, pipeline }
+  Scene {
+    meshes,
+    textured_meshes: vec![],
+    pipeline,
+  }
 }
 
 // trait to encapsulate scene behavior

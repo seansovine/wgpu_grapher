@@ -15,7 +15,7 @@ pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::Surf
     render_solid(state, &view, scene, mesh)?;
   }
 
-	// TODO: add for mesh in &scene.textured_meshes { ... }
+  // TODO: add for mesh in &scene.textured_meshes { ... }
 
   output.present();
 
@@ -70,8 +70,11 @@ pub fn _render_textured(
   _state: &mut RenderState,
   _scene: &mesh::Scene,
 ) -> Result<(), wgpu::SurfaceError> {
+  // TODO: Add code to create and submit render passes for textured mesh data.
 
-	// TODO: Add code to create and submit render passes for textured mesh data.
+  // An approach here might be to add the pipeline code based
+  // on the tutorial code, and comment it out. Then add the code
+  // that is needed to make the render pass work, working backwards.
 
   Ok(())
 }
