@@ -1,11 +1,9 @@
 mod camera;
-mod graph;
+mod math;
 mod matrix;
 mod mesh;
 mod pipeline;
 mod render;
-mod state;
-mod wave_eqn;
 
 use crate::mesh::RenderScene;
 
@@ -35,15 +33,14 @@ pub enum Command {
   WaveEquation,
 }
 
-// between-frame delay
-
-const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667);
-
 // program main
 
 fn main() {
   pollster::block_on(run_event_loop());
 }
+
+// between-frame delay; aiming for ~60 fps
+const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667);
 
 // implement main event loop
 
@@ -55,7 +52,7 @@ pub async fn run_event_loop() {
   let window = WindowBuilder::new().build(&event_loop).unwrap();
   window.set_title("wgpu grapher");
 
-  let mut state = state::RenderState::new(&window).await;
+  let mut state = render::RenderState::new(&window).await;
 
   #[allow(unused_mut)]
   let mut scene: Box<dyn RenderScene> = match args.command {
@@ -114,7 +111,7 @@ pub async fn run_event_loop() {
               scene.update(&state);
               state.update();
 
-              match render::render(&mut state, scene.scene()) {
+              match render::render_solid(&mut state, scene.scene()) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {

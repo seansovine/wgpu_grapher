@@ -1,16 +1,18 @@
 // Data representing a mesh and the vertices that they're made of.
 
-use crate::graph;
+use crate::math::graph;
+use crate::math::wave_eqn;
 use crate::matrix;
 use crate::matrix::{MatrixState, MatrixUniform};
 use crate::pipeline;
-use crate::state::RenderState;
-use crate::wave_eqn;
+use crate::render::RenderState;
+
+use super::Scene;
 
 use std::sync::LazyLock;
 
 use wgpu::util::DeviceExt;
-use wgpu::{Buffer, Device, RenderPipeline};
+use wgpu::{Buffer, Device};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -64,11 +66,6 @@ impl MeshRenderData {
       matrix,
     }
   }
-}
-
-pub struct Scene {
-  pub meshes: Vec<MeshRenderData>,
-  pub pipeline: RenderPipeline,
 }
 
 // build scene from (mesh, matrix) vector
@@ -164,7 +161,7 @@ pub fn graph_scene(state: &RenderState) -> Scene {
 
   // example function
   let mut f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-  let f = graph::shift_scale_input(f, 1.0, 20.0, 1.0, 20.0);
+  let f = graph::shift_scale_input(f, 1.0, 40.0, 1.0, 40.0);
   let f = graph::shift_scale_output(f, 0.25, 0.85);
 
   let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)

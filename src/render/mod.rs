@@ -1,7 +1,14 @@
-use crate::mesh;
-use crate::state::RenderState;
+mod state;
 
-pub fn render(state: &mut RenderState, scene: &mesh::Scene) -> Result<(), wgpu::SurfaceError> {
+pub use state::*;
+
+use crate::mesh;
+// use self::state::RenderState;
+
+pub fn render_solid(
+  state: &mut RenderState,
+  scene: &mesh::Scene,
+) -> Result<(), wgpu::SurfaceError> {
   let output = state.surface.get_current_texture()?;
   let view = output
     .texture
@@ -46,5 +53,12 @@ pub fn render(state: &mut RenderState, scene: &mesh::Scene) -> Result<(), wgpu::
 
   output.present();
 
+  Ok(())
+}
+
+pub fn _render_textured(
+  _state: &mut RenderState,
+  _scene: &mesh::Scene,
+) -> Result<(), wgpu::SurfaceError> {
   Ok(())
 }
