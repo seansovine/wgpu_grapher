@@ -111,7 +111,7 @@ pub async fn run_event_loop() {
               scene.update(&state);
               state.update();
 
-              match render::render_solid(&mut state, scene.scene()) {
+              match render::render(&state, scene.scene()) {
                 Ok(_) => {}
                 // swap chain needs updated or recreated (wgpu docs)
                 Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
