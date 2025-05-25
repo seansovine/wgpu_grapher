@@ -1,11 +1,15 @@
-use crate::mesh::Vertex;
+use crate::mesh::{TexturedVertex, Vertex};
 
 use wgpu::{BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 
-// vertex buffer layout
+// vertex buffer layouts
 
-impl Vertex {
-  pub fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
+pub(crate) trait Bufferable {
+  fn buffer_layout() -> wgpu::VertexBufferLayout<'static>;
+}
+
+impl Bufferable for Vertex {
+  fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
     wgpu::VertexBufferLayout {
       array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
       step_mode: wgpu::VertexStepMode::Vertex,
@@ -25,16 +29,47 @@ impl Vertex {
   }
 }
 
+impl Bufferable for TexturedVertex {
+  fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
+    wgpu::VertexBufferLayout {
+      array_stride: std::mem::size_of::<TexturedVertex>() as wgpu::BufferAddress,
+      step_mode: wgpu::VertexStepMode::Vertex,
+      attributes: &[
+        wgpu::VertexAttribute {
+          offset: 0,
+          shader_location: 0,
+          format: wgpu::VertexFormat::Float32x3,
+        },
+        wgpu::VertexAttribute {
+          offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
+          shader_location: 1,
+          format: wgpu::VertexFormat::Float32x2,
+        },
+      ],
+    }
+  }
+}
+
 // create a render pipeline
 
-pub(crate) fn create_render_pipeline(
+pub fn get_shader() -> wgpu::ShaderSource<'static> {
+  wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into())
+}
+
+pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
+  wgpu::ShaderSource::Wgsl(include_str!("textured_shader.wgsl").into())
+}
+
+pub(crate) fn create_render_pipeline<T: Bufferable>(
   device: &Device,
   config: &SurfaceConfiguration,
+  shader: wgpu::ShaderSource<'static>,
   bind_group_layouts: &[&BindGroupLayout],
+  polygon_mode: wgpu::PolygonMode,
 ) -> RenderPipeline {
   let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-    label: Some("shader"),
-    source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into()),
+    label: Some("solid color shader"),
+    source: shader,
   });
 
   let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -49,7 +84,7 @@ pub(crate) fn create_render_pipeline(
     vertex: wgpu::VertexState {
       module: &shader_module,
       entry_point: Some("vs_main"),
-      buffers: &[Vertex::buffer_layout()],
+      buffers: &[T::buffer_layout()],
       compilation_options: wgpu::PipelineCompilationOptions::default(),
     },
     fragment: Some(wgpu::FragmentState {
@@ -67,8 +102,7 @@ pub(crate) fn create_render_pipeline(
       strip_index_format: None,
       front_face: wgpu::FrontFace::Ccw,
       cull_mode: Some(wgpu::Face::Back),
-      // render wireframe
-      polygon_mode: wgpu::PolygonMode::Line,
+      polygon_mode,
       unclipped_depth: false,
       conservative: false,
     },

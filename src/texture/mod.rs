@@ -10,9 +10,9 @@ pub struct Image {
 }
 
 impl Image {
-  fn from_file(filepath: &str) -> Self {
-    let image_bytes =
-      std::fs::read(filepath).expect(&format!("Unable to read image at path: {}", filepath));
+  pub fn from_file(filepath: &str) -> Self {
+    let image_bytes = std::fs::read(filepath)
+      .unwrap_or_else(|_| panic!("Unable to read image at path: {}", filepath));
 
     let image = image::load_from_memory(&image_bytes).unwrap().to_rgba8();
     let dimensions = image.dimensions();
@@ -22,9 +22,11 @@ impl Image {
 }
 
 pub struct TextureData {
-  texture: wgpu::Texture,
-  view: wgpu::TextureView,
-  sampler: wgpu::Sampler,
+  // pub texture: wgpu::Texture,
+  // pub view: wgpu::TextureView,
+  // pub sampler: wgpu::Sampler,
+  pub bind_group_layout: wgpu::BindGroupLayout,
+  pub bind_group: wgpu::BindGroup,
 }
 
 impl TextureData {
@@ -42,14 +44,6 @@ impl TextureData {
       ..Default::default()
     });
 
-    Self {
-      texture,
-      view,
-      sampler,
-    }
-  }
-
-  pub fn bind_group(&self, state: &RenderState) -> wgpu::BindGroup {
     let bind_group_layout =
       state
         .device
@@ -80,17 +74,23 @@ impl TextureData {
       entries: &[
         wgpu::BindGroupEntry {
           binding: 0,
-          resource: wgpu::BindingResource::TextureView(&self.view),
+          resource: wgpu::BindingResource::TextureView(&view),
         },
         wgpu::BindGroupEntry {
           binding: 1,
-          resource: wgpu::BindingResource::Sampler(&self.sampler),
+          resource: wgpu::BindingResource::Sampler(&sampler),
         },
       ],
       label: Some("texture bind group"),
     });
 
-    bind_group
+    Self {
+      // texture,
+      // view,
+      // sampler,
+      bind_group_layout,
+      bind_group,
+    }
   }
 }
 

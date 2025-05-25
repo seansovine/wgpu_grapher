@@ -1,9 +1,9 @@
 mod state;
 pub use state::*;
 
-use crate::mesh::{self, MeshRenderData};
+use crate::mesh::{self, MeshRenderData, TexturedMeshRenderData};
 
-use wgpu::TextureView;
+use wgpu::{RenderPipeline, TextureView};
 
 pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::SurfaceError> {
   let output = state.surface.get_current_texture()?;
@@ -11,11 +11,16 @@ pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::Surf
     .texture
     .create_view(&wgpu::TextureViewDescriptor::default());
 
-  for mesh in &scene.meshes {
-    render_solid(state, &view, scene, mesh)?;
+  if let Some(pipeline) = &scene.pipeline {
+    for mesh in &scene.meshes {
+      render_solid(state, &view, pipeline, mesh)?;
+    }
   }
-
-  // TODO: add for mesh in &scene.textured_meshes { ... }
+  if let Some(pipeline) = &scene.textured_pipeline {
+    for mesh in &scene.textured_meshes {
+      render_textured(state, &view, pipeline, mesh)?;
+    }
+  }
 
   output.present();
 
@@ -25,17 +30,17 @@ pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::Surf
 pub fn render_solid(
   state: &RenderState,
   view: &TextureView,
-  scene: &mesh::Scene,
+  pipeline: &RenderPipeline,
   mesh: &MeshRenderData,
 ) -> Result<(), wgpu::SurfaceError> {
   let mut encoder = state
     .device
     .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-      label: Some("render encoder"),
+      label: Some("solid render encoder"),
     });
 
   let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-    label: Some("render pass"),
+    label: Some("solid render pass"),
     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
       view,
       resolve_target: None,
@@ -49,7 +54,7 @@ pub fn render_solid(
     timestamp_writes: None,
   });
 
-  render_pass.set_pipeline(&scene.pipeline);
+  render_pass.set_pipeline(pipeline);
 
   render_pass.set_bind_group(0, &state.camera_state.matrix.bind_group, &[]);
   render_pass.set_bind_group(1, &mesh.matrix.bind_group, &[]);
@@ -66,15 +71,49 @@ pub fn render_solid(
   Ok(())
 }
 
-pub fn _render_textured(
-  _state: &mut RenderState,
-  _scene: &mesh::Scene,
-) -> Result<(), wgpu::SurfaceError> {
-  // TODO: Add code to create and submit render passes for textured mesh data.
+// TODO: These can be merged.
 
-  // An approach here might be to add the pipeline code based
-  // on the tutorial code, and comment it out. Then add the code
-  // that is needed to make the render pass work, working backwards.
+pub fn render_textured(
+  state: &RenderState,
+  view: &TextureView,
+  pipeline: &RenderPipeline,
+  mesh: &TexturedMeshRenderData,
+) -> Result<(), wgpu::SurfaceError> {
+  let mut encoder = state
+    .device
+    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+      label: Some("textured render encoder"),
+    });
+
+  let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+    label: Some("textured render pass"),
+    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+      view,
+      resolve_target: None,
+      ops: wgpu::Operations {
+        load: wgpu::LoadOp::Load,
+        store: wgpu::StoreOp::Store,
+      },
+    })],
+    depth_stencil_attachment: None,
+    occlusion_query_set: None,
+    timestamp_writes: None,
+  });
+
+  render_pass.set_pipeline(pipeline);
+
+  render_pass.set_bind_group(0, &state.camera_state.matrix.bind_group, &[]);
+  render_pass.set_bind_group(1, &mesh.matrix.bind_group, &[]);
+  render_pass.set_bind_group(2, &mesh.texture.bind_group, &[]);
+
+  render_pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+  render_pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+  render_pass.draw_indexed(0..mesh.num_indices, 0, 0..1);
+
+  // release borrow of encoder
+  drop(render_pass);
+
+  state.queue.submit(std::iter::once(encoder.finish()));
 
   Ok(())
 }

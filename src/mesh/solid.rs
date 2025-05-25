@@ -7,7 +7,7 @@ use crate::matrix::{MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::render::RenderState;
 
-use super::Scene;
+use super::{RenderScene, Scene};
 
 use std::sync::LazyLock;
 
@@ -82,38 +82,24 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
   let last_mesh = meshes.last().unwrap();
 
   // only uses matrix layout, so only need one
-  let pipeline = pipeline::create_render_pipeline(
+  let pipeline = pipeline::create_render_pipeline::<Vertex>(
     &state.device,
     &state.config,
+    pipeline::get_shader(),
     &[
       &state.camera_state.matrix.bind_group_layout,
       &last_mesh.matrix.bind_group_layout,
     ],
+    // render as wireframe
+    wgpu::PolygonMode::Line,
   );
 
   Scene {
     meshes,
     textured_meshes: vec![],
-    pipeline,
+    pipeline: Some(pipeline),
+    textured_pipeline: None,
   }
-}
-
-// trait to encapsulate scene behavior
-
-#[allow(unused)]
-pub trait RenderScene {
-  /// get associated Scene reference
-  fn scene(&self) -> &Scene;
-  /// perform any timestep state updates
-  fn update(&mut self, state: &RenderState);
-}
-
-impl RenderScene for Scene {
-  fn scene(&self) -> &Scene {
-    self
-  }
-
-  fn update(&mut self, _state: &RenderState) {}
 }
 
 // test data

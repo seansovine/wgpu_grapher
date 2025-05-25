@@ -32,6 +32,7 @@ pub enum Command {
   Graph,
   MeltingGraph,
   WaveEquation,
+  Image,
 }
 
 // program main
@@ -60,6 +61,7 @@ pub async fn run_event_loop() {
     Command::Graph => Box::from(mesh::graph_scene(&state)),
     Command::MeltingGraph => Box::from(mesh::melting_graph_scene(&state)),
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
+    Command::Image => Box::from(mesh::image_test_scene(&state)),
   };
 
   log::info!("Starting event loop!");
