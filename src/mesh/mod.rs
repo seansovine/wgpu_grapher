@@ -15,11 +15,12 @@ pub struct Scene {
   pub textured_pipeline: Option<RenderPipeline>,
 }
 
-// trait to encapsulate scene behavior
+// trait to encapsulate scene behavior in render loop
 
 pub trait RenderScene {
   /// get associated Scene reference
   fn scene(&self) -> &Scene;
+
   /// perform any timestep state updates
   fn update(&mut self, state: &RenderState);
 }

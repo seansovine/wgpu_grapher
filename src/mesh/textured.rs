@@ -1,7 +1,4 @@
-// NOTE: The code here may be moved and cleaned up
-// later; we're just getting it down first.
-
-// build scene from (mesh, matrix) vector
+// Structures and functions for building textured mesh scenes.
 
 use super::Scene;
 use crate::matrix::{self, MatrixState, MatrixUniform};
@@ -31,8 +28,6 @@ pub struct TexturedMeshRenderData {
   pub matrix: MatrixState,
   pub texture: TextureData,
 }
-
-// TODO: Update ^ and v with texture info as needed.
 
 impl TexturedMeshRenderData {
   fn from_mesh_data(
@@ -64,6 +59,8 @@ impl TexturedMeshRenderData {
     }
   }
 }
+
+// build scene from (mesh, matrix) vector
 
 pub fn build_scene(
   state: &RenderState,
@@ -132,10 +129,9 @@ const TEST_INDICES: &[u16] = &[
   0, 3, 2,
 ];
 
-#[allow(unused)]
+/// Render the scene onto both sides of a square canvas.
 pub fn image_test_scene(state: &RenderState) -> Scene {
   let image = texture::Image::from_file("assets/pexels-arjay-neyra-2152024526-32225792.jpg");
-  let texture = texture::texture_from_image(&image, state);
   let texture_data = TextureData::from_image(&image, state);
 
   let mesh_data = TexturedMeshData {
@@ -144,9 +140,8 @@ pub fn image_test_scene(state: &RenderState) -> Scene {
     texture: texture_data,
   };
 
-  let mut meshes: Vec<(TexturedMeshData, MatrixUniform)> =
+  let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
     vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
 
-  // TODO: build and return scene
   build_scene(state, meshes)
 }

@@ -22,9 +22,6 @@ impl Image {
 }
 
 pub struct TextureData {
-  // pub texture: wgpu::Texture,
-  // pub view: wgpu::TextureView,
-  // pub sampler: wgpu::Sampler,
   pub bind_group_layout: wgpu::BindGroupLayout,
   pub bind_group: wgpu::BindGroup,
 }
@@ -33,7 +30,6 @@ impl TextureData {
   pub fn from_image(image: &Image, state: &RenderState) -> Self {
     let texture = texture_from_image(image, state);
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-
     let sampler = state.device.create_sampler(&wgpu::SamplerDescriptor {
       address_mode_u: wgpu::AddressMode::ClampToEdge,
       address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -85,9 +81,6 @@ impl TextureData {
     });
 
     Self {
-      // texture,
-      // view,
-      // sampler,
       bind_group_layout,
       bind_group,
     }
@@ -100,7 +93,6 @@ pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
     height: image.dimensions.1,
     depth_or_array_layers: 1,
   };
-
   let texture = state.device.create_texture(&wgpu::TextureDescriptor {
     size: texture_dimensions,
     mip_level_count: 1,
@@ -112,6 +104,7 @@ pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
     view_formats: &[],
   });
 
+  // write image bytes into texture
   state.queue.write_texture(
     wgpu::TexelCopyTextureInfo {
       texture: &texture,

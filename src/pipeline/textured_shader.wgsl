@@ -1,7 +1,5 @@
 // vertex shader
 
-// TODO: copied from solid shader; needs updated w/ texture
-
 struct MatrixUniform {
     matrix: mat4x4<f32>,
 }
@@ -36,6 +34,7 @@ fn vs_main(
 
 @group(2) @binding(0)
 var diffuse_tex: texture_2d<f32>;
+
 @group(2) @binding(1)
 var diffuse_samp: sampler;
 

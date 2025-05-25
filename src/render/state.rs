@@ -24,7 +24,6 @@ impl<'a> RenderState<'a> {
 
     // create surface, device, queue, config
 
-    // note that we could target WASM
     let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
       backends: wgpu::Backends::PRIMARY,
       ..Default::default()
@@ -125,11 +124,14 @@ impl RenderState<'_> {
       .camera_state
       .controller
       .update_camera(&mut self.camera_state.camera);
+
     self
       .camera_state
       .matrix
       .uniform
       .update(self.camera_state.camera.get_matrix());
+
+    // update camera matrix uniform
     self.queue.write_buffer(
       &self.camera_state.matrix.buffer,
       0,

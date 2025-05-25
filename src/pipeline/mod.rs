@@ -50,7 +50,7 @@ impl Bufferable for TexturedVertex {
   }
 }
 
-// create a render pipeline
+// include shaders and make accessor functions
 
 pub fn get_shader() -> wgpu::ShaderSource<'static> {
   wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into())
@@ -60,7 +60,9 @@ pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
   wgpu::ShaderSource::Wgsl(include_str!("textured_shader.wgsl").into())
 }
 
-pub(crate) fn create_render_pipeline<T: Bufferable>(
+// create a render pipeline
+
+pub fn create_render_pipeline<T: Bufferable>(
   device: &Device,
   config: &SurfaceConfiguration,
   shader: wgpu::ShaderSource<'static>,
