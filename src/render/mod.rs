@@ -1,17 +1,20 @@
 mod state;
+
+// re-export state
 pub use state::*;
 
-use crate::mesh;
+use crate::mesh::Scene;
 
-use wgpu::{RenderPipeline, TextureView};
+use wgpu::{BindGroup, BufferSlice, RenderPipeline, SurfaceError, TextureView};
 
-pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::SurfaceError> {
+pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
   let output = state.surface.get_current_texture()?;
   let view = output
     .texture
     .create_view(&wgpu::TextureViewDescriptor::default());
   let camera_bind_group = &state.camera_state.matrix.bind_group;
 
+  // render solid meshes if configured
   if let Some(pipeline) = &scene.pipeline {
     for mesh in &scene.meshes {
       render_detail(
@@ -25,6 +28,8 @@ pub fn render(state: &RenderState, scene: &mesh::Scene) -> Result<(), wgpu::Surf
       )?;
     }
   }
+
+  // render textured meshes if configured
   if let Some(pipeline) = &scene.textured_pipeline {
     for mesh in &scene.textured_meshes {
       render_detail(
@@ -52,11 +57,11 @@ fn render_detail(
   state: &RenderState,
   view: &TextureView,
   pipeline: &RenderPipeline,
-  vertex_buffer: wgpu::BufferSlice,
-  index_buffer: wgpu::BufferSlice,
+  vertex_buffer: BufferSlice,
+  index_buffer: BufferSlice,
   num_indices: u32,
-  bind_groups: &[&wgpu::BindGroup],
-) -> Result<(), wgpu::SurfaceError> {
+  bind_groups: &[&BindGroup],
+) -> Result<(), SurfaceError> {
   let mut encoder = state
     .device
     .create_command_encoder(&wgpu::CommandEncoderDescriptor {

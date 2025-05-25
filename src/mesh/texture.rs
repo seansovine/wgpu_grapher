@@ -1,5 +1,3 @@
-// We're just getting things down here for now; we can clean up later.
-
 use crate::render::RenderState;
 
 use image::{ImageBuffer, Rgba};
@@ -11,6 +9,7 @@ pub struct Image {
 
 impl Image {
   pub fn from_file(filepath: &str) -> Self {
+    // TODO: handle error vs panicking
     let image_bytes = std::fs::read(filepath)
       .unwrap_or_else(|_| panic!("Unable to read image at path: {}", filepath));
 
@@ -30,6 +29,7 @@ impl TextureData {
   pub fn from_image(image: &Image, state: &RenderState) -> Self {
     let texture = texture_from_image(image, state);
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+
     let sampler = state.device.create_sampler(&wgpu::SamplerDescriptor {
       address_mode_u: wgpu::AddressMode::ClampToEdge,
       address_mode_v: wgpu::AddressMode::ClampToEdge,
@@ -93,6 +93,7 @@ pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
     height: image.dimensions.1,
     depth_or_array_layers: 1,
   };
+
   let texture = state.device.create_texture(&wgpu::TextureDescriptor {
     size: texture_dimensions,
     mip_level_count: 1,

@@ -18,7 +18,6 @@ pub struct RenderState<'a> {
 }
 
 impl<'a> RenderState<'a> {
-  // some of the wgpu api is async
   pub async fn new(window: &'a Window) -> Self {
     let size = window.inner_size();
 
@@ -79,8 +78,6 @@ impl<'a> RenderState<'a> {
 
     let camera_state = CameraState::init(&device, &config);
 
-    // construct return object
-
     Self {
       surface,
       device,
@@ -108,6 +105,7 @@ impl RenderState<'_> {
 
       // update camera aspect ratio
       self.camera_state.camera.aspect = self.config.width as f32 / self.config.height as f32;
+
       self.update()
     }
   }

@@ -1,4 +1,5 @@
 mod solid;
+mod texture;
 mod textured;
 
 pub use solid::*;
@@ -15,7 +16,7 @@ pub struct Scene {
   pub textured_pipeline: Option<RenderPipeline>,
 }
 
-// trait to encapsulate scene behavior in render loop
+// trait to abstract scene behavior in render loop
 
 pub trait RenderScene {
   /// get associated Scene reference
@@ -30,5 +31,7 @@ impl RenderScene for Scene {
     self
   }
 
-  fn update(&mut self, _state: &RenderState) {}
+  fn update(&mut self, _state: &RenderState) {
+    // no-op; basic scene is static
+  }
 }

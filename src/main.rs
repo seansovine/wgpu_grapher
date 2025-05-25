@@ -5,11 +5,10 @@ mod matrix;
 mod mesh;
 mod pipeline;
 mod render;
-mod texture;
 
 use clap::{Parser, Subcommand};
 
-// command line args
+// setup command line args
 
 #[derive(Parser)]
 pub struct CliArgs {

@@ -1,4 +1,4 @@
-// Data representing a mesh and the vertices that they're made of.
+// Structures and functions for meshes with color provided per-vertex.
 
 use crate::math::graph;
 use crate::math::wave_eqn;

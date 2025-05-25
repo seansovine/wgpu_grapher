@@ -1,10 +1,10 @@
 // Structures and functions for building textured mesh scenes.
 
 use super::Scene;
+use super::texture::{Image, TextureData};
 use crate::matrix::{self, MatrixState, MatrixUniform};
+use crate::pipeline;
 use crate::render::RenderState;
-use crate::texture::TextureData;
-use crate::{pipeline, texture};
 
 use wgpu::util::DeviceExt;
 
@@ -72,12 +72,11 @@ pub fn build_scene(
     let mesh_render_data = TexturedMeshRenderData::from_mesh_data(&state.device, mesh, matrix);
     textured_meshes.push(mesh_render_data);
   }
-  // TODO: we need to handle depth issues when rendering these
 
-  // we'll use the matrix and texture layouts from this mesh
+  // use the matrix and texture layouts from the last mesh
   let last_mesh = textured_meshes.last().unwrap();
 
-  // we'll try to get away with just one texturedpipeline
+  // we'll try to get away with just one textured render pipeline
   let pipeline = pipeline::create_render_pipeline::<TexturedVertex>(
     &state.device,
     &state.config,
@@ -131,7 +130,7 @@ const TEST_INDICES: &[u16] = &[
 
 /// Render the scene onto both sides of a square canvas.
 pub fn image_test_scene(state: &RenderState) -> Scene {
-  let image = texture::Image::from_file("assets/pexels-arjay-neyra-2152024526-32225792.jpg");
+  let image = Image::from_file("assets/pexels-arjay-neyra-2152024526-32225792.jpg");
   let texture_data = TextureData::from_image(&image, state);
 
   let mesh_data = TexturedMeshData {
