@@ -31,6 +31,7 @@ pub async fn run(args: CliArgs) {
     Command::MeltingGraph => Box::from(mesh::melting_graph_scene(&state)),
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
     Command::Image => Box::from(mesh::image_test_scene(&state)),
+    Command::CustomTexture => Box::from(mesh::custom_fading_texture_scene(&state)),
   };
 
   log::info!("Starting event loop!");

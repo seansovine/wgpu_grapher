@@ -1,7 +1,7 @@
 // Structures and functions for building textured mesh scenes.
 
-use super::Scene;
-use super::texture::{Image, TextureData};
+use super::texture::{Image, TextureData, TextureMatrix};
+use super::{RenderScene, Scene};
 use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::render::RenderState;
@@ -143,4 +143,115 @@ pub fn image_test_scene(state: &RenderState) -> Scene {
     vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
 
   build_scene(state, meshes)
+}
+
+// experiment in animated hand-designed texture
+
+pub struct FadingCustomTextureScene {
+  texture_matrix: TextureMatrix,
+  scene: Scene,
+  multiplier: f32,
+  decreasing: bool,
+}
+
+impl RenderScene for FadingCustomTextureScene {
+  fn scene(&self) -> &Scene {
+    &self.scene
+  }
+
+  fn update(&mut self, state: &RenderState) {
+    const DIM_FACTOR: f32 = 0.96;
+    if self.decreasing {
+      self.multiplier *= DIM_FACTOR;
+
+      if self.multiplier < 0.01 {
+        self.decreasing = false;
+      }
+    }
+
+    const BRIGHT_FACTOR: f32 = 1.02;
+    if !self.decreasing {
+      self.multiplier *= BRIGHT_FACTOR;
+
+      if self.multiplier > 0.9 {
+        self.decreasing = true;
+      }
+    }
+
+    let dims = self.texture_matrix.dimensions.clone();
+    let mut matrix = self.texture_matrix.clone();
+
+    for i in 0..dims.0 {
+      for j in 0..dims.1 {
+        for r in 0..3 {
+          matrix.get(i, j)[r] = ((matrix.get(i, j)[r] as f32) * self.multiplier) as u8;
+        }
+      }
+    }
+
+    let texture = &self.scene.textured_meshes[0].texture.texture;
+
+    // write updated bytes into texture
+    state.queue.write_texture(
+      wgpu::TexelCopyTextureInfo {
+        texture: &texture,
+        mip_level: 0,
+        origin: wgpu::Origin3d::ZERO,
+        aspect: wgpu::TextureAspect::All,
+      },
+      &matrix.data,
+      wgpu::TexelCopyBufferLayout {
+        offset: 0,
+        bytes_per_row: Some(4 * matrix.dimensions.0),
+        rows_per_image: Some(matrix.dimensions.1),
+      },
+      texture.size(),
+    );
+  }
+}
+
+/// Render the scene onto both sides of a square canvas.
+pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureScene {
+  const TEXTURE_DIMS: (u32, u32) = (500, 500);
+  let mut texture_matrix = TextureMatrix::new(TEXTURE_DIMS.0, TEXTURE_DIMS.1);
+
+  const GRAY_FACTOR: f32 = 0.7;
+  let gray = |value: u8, factor: f32| ((value as f32) * factor) as u8;
+
+  for i in 0..TEXTURE_DIMS.0 {
+    for j in 0..TEXTURE_DIMS.1 {
+      if i < TEXTURE_DIMS.0 / 2 && j < TEXTURE_DIMS.1 / 2 {
+        let entry = texture_matrix.get(i, j);
+        entry[0] = gray(entry[0], GRAY_FACTOR * GRAY_FACTOR);
+        entry[1] = gray(entry[1], GRAY_FACTOR * GRAY_FACTOR);
+        entry[2] = gray(entry[2], GRAY_FACTOR * GRAY_FACTOR);
+      }
+      if i >= TEXTURE_DIMS.0 / 2 && j >= TEXTURE_DIMS.1 / 2 {
+        let entry = texture_matrix.get(i, j);
+        entry[0] = gray(entry[0], GRAY_FACTOR);
+        entry[1] = gray(entry[1], GRAY_FACTOR);
+        entry[2] = gray(entry[2], GRAY_FACTOR);
+      }
+    }
+  }
+
+  let texture_data = TextureData::from_matrix(&texture_matrix, state);
+
+  let mesh_data = TexturedMeshData {
+    vertices: Vec::from(TEST_VERTICES),
+    indices: Vec::from(TEST_INDICES),
+    texture: texture_data,
+  };
+
+  let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
+    vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
+
+  let scene = build_scene(state, meshes);
+
+  FadingCustomTextureScene {
+    texture_matrix,
+    scene,
+    multiplier: 1.0,
+    decreasing: true,
+  }
 }

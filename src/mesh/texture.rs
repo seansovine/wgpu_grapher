@@ -1,6 +1,7 @@
 use crate::render::RenderState;
 
 use image::{ImageBuffer, Rgba};
+use wgpu::Texture;
 
 pub struct Image {
   pub image: ImageBuffer<Rgba<u8>, Vec<u8>>,
@@ -23,11 +24,11 @@ impl Image {
 pub struct TextureData {
   pub bind_group_layout: wgpu::BindGroupLayout,
   pub bind_group: wgpu::BindGroup,
+  pub texture: wgpu::Texture,
 }
 
 impl TextureData {
-  pub fn from_image(image: &Image, state: &RenderState) -> Self {
-    let texture = texture_from_image(image, state);
+  pub fn from_texture(texture: Texture, state: &RenderState) -> Self {
     let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
     let sampler = state.device.create_sampler(&wgpu::SamplerDescriptor {
@@ -83,14 +84,29 @@ impl TextureData {
     Self {
       bind_group_layout,
       bind_group,
+      texture,
     }
+  }
+
+  pub fn from_image(image: &Image, state: &RenderState) -> Self {
+    let texture = texture_from_image(image, state);
+    TextureData::from_texture(texture, state)
+  }
+
+  pub fn from_matrix(matrix: &TextureMatrix, state: &RenderState) -> Self {
+    let texture = texture_from_matrix(matrix, state);
+    TextureData::from_texture(texture, state)
   }
 }
 
-pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
+pub fn texture_from_data_and_dims(
+  data: &[u8],
+  dims: (u32, u32),
+  state: &RenderState,
+) -> wgpu::Texture {
   let texture_dimensions = wgpu::Extent3d {
-    width: image.dimensions.0,
-    height: image.dimensions.1,
+    width: dims.0,
+    height: dims.1,
     depth_or_array_layers: 1,
   };
 
@@ -113,14 +129,48 @@ pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
       origin: wgpu::Origin3d::ZERO,
       aspect: wgpu::TextureAspect::All,
     },
-    &image.image,
+    &data,
     wgpu::TexelCopyBufferLayout {
       offset: 0,
-      bytes_per_row: Some(4 * image.dimensions.0),
-      rows_per_image: Some(image.dimensions.1),
+      bytes_per_row: Some(4 * dims.0),
+      rows_per_image: Some(dims.1),
     },
     texture_dimensions,
   );
 
   texture
+}
+
+pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
+  texture_from_data_and_dims(&image.image, image.dimensions, state)
+}
+
+// texture matrix
+
+/// Represents texture data as a matrix of RGBA bytes.
+#[derive(Clone)]
+pub struct TextureMatrix {
+  pub dimensions: (u32, u32),
+  pub data: Vec<u8>,
+}
+
+impl TextureMatrix {
+  pub fn new(x_dim: u32, y_dim: u32) -> Self {
+    let data_len = (x_dim * y_dim * 4) as usize;
+    let data = vec![255_u8; data_len];
+
+    Self {
+      dimensions: (x_dim, y_dim),
+      data,
+    }
+  }
+
+  pub fn get(&mut self, x: u32, y: u32) -> &mut [u8] {
+    let index = (y * 4 * self.dimensions.0 + 4 * x) as usize;
+    &mut self.data[index..index + 4]
+  }
+}
+
+pub fn texture_from_matrix(matrix: &TextureMatrix, state: &RenderState) -> wgpu::Texture {
+  texture_from_data_and_dims(&matrix.data, matrix.dimensions, state)
 }

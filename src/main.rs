@@ -22,6 +22,7 @@ pub enum Command {
   MeltingGraph,
   WaveEquation,
   Image,
+  CustomTexture,
 }
 
 // program entrypoint
