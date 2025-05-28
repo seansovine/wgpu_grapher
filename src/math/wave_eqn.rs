@@ -6,7 +6,7 @@ use rand::rngs::ThreadRng;
 pub const X_SIZE: usize = 256;
 pub const Y_SIZE: usize = 256;
 
-const PROP_SPEED: f32 = 0.25;
+const PROP_SPEED: f32 = 0.35;
 const DAMPING_FACTOR: f32 = 0.995;
 
 const DISTURBANCE_PROB: f32 = 0.02;
@@ -14,34 +14,52 @@ const DISTURBANCE_SIZE: f32 = 80.0;
 
 pub struct WaveEquationData {
   // current timestep data
-  pub u_0: [[f32; Y_SIZE]; X_SIZE],
+  pub u_0: Vec<Vec<f32>>,
   // previous timestep data
-  u_1: [[f32; Y_SIZE]; X_SIZE],
+  u_1: Vec<Vec<f32>>,
   // 2x previous data
-  u_2: [[f32; Y_SIZE]; X_SIZE],
-  // propagation speed
-  k: f32,
+  u_2: Vec<Vec<f32>>,
   // random number generator
   rng: ThreadRng,
+  // grid size
+  x_size: usize,
+  y_size: usize,
+  // parameters
+  pub prop_speed: f32,
+  pub damping_factor: f32,
+  pub disturbance_prob: f32,
+  pub disturbance_size: f32,
 }
 
 impl WaveEquationData {
-  pub fn new() -> Self {
+  pub fn new(x_size: usize, y_size: usize) -> Self {
     Self {
-      u_0: [[0.0; Y_SIZE]; X_SIZE],
-      u_1: [[0.0; Y_SIZE]; X_SIZE],
-      u_2: [[0.0; Y_SIZE]; X_SIZE],
-      k: PROP_SPEED,
+      u_0: vec![vec![0.0; y_size]; x_size],
+      u_1: vec![vec![0.0; y_size]; x_size],
+      u_2: vec![vec![0.0; y_size]; x_size],
       rng: rand::rng(),
+      //
+      x_size,
+      y_size,
+      prop_speed: PROP_SPEED,
+      damping_factor: DAMPING_FACTOR,
+      disturbance_prob: DISTURBANCE_PROB,
+      disturbance_size: DISTURBANCE_SIZE,
     }
+  }
+
+  pub fn default() -> Self {
+    WaveEquationData::new(X_SIZE, Y_SIZE)
   }
 
   pub fn update(&mut self) {
     self.add_random_disturbance();
 
-    // shift current and previous back one timestep
-    self.u_2 = self.u_1;
-    self.u_1 = self.u_0;
+    for i in 0..self.x_size {
+      // shift current and previous back one timestep
+      self.u_2[i][0..self.y_size].copy_from_slice(&self.u_1[i]);
+      self.u_1[i][0..self.y_size].copy_from_slice(&self.u_0[i]);
+    }
 
     let u_1 = &self.u_1;
     let u_2 = &self.u_2;
@@ -50,13 +68,13 @@ impl WaveEquationData {
     for i in 1..X_SIZE - 1 {
       for j in 1..Y_SIZE - 1 {
         // next finite difference step
-        self.u_0[i][j] = self.k
+        self.u_0[i][j] = self.prop_speed
           * (u_1[i - 1][j] + u_1[i + 1][j] + u_1[i][j - 1] + u_1[i][j + 1] - 4.0 * u_1[i][j])
           + 2.0 * u_1[i][j]
           - u_2[i][j];
 
         // add damping, following Beltoforion's example
-        self.u_0[i][j] *= DAMPING_FACTOR;
+        self.u_0[i][j] *= self.damping_factor;
       }
     }
   }
@@ -64,13 +82,13 @@ impl WaveEquationData {
   pub fn add_random_disturbance(&mut self) {
     // following Beltoforion's example,
     // add a random disturbance to the space
-    if self.rng.random::<f32>() < DISTURBANCE_PROB {
+    if self.rng.random::<f32>() < self.disturbance_prob {
       let x: usize = self.rng.random_range(5..X_SIZE - 5);
       let y: usize = self.rng.random_range(5..Y_SIZE - 5);
 
       for i in x - 2..x + 2 {
         for j in y - 2..y + 2 {
-          self.u_0[i][j] = DISTURBANCE_SIZE;
+          self.u_0[i][j] = self.disturbance_size;
         }
       }
     }

@@ -76,7 +76,7 @@ pub async fn run(args: CliArgs) {
               state.framerate = 1000_f32 * framecount as f32 / elapsed as f32;
 
               // log framerate once per second
-              if elapsed >= 1000 {
+              if elapsed >= 10_000 {
                 log::info!("FPS: {}", state.framerate);
                 framecount = 0;
                 time = time::Instant::now();

@@ -304,7 +304,13 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
     vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
 
   let scene = build_scene(state, meshes);
-  let wave_eqn = wave_eqn::WaveEquationData::new();
+  let mut wave_eqn = wave_eqn::WaveEquationData::new(500, 500);
+
+  // update solver properties
+  wave_eqn.prop_speed *= 1.3;
+  wave_eqn.disturbance_prob = 0.01;
+  wave_eqn.disturbance_size *= 1.5;
+  wave_eqn.damping_factor = 0.999;
 
   WaveEquationTextureScene {
     texture_matrix,
@@ -364,7 +370,7 @@ impl RenderScene for WaveEquationTextureScene {
 }
 
 fn float_to_scaled_u8(x: f32) -> u8 {
-  const SCALE: f32 = 2.0;
+  const SCALE: f32 = 3.0;
   const SHIFT: f32 = 128.0;
 
   (x * SCALE + SHIFT).clamp(0.0, 255.0) as u8

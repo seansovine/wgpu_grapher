@@ -237,7 +237,7 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -0.2_f32, -WIDTH / 2.0_f32]);
 
   let scene = build_scene(state, vec![(func_mesh.clone(), matrix)]);
-  let wave_eqn = wave_eqn::WaveEquationData::new();
+  let wave_eqn = wave_eqn::WaveEquationData::default();
 
   WaveEquationScene {
     scene,
