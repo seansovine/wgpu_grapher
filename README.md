@@ -39,6 +39,14 @@ The idea for the random disturbances and energy damping in this simulation
 came from [Beltoforion](https://beltoforion.de/en/recreational_mathematics/).
 (His work is awesome; it's definitely worth checking out.)
 
+You can now also render the wave equation simulation into a texture on a 2D canvas.
+
+<p align="center" margin="20px">
+	<img src="images/screenshot_wave_eqn_texture.png" alt="drawing" width="500" style="padding-top: 15px; padding-bottom: 10px"/>
+</p>
+
+This looks similar to Beltoforion's example referenced above.
+
 ## Image viewer
 
 Now also includes an image viewer that renders an image from a file on a canvas

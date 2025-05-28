@@ -129,7 +129,7 @@ pub fn texture_from_data_and_dims(
       origin: wgpu::Origin3d::ZERO,
       aspect: wgpu::TextureAspect::All,
     },
-    &data,
+    data,
     wgpu::TexelCopyBufferLayout {
       offset: 0,
       bytes_per_row: Some(4 * dims.0),

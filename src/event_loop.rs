@@ -32,6 +32,7 @@ pub async fn run(args: CliArgs) {
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
     Command::Image => Box::from(mesh::image_test_scene(&state)),
     Command::CustomTexture => Box::from(mesh::custom_fading_texture_scene(&state)),
+    Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
   };
 
   log::info!("Starting event loop!");

@@ -2,6 +2,7 @@
 
 use super::texture::{Image, TextureData, TextureMatrix};
 use super::{RenderScene, Scene};
+use crate::math::wave_eqn;
 use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::render::RenderState;
@@ -99,7 +100,7 @@ pub fn build_scene(
 
 // test scene
 
-const TEST_VERTICES: &[TexturedVertex] = &[
+const TEST_VERTICES_VERTICAL: &[TexturedVertex] = &[
   TexturedVertex {
     position: [-0.5, -0.5, 0.0],
     tex_coords: [0.0, 1.0],
@@ -114,6 +115,25 @@ const TEST_VERTICES: &[TexturedVertex] = &[
   },
   TexturedVertex {
     position: [-0.5, 0.5, 0.0],
+    tex_coords: [0.0, 0.0],
+  },
+];
+
+const TEST_VERTICES_FLAT: &[TexturedVertex] = &[
+  TexturedVertex {
+    position: [-0.5, 0.0, 0.5],
+    tex_coords: [0.0, 1.0],
+  },
+  TexturedVertex {
+    position: [0.5, 0.0, 0.5],
+    tex_coords: [1.0, 1.0],
+  },
+  TexturedVertex {
+    position: [0.5, 0.0, -0.5],
+    tex_coords: [1.0, 0.0],
+  },
+  TexturedVertex {
+    position: [-0.5, 0.0, -0.5],
     tex_coords: [0.0, 0.0],
   },
 ];
@@ -134,7 +154,7 @@ pub fn image_test_scene(state: &RenderState) -> Scene {
   let texture_data = TextureData::from_image(&image, state);
 
   let mesh_data = TexturedMeshData {
-    vertices: Vec::from(TEST_VERTICES),
+    vertices: Vec::from(TEST_VERTICES_VERTICAL),
     indices: Vec::from(TEST_INDICES),
     texture: texture_data,
   };
@@ -178,7 +198,7 @@ impl RenderScene for FadingCustomTextureScene {
       }
     }
 
-    let dims = self.texture_matrix.dimensions.clone();
+    let dims = self.texture_matrix.dimensions;
     let mut matrix = self.texture_matrix.clone();
 
     for i in 0..dims.0 {
@@ -194,7 +214,7 @@ impl RenderScene for FadingCustomTextureScene {
     // write updated bytes into texture
     state.queue.write_texture(
       wgpu::TexelCopyTextureInfo {
-        texture: &texture,
+        texture,
         mip_level: 0,
         origin: wgpu::Origin3d::ZERO,
         aspect: wgpu::TextureAspect::All,
@@ -238,7 +258,7 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
   let texture_data = TextureData::from_matrix(&texture_matrix, state);
 
   let mesh_data = TexturedMeshData {
-    vertices: Vec::from(TEST_VERTICES),
+    vertices: Vec::from(TEST_VERTICES_VERTICAL),
     indices: Vec::from(TEST_INDICES),
     texture: texture_data,
   };
@@ -254,4 +274,98 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
     multiplier: 1.0,
     decreasing: true,
   }
+}
+
+// wave equation rendered into texture
+
+pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
+  let texture_dims: (u32, u32) = (wave_eqn::X_SIZE as u32, wave_eqn::Y_SIZE as u32);
+
+  let mut texture_matrix = TextureMatrix::new(texture_dims.0, texture_dims.1);
+
+  for i in 0..texture_dims.0 {
+    for j in 0..texture_dims.1 {
+      let entry = texture_matrix.get(i, j);
+      entry[0] = 0;
+      entry[1] = 0;
+      entry[2] = 0;
+    }
+  }
+
+  let texture_data = TextureData::from_matrix(&texture_matrix, state);
+
+  let mesh_data = TexturedMeshData {
+    vertices: Vec::from(TEST_VERTICES_FLAT),
+    indices: Vec::from(TEST_INDICES),
+    texture: texture_data,
+  };
+
+  let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
+    vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
+
+  let scene = build_scene(state, meshes);
+  let wave_eqn = wave_eqn::WaveEquationData::new();
+
+  WaveEquationTextureScene {
+    texture_matrix,
+    scene,
+    wave_eqn,
+  }
+}
+
+pub struct WaveEquationTextureScene {
+  texture_matrix: TextureMatrix,
+  scene: Scene,
+  pub wave_eqn: wave_eqn::WaveEquationData,
+}
+
+impl RenderScene for WaveEquationTextureScene {
+  fn scene(&self) -> &Scene {
+    &self.scene
+  }
+
+  fn update(&mut self, state: &RenderState) {
+    // run next finite-difference timestep
+    self.wave_eqn.update();
+
+    let matrix = &mut self.texture_matrix;
+
+    // update vertex data
+    let n = matrix.dimensions.0;
+    for i in 0..n {
+      for j in 0..n {
+        let new_val = float_to_scaled_u8(self.wave_eqn.u_0[i as usize][j as usize]);
+        let entry = matrix.get(i, j);
+        entry[0] = new_val;
+        entry[1] = new_val;
+        entry[2] = new_val;
+      }
+    }
+
+    let texture = &self.scene.textured_meshes[0].texture.texture;
+
+    // write updated bytes into texture
+    state.queue.write_texture(
+      wgpu::TexelCopyTextureInfo {
+        texture,
+        mip_level: 0,
+        origin: wgpu::Origin3d::ZERO,
+        aspect: wgpu::TextureAspect::All,
+      },
+      &matrix.data,
+      wgpu::TexelCopyBufferLayout {
+        offset: 0,
+        bytes_per_row: Some(4 * matrix.dimensions.0),
+        rows_per_image: Some(matrix.dimensions.1),
+      },
+      texture.size(),
+    );
+  }
+}
+
+fn float_to_scaled_u8(x: f32) -> u8 {
+  const SCALE: f32 = 2.0;
+  const SHIFT: f32 = 128.0;
+
+  (x * SCALE + SHIFT).clamp(0.0, 255.0) as u8
 }

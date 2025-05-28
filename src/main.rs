@@ -23,6 +23,7 @@ pub enum Command {
   WaveEquation,
   Image,
   CustomTexture,
+  WaveEquationTexture,
 }
 
 // program entrypoint
