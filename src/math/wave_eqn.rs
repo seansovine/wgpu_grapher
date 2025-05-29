@@ -48,6 +48,7 @@ impl WaveEquationData {
     }
   }
 
+  #[allow(unused)]
   pub fn default() -> Self {
     WaveEquationData::new(X_SIZE, Y_SIZE)
   }
