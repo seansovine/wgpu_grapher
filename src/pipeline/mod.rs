@@ -1,3 +1,4 @@
+use crate::mesh::texture::DepthBuffer;
 use crate::mesh::{TexturedVertex, Vertex};
 
 use wgpu::{BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
@@ -108,7 +109,13 @@ pub fn create_render_pipeline<T: Bufferable>(
       unclipped_depth: false,
       conservative: false,
     },
-    depth_stencil: None,
+    depth_stencil: Some(wgpu::DepthStencilState {
+      format: DepthBuffer::DEPTH_FORMAT,
+      depth_write_enabled: true,
+      depth_compare: wgpu::CompareFunction::Less,
+      stencil: wgpu::StencilState::default(),
+      bias: wgpu::DepthBiasState::default(),
+    }),
     multisample: wgpu::MultisampleState {
       count: 1,
       mask: !0,

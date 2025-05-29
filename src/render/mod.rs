@@ -14,6 +14,9 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
     .create_view(&wgpu::TextureViewDescriptor::default());
   let camera_bind_group = &state.camera_state.matrix.bind_group;
 
+  // want to clear depth buffer on first render only
+  let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
+
   // render solid meshes if configured
   if let Some(pipeline) = &scene.pipeline {
     for mesh in &scene.meshes {
@@ -25,7 +28,9 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
         mesh.index_buffer.slice(..),
         mesh.num_indices,
         &[camera_bind_group, &mesh.matrix.bind_group],
+        depth_load_op,
       )?;
+      depth_load_op = wgpu::LoadOp::Load;
     }
   }
 
@@ -44,7 +49,9 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
           &mesh.matrix.bind_group,
           &mesh.texture.bind_group,
         ],
+        depth_load_op,
       )?;
+      depth_load_op = wgpu::LoadOp::Load;
     }
   }
 
@@ -53,6 +60,7 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
   Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_detail(
   state: &RenderState,
   view: &TextureView,
@@ -61,6 +69,7 @@ fn render_detail(
   index_buffer: BufferSlice,
   num_indices: u32,
   bind_groups: &[&BindGroup],
+  depth_load_op: wgpu::LoadOp<f32>,
 ) -> Result<(), SurfaceError> {
   let mut encoder = state
     .device
@@ -78,7 +87,14 @@ fn render_detail(
         store: wgpu::StoreOp::Store,
       },
     })],
-    depth_stencil_attachment: None,
+    depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+      view: &state.depth_buffer.view,
+      depth_ops: Some(wgpu::Operations {
+        load: depth_load_op,
+        store: wgpu::StoreOp::Store,
+      }),
+      stencil_ops: None,
+    }),
     occlusion_query_set: None,
     timestamp_writes: None,
   });

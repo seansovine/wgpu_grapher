@@ -77,7 +77,6 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
     let mesh_render_data = MeshRenderData::from_mesh_data(&state.device, mesh, matrix);
     meshes.push(mesh_render_data);
   }
-  // TODO: we need to handle depth issues when rendering these
 
   let last_mesh = meshes.last().unwrap();
 

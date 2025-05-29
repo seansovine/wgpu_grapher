@@ -151,16 +151,35 @@ const TEST_INDICES: &[u16] = &[
 /// Render the scene onto both sides of a square canvas.
 pub fn image_test_scene(state: &RenderState) -> Scene {
   let image = Image::from_file("assets/pexels-arjay-neyra-2152024526-32225792.jpg");
-  let texture_data = TextureData::from_image(&image, state);
 
-  let mesh_data = TexturedMeshData {
+  let texture_data_front = TextureData::from_image(&image, state);
+
+  let mesh_data_front = TexturedMeshData {
     vertices: Vec::from(TEST_VERTICES_VERTICAL),
     indices: Vec::from(TEST_INDICES),
-    texture: texture_data,
+    texture: texture_data_front,
   };
 
-  let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
-    vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
+  // second image behind first, to test depth buffer
+
+  let texture_data_back = TextureData::from_image(&image, state);
+
+  let mesh_data_back = TexturedMeshData {
+    vertices: Vec::from(TEST_VERTICES_VERTICAL),
+    indices: Vec::from(TEST_INDICES),
+    texture: texture_data_back,
+  };
+
+  let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![
+    (
+      mesh_data_front,
+      MatrixUniform::translation(&[0.0, 0.0, 0.5]),
+    ),
+    (
+      mesh_data_back,
+      MatrixUniform::translation(&[0.0, 0.0, -0.5]),
+    ),
+  ];
 
   build_scene(state, meshes)
 }

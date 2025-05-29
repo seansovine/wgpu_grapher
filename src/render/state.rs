@@ -1,4 +1,5 @@
 use crate::camera::CameraState;
+use crate::mesh::texture::DepthBuffer;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
@@ -8,6 +9,7 @@ pub struct RenderState<'a> {
   pub device: wgpu::Device,
   pub queue: wgpu::Queue,
   pub config: wgpu::SurfaceConfiguration,
+  pub depth_buffer: DepthBuffer,
   // winit
   pub size: PhysicalSize<u32>,
   pub window: &'a Window,
@@ -74,15 +76,18 @@ impl<'a> RenderState<'a> {
 
     surface.configure(&device, &config);
 
-    // make camera
+    // make camera and depth buffer
 
     let camera_state = CameraState::init(&device, &config);
+
+    let depth_buffer = DepthBuffer::create(&config, &device);
 
     Self {
       surface,
       device,
       queue,
       config,
+      depth_buffer,
       size,
       window,
       camera_state,
@@ -105,6 +110,9 @@ impl RenderState<'_> {
 
       // update camera aspect ratio
       self.camera_state.camera.aspect = self.config.width as f32 / self.config.height as f32;
+
+      // update depth buffer size
+      self.depth_buffer = DepthBuffer::create(&self.config, &self.device);
 
       self.update()
     }
