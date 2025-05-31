@@ -149,8 +149,8 @@ const TEST_INDICES: &[u16] = &[
 ];
 
 /// Render the scene onto both sides of a square canvas.
-pub fn image_test_scene(state: &RenderState) -> Scene {
-  let image = Image::from_file("assets/pexels-arjay-neyra-2152024526-32225792.jpg");
+pub fn image_test_scene(state: &RenderState, image_path: &str) -> Scene {
+  let image = Image::from_file(image_path);
 
   let texture_data_front = TextureData::from_image(&image, state);
 
@@ -323,7 +323,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
     vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
 
   let scene = build_scene(state, meshes);
-  let mut wave_eqn = wave_eqn::WaveEquationData::new(500, 500);
+  let mut wave_eqn = wave_eqn::WaveEquationData::new(1500, 1500);
 
   // update solver properties
   wave_eqn.prop_speed *= 1.3;

@@ -8,5 +8,4 @@ if [[ "$1" != "debug" && "$1" != "release" ]]; then
   exit 2
 fi
 
-target/$1/wgpu_grapher $2
-
+target/$1/wgpu_grapher "${@:2}"

@@ -6,7 +6,7 @@ mod mesh;
 mod pipeline;
 mod render;
 
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 // setup command line args
 
@@ -21,9 +21,15 @@ pub enum Command {
   Graph,
   MeltingGraph,
   WaveEquation,
-  Image,
+  Image(ImageArgs),
   CustomTexture,
   WaveEquationTexture,
+}
+
+#[derive(Debug, Args)]
+pub struct ImageArgs {
+  #[clap(long, required=true)]
+  path: String,
 }
 
 // program entrypoint
