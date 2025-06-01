@@ -28,13 +28,28 @@ pub enum Command {
 
 #[derive(Debug, Args)]
 pub struct ImageArgs {
-  #[clap(long, required=true)]
+  #[clap(long, required = true)]
   path: String,
 }
 
 // program entrypoint
 
-fn main() {
+fn main() -> Result<(), String> {
   let args = CliArgs::parse();
+  if let Command::Image(ref args) = args.command {
+    validate_path(args)?;
+  }
+
   pollster::block_on(event_loop::run(args));
+
+  Ok(())
+}
+
+fn validate_path(args: &ImageArgs) -> Result<(), String> {
+  let exists = std::path::Path::new(&args.path).exists();
+  if !exists {
+    Err(format!("File not found at location: {}", &args.path))
+  } else {
+    Ok(())
+  }
 }
