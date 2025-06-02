@@ -45,6 +45,8 @@ fn main() -> Result<(), String> {
   Ok(())
 }
 
+// arg validation
+
 fn validate_path(args: &ImageArgs) -> Result<(), String> {
   let exists = std::path::Path::new(&args.path).exists();
   if !exists {

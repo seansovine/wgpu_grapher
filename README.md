@@ -1,12 +1,26 @@
 # WGPU Grapher
 
-This is a 3D function grapher written in Rust using WGPU.
+This is a hobby project to make a 3D rendering engine in Rust using WGPU. It is a work in progress
+for learning and (mostly) for fun. I started learning WGPU by following the _Learn WGPU_
+tutorial.
 
-__Example__ $y = \text{sinc}(\sqrt{x^2 + y^2})$:
+There are definitely many things I'd like to do to build on and improve what is here.
+
+## 3D function grapher
+
+The initial feature is a 3D function grapher that draws the graph of a function that
+is specified in the code. It can graph pretty much any numerical function `z = f(x, y)` that you can define
+in Rust,
+but eventually I'd like to add a mathematical expression parsing library and a GUI that allows
+the user to type in a function for it to graph.
+
+__Example__:
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_1.png" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
+
+(Note that the version shown in the image is WIP on the `add_light` branch.)
 
 It has two main parts: A simple rendering engine to render a
 vector of meshes with solid colored or textured primitives; and code to generate
@@ -29,10 +43,10 @@ loop were inspired by the _Learn WGPU_ tutorial.
 
 ## 2D wave equation simulation
 
-It now includes a finite-difference simulation of the 2D wave equation.
+It also includes a "real-time" finite-difference simulation of the 2D wave equation.
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_wave_eqn.png" alt="drawing" width="600" style="padding-top: 15px; padding-bottom: 10px"/>
+	<img src="images/screenshot_wave_eqn.png" alt="drawing" width="500" style="padding-top: 15px; padding-bottom: 10px"/>
 </p>
 
 The idea for the random disturbances and energy damping in this simulation
@@ -49,7 +63,7 @@ This looks similar to Beltoforion's example referenced above.
 
 ## Image viewer
 
-Now also includes an image viewer that renders an image from a file on a canvas
+There is an image viewer mode that renders an image from a file on a canvas
 that can be zoomed and rotated, as in the other modes.
 
 <p align="center" margin="20px">
@@ -58,4 +72,4 @@ that can be zoomed and rotated, as in the other modes.
 
 (Sample image credit to Arjay Neyra on [Pexels](https://www.pexels.com/photo/spectacular-himalayan-mountain-valley-in-nepal-32225792/).)
 
-In the future this will be used for some image processing and animated simulation applications.
+In the future this will be used for some image processing and further animated simulation applications.
