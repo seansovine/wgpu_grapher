@@ -8,7 +8,7 @@ There are definitely many things I'd like to do to build on and improve what is 
 
 ## 3D function grapher
 
-The initial feature is a 3D function grapher that draws a wireframe graph of a function that
+The initial feature is a 3D function grapher that draws the graph of a function that
 is specified in the code. It can graph pretty much any numerical function `z = f(x, y)` that you can define
 in Rust,
 but eventually I'd like to add a mathematical expression parsing library and a GUI that allows
