@@ -1,4 +1,5 @@
 use crate::camera::CameraState;
+use crate::light::LightState;
 use crate::mesh::texture::DepthBuffer;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
@@ -15,6 +16,8 @@ pub struct RenderState<'a> {
   pub window: &'a Window,
   // camera
   pub camera_state: CameraState,
+  // light
+  pub light_state: LightState,
   // running framerate
   pub framerate: f32,
 }
@@ -80,6 +83,8 @@ impl<'a> RenderState<'a> {
 
     let camera_state = CameraState::init(&device, &config);
 
+    let light_state = LightState::create(&device);
+
     let depth_buffer = DepthBuffer::create(&config, &device);
 
     Self {
@@ -91,6 +96,7 @@ impl<'a> RenderState<'a> {
       size,
       window,
       camera_state,
+      light_state,
       framerate: 1_f32,
     }
   }

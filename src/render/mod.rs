@@ -13,6 +13,7 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
     .texture
     .create_view(&wgpu::TextureViewDescriptor::default());
   let camera_bind_group = &state.camera_state.matrix.bind_group;
+  let light_bind_group = &state.light_state.bind_group;
 
   // want to clear depth buffer on first render only
   let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
@@ -27,7 +28,7 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
         mesh.vertex_buffer.slice(..),
         mesh.index_buffer.slice(..),
         mesh.num_indices,
-        &[camera_bind_group, &mesh.matrix.bind_group],
+        &[camera_bind_group, &mesh.matrix.bind_group, light_bind_group],
         depth_load_op,
       )?;
       depth_load_op = wgpu::LoadOp::Load;

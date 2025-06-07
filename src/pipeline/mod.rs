@@ -71,18 +71,18 @@ pub fn create_render_pipeline<T: Bufferable>(
   polygon_mode: wgpu::PolygonMode,
 ) -> RenderPipeline {
   let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
-    label: Some("solid color shader"),
+    label: Some("a shader"),
     source: shader,
   });
 
   let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-    label: Some("a solid color render pipeline layout"),
+    label: Some("a render pipeline layout"),
     bind_group_layouts,
     push_constant_ranges: &[],
   });
 
   device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-    label: Some("a solid color render pipeline"),
+    label: Some("a render pipeline"),
     layout: Some(&render_pipeline_layout),
     vertex: wgpu::VertexState {
       module: &shader_module,

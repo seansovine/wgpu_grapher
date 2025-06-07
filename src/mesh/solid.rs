@@ -88,6 +88,7 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
     &[
       &state.camera_state.matrix.bind_group_layout,
       &last_mesh.matrix.bind_group_layout,
+      &state.light_state.bind_group_layout,
     ],
     // render as wireframe
     wgpu::PolygonMode::Line,
