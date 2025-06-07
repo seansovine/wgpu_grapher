@@ -91,8 +91,8 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
       &last_mesh.matrix.bind_group_layout,
       &state.light_state.bind_group_layout,
     ],
-    // render as wireframe
-    wgpu::PolygonMode::Line,
+    // TODO: add option to render as wireframe
+    wgpu::PolygonMode::Fill,
   );
 
   Scene {
@@ -146,17 +146,22 @@ pub fn test_scene(state: &RenderState) -> Scene {
 
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
-  static SUBDIVISIONS: u16 = 128;
+  static SUBDIVISIONS: u16 = 250;
   static WIDTH: f32 = 2.0;
 
   let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -WIDTH / 4.0_f32, -WIDTH / 2.0_f32]);
 
-  // example function
-  let mut f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-  let f = graph::shift_scale_input(f, 1.0, 40.0, 1.0, 40.0);
-  let f = graph::shift_scale_output(f, 0.25, 0.85);
+  // example function(s)
+
+  // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+  // let f = graph::shift_scale_input(f, 1.0, 40.0, 1.0, 40.0);
+  // let f = graph::shift_scale_output(f, 0.25, 1.25);
+
+  let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)));
+  let f = graph::shift_scale_input(f, 1.0, 3.0, 1.0, 3.0);
+  let f = graph::shift_scale_output(f, 0.25, 0.65);
 
   let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)

@@ -15,27 +15,71 @@
 
 use crate::mesh::{self, MeshData};
 
+pub struct Triangle {
+  // should be ordered counter clockwise
+  vertex_indices: [u16; 3],
+  normal: [f32; 3],
+}
+
+impl Triangle {
+  fn create(i_1: u16, i_2: u16, i_3: u16, vertices: &[Vertex]) -> Self {
+    let v_1 = &vertices[i_1 as usize];
+    let v_2 = &vertices[i_2 as usize];
+    let v_3 = &vertices[i_3 as usize];
+
+    // first side
+    let a = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];
+    // second side
+    let b = [v_3[0] - v_1[0], v_3[1] - v_1[1], v_3[2] - v_1[2]];
+
+    // normal vector by cross product
+    let normal = [
+      a[1] * b[2] - a[2] * b[1],
+      a[2] * b[0] - a[0] * b[2],
+      a[0] * b[1] - a[1] * b[0],
+    ];
+    // normalize
+    let norm = (normal[0].powi(2) + normal[1].powi(2) + normal[2].powi(2)).sqrt();
+    let normal = [normal[0] / norm, normal[1] / norm, normal[2] / norm];
+
+    Self {
+      vertex_indices: [i_1, i_2, i_3],
+      normal,
+    }
+  }
+}
+
+impl From<Triangle> for [u16; 3] {
+  fn from(value: Triangle) -> Self {
+    value.vertex_indices
+  }
+}
+
 pub struct Square {
   // vertex indices of corners CW from back-left
-  corners: [u16; 4],
+  corner_indices: [u16; 4],
 }
 
 impl Square {
-  #[rustfmt::skip]
-  fn triangle_vertices(&self) -> [u16; 6] {
-    let c = &self.corners;
+  // #[rustfmt::skip]
+  fn triangles(&self, vertices: &[Vertex]) -> [Triangle; 2] {
+    let c = &self.corner_indices;
     [
       // bottom faces
       // c[0], c[2], c[3],
       // c[0], c[1], c[2],
+
+      // TODO: We need to think about inverted normals
+      // for bottom faces.
+
       // top faces
-      c[0], c[3], c[2],
-      c[0], c[2], c[1],
+      Triangle::create(c[0], c[3], c[2], vertices),
+      Triangle::create(c[0], c[2], c[1], vertices),
     ]
   }
 }
 
-struct Vertex([f32; 3]);
+type Vertex = [f32; 3];
 
 pub struct UnitSquareTesselation {
   // number of squares to subdivide in each direction
@@ -60,13 +104,13 @@ impl UnitSquareTesselation {
       ticks.push(i as f32 * (width / n as f32));
     }
 
-    let mut vertices = vec![];
+    let mut vertices: Vec<Vertex> = vec![];
 
     // flattened order is important here:
     //  we go across rows from left to right, visiting rows from back to front
     for z in &ticks {
       for x in &ticks {
-        vertices.push(Vertex([*x, 0.0, *z]));
+        vertices.push([*x, 0.0, *z]);
       }
     }
 
@@ -77,7 +121,7 @@ impl UnitSquareTesselation {
     for z in 0..n {
       for x in 0..n {
         squares.push(Square {
-          corners: [
+          corner_indices: [
             z * (n + 1) + x,
             z * (n + 1) + (x + 1),
             (z + 1) * (n + 1) + (x + 1),
@@ -99,29 +143,43 @@ impl UnitSquareTesselation {
     F: Fn(f32, f32) -> f32,
   {
     for vertex in &mut self.vertices {
-      vertex.0[1] = f(vertex.0[0], vertex.0[2])
+      vertex[1] = f(vertex[0], vertex[2])
     }
 
     self
   }
 
   pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
-    let mut vertices = vec![];
-
-    for vertex in &self.vertices {
-      vertices.push(mesh::Vertex {
-        position: vertex.0,
-        color,
-        // TODO: actually compute this
-        normal: [0.0, 0.0, 0.0],
-      });
-    }
-
     let mut indices: Vec<u16> = vec![];
+    let mut normals: Vec<Option<[f32; 3]>> = vec![None; self.vertices.len()];
 
     self.squares.iter().for_each(|square| {
-      indices.extend_from_slice(&square.triangle_vertices());
+      let triangles = &square.triangles(&self.vertices);
+
+      let t1 = &triangles[0];
+      let t2 = &triangles[1];
+
+      indices.extend_from_slice(&t1.vertex_indices);
+      indices.extend_from_slice(&t2.vertex_indices);
+
+      for t in &[t1, t2] {
+        for v in t.vertex_indices.map(|v| v as usize) {
+          if normals[v].is_none() {
+            normals[v] = Some(t.normal);
+          }
+        }
+      }
     });
+
+    let mut vertices: Vec<mesh::Vertex> = vec![];
+
+    for (i, vertex) in self.vertices.iter().enumerate() {
+      vertices.push(mesh::Vertex {
+        position: *vertex,
+        color,
+        normal: normals[i].take().unwrap(),
+      });
+    }
 
     MeshData { vertices, indices }
   }
