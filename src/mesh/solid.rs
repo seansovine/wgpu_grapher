@@ -146,7 +146,7 @@ pub fn test_scene(state: &RenderState) -> Scene {
 
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
-  static SUBDIVISIONS: u16 = 250;
+  static SUBDIVISIONS: u16 = 255;
   static WIDTH: f32 = 2.0;
 
   let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
@@ -159,9 +159,9 @@ pub fn graph_scene(state: &RenderState) -> Scene {
   // let f = graph::shift_scale_input(f, 1.0, 40.0, 1.0, 40.0);
   // let f = graph::shift_scale_output(f, 0.25, 1.25);
 
-  let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)));
-  let f = graph::shift_scale_input(f, 1.0, 3.0, 1.0, 3.0);
-  let f = graph::shift_scale_output(f, 0.25, 0.65);
+  let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+  let f = graph::shift_scale_input(f, 1.0, 4.0, 1.0, 4.0);
+  let f = graph::shift_scale_output(f, 0.25, 0.25);
 
   let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)
