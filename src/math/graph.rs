@@ -22,13 +22,13 @@ pub struct Square {
 
 impl Square {
   #[rustfmt::skip]
-  fn triangle_vertices(&self) -> [u16; 12] {
+  fn triangle_vertices(&self) -> [u16; 6] {
     let c = &self.corners;
     [
-      // top faces
-      c[0], c[2], c[3],
-      c[0], c[1], c[2],
       // bottom faces
+      // c[0], c[2], c[3],
+      // c[0], c[1], c[2],
+      // top faces
       c[0], c[3], c[2],
       c[0], c[2], c[1],
     ]
@@ -112,6 +112,8 @@ impl UnitSquareTesselation {
       vertices.push(mesh::Vertex {
         position: vertex.0,
         color,
+        // TODO: actually compute this
+        normal: [0.0, 0.0, 0.0],
       });
     }
 

@@ -23,11 +23,14 @@ var<uniform> light: LightUniform;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) color: vec3<f32>,
+    @location(2) normal: vec3<f32>,
 }
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
     @location(0) color: vec3<f32>,
+    @location(1) frag_position: vec3<f32>,
+    @location(2) normal: vec3<f32>,
 }
 
 // vertex shader
@@ -37,8 +40,14 @@ fn vs_main(
     model: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
+
     out.color = model.color;
     out.clip_position = camera.matrix * model_matrix.matrix * vec4<f32>(model.position, 1.0);
+
+    // pass normal through
+    out.normal = model.normal;
+    // fragment shader gets position in world space
+    out.frag_position = (model_matrix.matrix * vec4<f32>(model.position, 1.0)).xyz;
 
     return out;
 }

@@ -19,6 +19,7 @@ use wgpu::{Buffer, Device};
 pub struct Vertex {
   pub position: [f32; 3],
   pub color: [f32; 3],
+  pub normal: [f32; 3],
 }
 
 #[derive(Clone)]
@@ -110,14 +111,17 @@ static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
     Vertex {
       position: [0.0, 1.0, 0.0],
       color: [1.0, 0.0, 0.0],
+      normal: [0.0, 0.0, 1.0],
     },
     Vertex {
       position: [-0.5, 0.0, 0.0],
       color: [1.0, 0.0, 0.0],
+      normal: [0.0, 0.0, 1.0],
     },
     Vertex {
       position: [0.5, 0.0, 0.0],
       color: [1.0, 0.0, 0.0],
+      normal: [0.0, 0.0, 1.0],
     },
   ]),
   indices: Vec::from([0, 1, 2, 0, 2, 1]),
