@@ -14,7 +14,7 @@ in Rust,
 but eventually I'd like to add a mathematical expression parsing library and a GUI that allows
 the user to type in a function for it to graph.
 
-__Example__ $y = \text{sinc}(\sqrt{x^2 + y^2})$:
+__Example__:
 
 <p align="center" margin="20px">
 	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
