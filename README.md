@@ -17,8 +17,10 @@ the user to type in a function for it to graph.
 __Example__ $y = \text{sinc}(\sqrt{x^2 + y^2})$:
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_1.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
+
+(Note that the version shown in the image is WIP on the `add_light` branch.)
 
 It has two main parts: A simple rendering engine to render a
 vector of meshes with solid colored or textured primitives; and code to generate
