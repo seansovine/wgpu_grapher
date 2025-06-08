@@ -20,8 +20,6 @@ __Example__:
 	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-(Note that the version shown in the image is WIP on the `add_light` branch.)
-
 It has two main parts: A simple rendering engine to render a
 vector of meshes with solid colored or textured primitives; and code to generate
 the meshes for rendering a function graph.
