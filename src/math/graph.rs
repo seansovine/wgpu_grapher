@@ -81,10 +81,14 @@ impl Square {
 type Vertex = [f32; 3];
 
 pub struct SquareTesselation {
-  // # of squares to subdivide into in each direction
   #[allow(unused)]
+  // # of squares to subdivide into in each direction
   n: u32,
+
+  // all vertices in mesh
   vertices: Vec<Vertex>,
+
+  // list of squares in the tesselation
   squares: Vec<Square>,
 }
 
@@ -104,7 +108,7 @@ impl SquareTesselation {
   pub fn generate(n: u32, width: f32) -> Self {
     let mut ticks: Vec<f32> = vec![];
     let mut vertices: Vec<Vertex> = vec![];
-    let mut squares = vec![];
+    let mut squares: Vec<Square> = vec![];
 
     // compute axis subdivision points
     for i in 0..=n {
@@ -160,9 +164,7 @@ impl SquareTesselation {
     let mut vertices: Vec<mesh::Vertex> = vec![];
 
     for square in &self.squares {
-      let triangles = square.triangles();
-
-      for t in &triangles {
+      for t in square.triangles() {
         indices.extend_from_slice(&t.vertex_indices);
         for v in t.vertex_indices.map(|v| v as usize) {
           if normals[v].is_none() {

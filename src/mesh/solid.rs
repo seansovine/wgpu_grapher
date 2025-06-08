@@ -155,15 +155,15 @@ pub fn graph_scene(state: &RenderState) -> Scene {
 
   // example function(s)
 
-  let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-  let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
-  let f = graph::shift_scale_output(f, 0.25, 1.25);
+  // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+  // let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
+  // let f = graph::shift_scale_output(f, 0.25, 1.25);
 
-  // const SCALE: f32 = 3.0;
+  const SCALE: f32 = 2.0;
 
-  // let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
-  // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
-  // let f = graph::shift_scale_output(f, 0.25, 0.5);
+  let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+  let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
+  let f = graph::shift_scale_output(f, 0.25, 0.5);
 
   // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
   // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
