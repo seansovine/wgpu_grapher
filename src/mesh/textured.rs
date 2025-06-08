@@ -1,10 +1,10 @@
 // Structures and functions for building textured mesh scenes.
 
-use super::texture::{Image, TextureData, TextureMatrix};
 use super::{RenderScene, Scene};
 use crate::math::wave_eqn;
 use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
+use crate::pipeline::texture::{Image, TextureData, TextureMatrix};
 use crate::render::RenderState;
 
 use wgpu::util::DeviceExt;
@@ -18,7 +18,7 @@ pub struct TexturedVertex {
 
 pub struct TexturedMeshData {
   pub vertices: Vec<TexturedVertex>,
-  pub indices: Vec<u16>,
+  pub indices: Vec<u32>,
   pub texture: TextureData,
 }
 
@@ -139,7 +139,7 @@ const TEST_VERTICES_FLAT: &[TexturedVertex] = &[
 ];
 
 #[rustfmt::skip]
-const TEST_INDICES: &[u16] = &[
+const TEST_INDICES: &[u32] = &[
   // top
   0, 1, 2,
   0, 2, 3,

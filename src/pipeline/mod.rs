@@ -1,5 +1,7 @@
-use crate::mesh::texture::DepthBuffer;
+pub mod texture;
+
 use crate::mesh::{TexturedVertex, Vertex};
+use texture::DepthBuffer;
 
 use wgpu::{BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 

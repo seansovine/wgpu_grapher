@@ -1,5 +1,4 @@
 mod solid;
-pub mod texture;
 mod textured;
 
 pub use solid::*;

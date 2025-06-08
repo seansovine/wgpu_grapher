@@ -1,6 +1,6 @@
 use crate::camera::CameraState;
 use crate::light::LightState;
-use crate::mesh::texture::DepthBuffer;
+use crate::pipeline::texture::DepthBuffer;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
