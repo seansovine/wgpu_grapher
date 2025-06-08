@@ -1,6 +1,8 @@
 use wgpu::util::DeviceExt;
 use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
 
+const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MatrixUniform {
@@ -15,14 +17,20 @@ impl MatrixUniform {
     }
   }
 
-  pub fn translation(coords: &[f32]) -> MatrixUniform {
-    MatrixUniform {
+  pub fn translation(coords: &[f32]) -> Self {
+    Self {
       view_proj: cgmath::Matrix4::from_translation(cgmath::Vector3 {
         x: coords[0],
         y: coords[1],
         z: coords[2],
       })
       .into(),
+    }
+  }
+
+  pub fn x_rotation(degrees: f32) -> Self {
+    Self {
+      view_proj: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),
     }
   }
 

@@ -29,7 +29,7 @@ pub async fn run(args: CliArgs) {
   let mut scene: Box<dyn RenderScene> = match args.command {
     Command::Graph => Box::from(mesh::graph_scene(&state)),
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
-    Command::Image(args) => Box::from(mesh::image_test_scene(&state, &args.path)),
+    Command::Image(args) => Box::from(mesh::image_viewer_scene(&state, &args.path)),
     Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
   };
 
@@ -37,6 +37,8 @@ pub async fn run(args: CliArgs) {
 
   let mut time = time::Instant::now();
   let mut framecount = 0_usize;
+
+  let mut updates_paused = false;
 
   event_loop
     .run(move |event, control_flow| match event {
@@ -59,6 +61,17 @@ pub async fn run(args: CliArgs) {
               ..
             } => control_flow.exit(),
 
+            // pause state updates
+            WindowEvent::KeyboardInput {
+              event:
+                KeyEvent {
+                  state: ElementState::Pressed,
+                  physical_key: PhysicalKey::Code(KeyCode::KeyP),
+                  ..
+                },
+              ..
+            } => updates_paused = !updates_paused,
+
             // handle window resize
             WindowEvent::Resized(physical_size) => {
               state.resize(*physical_size);
@@ -80,7 +93,9 @@ pub async fn run(args: CliArgs) {
                 time = time::Instant::now();
               }
 
-              scene.update(&state);
+              if !updates_paused {
+                scene.update(&state);
+              }
               state.update();
 
               // crude method to update more often than render

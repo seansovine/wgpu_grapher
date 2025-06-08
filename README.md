@@ -37,6 +37,7 @@ loop were inspired by the _Learn WGPU_ tutorial.
 | `down`  | rotate down  |
 | `z`     | zoom in      |
 | `x`     | zoom out     |
+| `p`     | pause/resume state updates |
 | `esc`   | exit         |
 
 ## 2D wave equation simulation
@@ -51,7 +52,7 @@ The idea for the random disturbances and energy damping in this simulation
 came from [Beltoforion](https://beltoforion.de/en/recreational_mathematics/).
 (His work is awesome; it's definitely worth checking out.)
 
-You can now also render the wave equation simulation into a texture on a 2D canvas.
+It can also render the wave equation simulation into a texture on a 2D canvas.
 
 <p align="center" margin="20px">
 	<img src="images/screenshot_wave_eqn_texture.png" alt="drawing" width="500" style="padding-top: 15px; padding-bottom: 10px"/>

@@ -149,7 +149,7 @@ const TEST_INDICES: &[u32] = &[
 ];
 
 /// Render the scene onto both sides of a square canvas.
-pub fn image_test_scene(state: &RenderState, image_path: &str) -> Scene {
+pub fn image_viewer_scene(state: &RenderState, image_path: &str) -> Scene {
   let image = Image::from_file(image_path);
 
   let texture_data_front = TextureData::from_image(&image, state);
@@ -320,17 +320,16 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
     texture: texture_data,
   };
 
-  let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
-    vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
+  let meshes = vec![(mesh_data, MatrixUniform::x_rotation(90.0))];
 
   let scene = build_scene(state, meshes);
-  let mut wave_eqn = wave_eqn::WaveEquationData::new(1500, 1500);
+  let mut wave_eqn = wave_eqn::WaveEquationData::new(1000, 1000);
 
   // update solver properties
-  wave_eqn.prop_speed *= 1.3;
   wave_eqn.disturbance_prob = 0.01;
-  wave_eqn.disturbance_size *= 1.5;
-  wave_eqn.damping_factor = 0.999;
+  wave_eqn.disturbance_size = 50.0;
+  wave_eqn.damping_factor = 0.997;
+  wave_eqn.prop_speed = 0.25;
 
   WaveEquationTextureScene {
     texture_matrix,
@@ -360,11 +359,12 @@ impl RenderScene for WaveEquationTextureScene {
     let n = matrix.dimensions.0;
     for i in 0..n {
       for j in 0..n {
-        let new_val = float_to_scaled_u8(self.wave_eqn.u_0[i as usize][j as usize]);
+        let new_val = float_to_scaled_u8_color_pixel(self.wave_eqn.u_0[i as usize][j as usize]);
         let entry = matrix.get(i, j);
-        entry[0] = new_val;
-        entry[1] = new_val;
-        entry[2] = new_val;
+
+        entry[0] = new_val[0];
+        entry[1] = new_val[1];
+        entry[2] = new_val[2];
       }
     }
 
@@ -389,9 +389,22 @@ impl RenderScene for WaveEquationTextureScene {
   }
 }
 
-fn float_to_scaled_u8(x: f32) -> u8 {
+#[allow(unused)]
+fn float_to_scaled_u8_grayscale_pixel(x: f32) -> [u8; 3] {
   const SCALE: f32 = 3.0;
   const SHIFT: f32 = 128.0;
 
-  (x * SCALE + SHIFT).clamp(0.0, 255.0) as u8
+  let value = (x * SCALE + SHIFT).clamp(0.0, 255.0) as u8;
+
+  [value, value, value]
+}
+
+#[allow(unused)]
+fn float_to_scaled_u8_color_pixel(x: f32) -> [u8; 3] {
+  const SCALE: f32 = 10.0;
+  const SHIFT: f32 = 128.0;
+
+  let value = (x * SCALE + SHIFT).clamp(0.0, 255.0) as u8;
+
+  [0, value, 255 - value]
 }
