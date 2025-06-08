@@ -20,10 +20,8 @@ pub struct CliArgs {
 #[derive(Subcommand)]
 pub enum Command {
   Graph,
-  MeltingGraph,
   WaveEquation,
   Image(ImageArgs),
-  CustomTexture,
   WaveEquationTexture,
 }
 

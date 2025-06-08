@@ -5,9 +5,9 @@ use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct LightUniform {
   position: [f32; 3],
-  _padding: u32,
+  _pad1: u32,
   color: [f32; 3],
-  _padding2: u32,
+  _pad2: u32,
 }
 
 pub struct LightState {
@@ -21,9 +21,9 @@ impl LightState {
   pub fn create(device: &Device) -> Self {
     let uniform = LightUniform {
       position: [0.0, 8.0, 0.0],
-      _padding: 0,
+      _pad1: 0,
       color: [1.0, 1.0, 1.0],
-      _padding2: 0,
+      _pad2: 0,
     };
 
     let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {

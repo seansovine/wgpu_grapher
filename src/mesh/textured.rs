@@ -249,6 +249,7 @@ impl RenderScene for FadingCustomTextureScene {
   }
 }
 
+#[allow(unused)]
 /// Render the scene onto both sides of a square canvas.
 pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureScene {
   const TEXTURE_DIMS: (u32, u32) = (500, 500);

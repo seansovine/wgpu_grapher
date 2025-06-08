@@ -3,8 +3,8 @@
 use rand::Rng;
 use rand::rngs::ThreadRng;
 
-pub const X_SIZE: usize = 256;
-pub const Y_SIZE: usize = 256;
+pub const X_SIZE: usize = 500;
+pub const Y_SIZE: usize = 500;
 
 const PROP_SPEED: f32 = 0.35;
 const DAMPING_FACTOR: f32 = 0.995;
@@ -22,8 +22,8 @@ pub struct WaveEquationData {
   // random number generator
   rng: ThreadRng,
   // grid size
-  x_size: usize,
-  y_size: usize,
+  pub x_size: usize,
+  pub y_size: usize,
   // parameters
   pub prop_speed: f32,
   pub damping_factor: f32,
@@ -41,6 +41,7 @@ impl WaveEquationData {
       //
       x_size,
       y_size,
+      //
       prop_speed: PROP_SPEED,
       damping_factor: DAMPING_FACTOR,
       disturbance_prob: DISTURBANCE_PROB,
@@ -66,8 +67,8 @@ impl WaveEquationData {
     let u_2 = &self.u_2;
 
     // update current internal points; boundary held at 0
-    for i in 1..X_SIZE - 1 {
-      for j in 1..Y_SIZE - 1 {
+    for i in 1..self.x_size - 1 {
+      for j in 1..self.y_size - 1 {
         // next finite difference step
         self.u_0[i][j] = self.prop_speed
           * (u_1[i - 1][j] + u_1[i + 1][j] + u_1[i][j - 1] + u_1[i][j + 1] - 4.0 * u_1[i][j])
@@ -84,8 +85,8 @@ impl WaveEquationData {
     // following Beltoforion's example,
     // add a random disturbance to the space
     if self.rng.random::<f32>() < self.disturbance_prob {
-      let x: usize = self.rng.random_range(5..X_SIZE - 5);
-      let y: usize = self.rng.random_range(5..Y_SIZE - 5);
+      let x: usize = self.rng.random_range(5..self.x_size - 5);
+      let y: usize = self.rng.random_range(5..self.y_size - 5);
 
       for i in x - 2..x + 2 {
         for j in y - 2..y + 2 {

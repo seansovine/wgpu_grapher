@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
 
-cargo run --release --quiet -- "$@"
+# turn on env_log logging
+export RUST_LOG=wgpu_grapher=info
 
+cargo run --release --quiet -- "$@"

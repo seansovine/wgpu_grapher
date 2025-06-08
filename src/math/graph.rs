@@ -11,9 +11,13 @@
 // This will create the MeshData object used by mesh::build_scene.
 //
 
+use std::vec;
+
 use crate::mesh::{self, MeshData};
 
 // geometric data
+
+type Vertex = [f32; 3];
 
 pub struct Triangle {
   // should be ordered counter clockwise
@@ -36,25 +40,29 @@ impl Triangle {
     let v_2 = &vertices[self.vertex_indices[1] as usize];
     let v_3 = &vertices[self.vertex_indices[2] as usize];
 
-    // first side
-    let b = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];
-    // second side
-    let a = [v_3[0] - v_1[0], v_3[1] - v_1[1], v_3[2] - v_1[2]];
-
-    // normal vector by cross product
-    let normal = [
-      a[1] * b[2] - a[2] * b[1],
-      a[2] * b[0] - a[0] * b[2],
-      a[0] * b[1] - a[1] * b[0],
-    ];
-    // normalize
-    let mut norm = (normal[0].powi(2) + normal[1].powi(2) + normal[2].powi(2)).sqrt();
-    if self.reflect_normal {
-      norm *= -1.0;
-    }
-
-    [normal[0] / norm, normal[1] / norm, normal[2] / norm]
+    triangle_normal(v_1, v_2, v_3, self.reflect_normal)
   }
+}
+
+fn triangle_normal(v_1: &Vertex, v_2: &Vertex, v_3: &Vertex, reflect: bool) -> [f32; 3] {
+  // first side
+  let b = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];
+  // second side
+  let a = [v_3[0] - v_1[0], v_3[1] - v_1[1], v_3[2] - v_1[2]];
+
+  // normal vector by cross product
+  let normal = [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+  // normalize
+  let mut norm = (normal[0].powi(2) + normal[1].powi(2) + normal[2].powi(2)).sqrt();
+  if reflect {
+    norm *= -1.0;
+  }
+
+  [normal[0] / norm, normal[1] / norm, normal[2] / norm]
 }
 
 pub struct Square {
@@ -77,8 +85,6 @@ impl Square {
 }
 
 // square tesselation
-
-type Vertex = [f32; 3];
 
 pub struct SquareTesselation {
   #[allow(unused)]
@@ -183,6 +189,27 @@ impl SquareTesselation {
     }
 
     MeshData { vertices, indices }
+  }
+
+  pub fn update_normals(&self, mesh_data: &mut MeshData) {
+    for square in &self.squares {
+      for t in square.triangles() {
+        let i_1 = t.vertex_indices[0] as usize;
+        let i_2 = t.vertex_indices[1] as usize;
+        let i_3 = t.vertex_indices[2] as usize;
+
+        let v_1 = &mesh_data.vertices[i_1].position;
+        let v_2 = &mesh_data.vertices[i_2].position;
+        let v_3 = &mesh_data.vertices[i_3].position;
+
+        let new_normal = triangle_normal(v_1, v_2, v_3, t.reflect_normal);
+
+        // just update all three normals; some will be updated more than once
+        mesh_data.vertices[i_1].normal = new_normal;
+        mesh_data.vertices[i_2].normal = new_normal;
+        mesh_data.vertices[i_3].normal = new_normal;
+      }
+    }
   }
 }
 

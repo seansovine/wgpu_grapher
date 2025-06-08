@@ -12,7 +12,7 @@ use winit::{
 use std::{thread, time};
 
 // between-frame delay; aiming for ~60 fps
-const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667);
+const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667 / 4);
 
 // implement main event loop
 
@@ -28,10 +28,8 @@ pub async fn run(args: CliArgs) {
   #[allow(unused_mut)]
   let mut scene: Box<dyn RenderScene> = match args.command {
     Command::Graph => Box::from(mesh::graph_scene(&state)),
-    Command::MeltingGraph => Box::from(mesh::melting_graph_scene(&state)),
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
     Command::Image(args) => Box::from(mesh::image_test_scene(&state, &args.path)),
-    Command::CustomTexture => Box::from(mesh::custom_fading_texture_scene(&state)),
     Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
   };
 
@@ -85,22 +83,25 @@ pub async fn run(args: CliArgs) {
               scene.update(&state);
               state.update();
 
-              match render::render(&state, scene.scene()) {
-                Ok(_) => {}
-                // swap chain needs updated or recreated (wgpu docs)
-                Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                  state.resize(state.size)
-                }
+              // crude method to update more often than render
+              if framecount % 2 == 0 {
+                match render::render(&state, scene.scene()) {
+                  Ok(_) => {}
+                  // swap chain needs updated or recreated (wgpu docs)
+                  Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
+                    state.resize(state.size)
+                  }
 
-                // out of memory or other error considered fatal
-                Err(wgpu::SurfaceError::OutOfMemory | wgpu::SurfaceError::Other) => {
-                  log::error!("Out of memory or other error.");
-                  control_flow.exit();
-                }
+                  // out of memory or other error considered fatal
+                  Err(wgpu::SurfaceError::OutOfMemory | wgpu::SurfaceError::Other) => {
+                    log::error!("Out of memory or other error.");
+                    control_flow.exit();
+                  }
 
-                // present has taken too long
-                Err(wgpu::SurfaceError::Timeout) => {
-                  log::warn!("Surface timeout.")
+                  // present has taken too long
+                  Err(wgpu::SurfaceError::Timeout) => {
+                    log::warn!("Surface timeout.")
+                  }
                 }
               }
 
