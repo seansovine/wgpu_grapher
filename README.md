@@ -8,17 +8,19 @@ There are definitely many things I'd like to do to build on and improve what is 
 
 ## 3D function grapher
 
-The initial feature is a 3D function grapher that draws a wireframe graph of a function that
+The initial feature is a 3D function grapher that draws the graph of a function that
 is specified in the code. It can graph pretty much any numerical function `z = f(x, y)` that you can define
 in Rust,
 but eventually I'd like to add a mathematical expression parsing library and a GUI that allows
 the user to type in a function for it to graph.
 
-__Example__ $y = \text{sinc}(\sqrt{x^2 + y^2})$:
+__Example__:
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_1.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
+
+(Note that the version shown in the image is WIP on the `add_light` branch.)
 
 It has two main parts: A simple rendering engine to render a
 vector of meshes with solid colored or textured primitives; and code to generate
