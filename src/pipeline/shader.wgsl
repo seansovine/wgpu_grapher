@@ -27,7 +27,7 @@ struct VertexInput {
 }
 
 struct VertexOutput {
-    @builtin(position) clip_position: vec4<f32>,
+    @builtin(position) view_position: vec4<f32>,
     @location(0) color: vec3<f32>,
     @location(1) light_offset: vec3<f32>,
     @location(2) normal: vec3<f32>,
@@ -37,17 +37,17 @@ struct VertexOutput {
 
 @vertex
 fn vs_main(
-    model: VertexInput,
+    vertex: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
 
-    out.color = model.color;
-    out.clip_position = camera.matrix * model_matrix.matrix * vec4<f32>(model.position, 1.0);
+    out.color = vertex.color;
+    out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
 
     // rotate normal with body and pass through
-    out.normal = (model_matrix.matrix * vec4<f32>(model.normal, 1.0)).xyz;
+    out.normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
     // fragment shader gets direction from point to light in world space
-    var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(model.position, 1.0)).xyz;
+    var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
     out.light_offset = normalize(light.position - world_position);
 
     return out;
@@ -57,7 +57,7 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let ambient_strength = 0.005;
+    let ambient_strength = 0.025;
     let ambient_color = light.color * ambient_strength;
     let ambient = ambient_color * in.color;
 

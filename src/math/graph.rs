@@ -2,35 +2,44 @@
 //
 // This includes:
 //
-//  - a function that tesselates the (x, z) unit square with uniform subsquares
+//  - a function that tesselates an (x, z) square with uniform subsquares
 //  - a function to generate the vertex and index sets from squares
-//    - we'll want to consider front & back face rendering
 //  - a function to update the vertex sets above from an (x, z) -> y closure
-//    - (note we're working in OpenGL coordinate system)
-//  - mechanisms to decorate such closures to scale and shift inputs and outputs
+//     (note we're working in OpenGL coordinate system)
+//  - mechanisms to decorate function closures to scale and shift inputs and outputs
 //
-// This will do:
+// This will create the MeshData object used by mesh::build_scene.
 //
-//   This will create the MeshData and matrix uniform objects used by mesh::build_scene.
 
 use crate::mesh::{self, MeshData};
 
+// geometric data
+
 pub struct Triangle {
   // should be ordered counter clockwise
-  vertex_indices: [u16; 3],
-  normal: [f32; 3],
+  vertex_indices: [u32; 3],
+
+  // to give bottom of graph same lighting as top
+  reflect_normal: bool,
 }
 
 impl Triangle {
-  fn create(i_1: u16, i_2: u16, i_3: u16, vertices: &[Vertex]) -> Self {
-    let v_1 = &vertices[i_1 as usize];
-    let v_2 = &vertices[i_2 as usize];
-    let v_3 = &vertices[i_3 as usize];
+  fn create(i_1: u32, i_2: u32, i_3: u32, reflect_normal: bool) -> Self {
+    Self {
+      vertex_indices: [i_1, i_2, i_3],
+      reflect_normal,
+    }
+  }
+
+  fn compute_normal(&self, vertices: &[Vertex]) -> [f32; 3] {
+    let v_1 = &vertices[self.vertex_indices[0] as usize];
+    let v_2 = &vertices[self.vertex_indices[1] as usize];
+    let v_3 = &vertices[self.vertex_indices[2] as usize];
 
     // first side
-    let a = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];
+    let b = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];
     // second side
-    let b = [v_3[0] - v_1[0], v_3[1] - v_1[1], v_3[2] - v_1[2]];
+    let a = [v_3[0] - v_1[0], v_3[1] - v_1[1], v_3[2] - v_1[2]];
 
     // normal vector by cross product
     let normal = [
@@ -39,85 +48,81 @@ impl Triangle {
       a[0] * b[1] - a[1] * b[0],
     ];
     // normalize
-    let norm = (normal[0].powi(2) + normal[1].powi(2) + normal[2].powi(2)).sqrt();
-    let normal = [normal[0] / norm, normal[1] / norm, normal[2] / norm];
-
-    Self {
-      vertex_indices: [i_1, i_2, i_3],
-      normal,
+    let mut norm = (normal[0].powi(2) + normal[1].powi(2) + normal[2].powi(2)).sqrt();
+    if self.reflect_normal {
+      norm *= -1.0;
     }
-  }
-}
 
-impl From<Triangle> for [u16; 3] {
-  fn from(value: Triangle) -> Self {
-    value.vertex_indices
+    [normal[0] / norm, normal[1] / norm, normal[2] / norm]
   }
 }
 
 pub struct Square {
   // vertex indices of corners CW from back-left
-  corner_indices: [u16; 4],
+  corner_indices: [u32; 4],
 }
 
 impl Square {
-  // #[rustfmt::skip]
-  fn triangles(&self, vertices: &[Vertex]) -> [Triangle; 2] {
+  fn triangles(&self) -> [Triangle; 4] {
     let c = &self.corner_indices;
     [
-      // bottom faces
-      // c[0], c[2], c[3],
-      // c[0], c[1], c[2],
-
-      // TODO: We need to think about inverted normals
-      // for bottom faces.
-
       // top faces
-      Triangle::create(c[0], c[3], c[2], vertices),
-      Triangle::create(c[0], c[2], c[1], vertices),
+      Triangle::create(c[0], c[2], c[3], false),
+      Triangle::create(c[0], c[1], c[2], false),
+      // bottom faces w/ reflected normals
+      Triangle::create(c[0], c[3], c[2], true),
+      Triangle::create(c[0], c[2], c[1], true),
     ]
   }
 }
 
+// square tesselation
+
 type Vertex = [f32; 3];
 
-pub struct UnitSquareTesselation {
-  // number of squares to subdivide in each direction
-  _n: u16,
+pub struct SquareTesselation {
+  // # of squares to subdivide into in each direction
+  #[allow(unused)]
+  n: u32,
   vertices: Vec<Vertex>,
   squares: Vec<Square>,
 }
 
-impl UnitSquareTesselation {
+impl SquareTesselation {
+  // color to use for (x, z) plane "floor" mesh
   pub const FLOOR_COLOR: [f32; 3] = [
     0.8 * 168.0f32 / 255.0f32,
     0.8 * 125.0f32 / 255.0f32,
     0.8 * 50.0f32 / 255.0f32,
   ];
+
+  // color to use for function mesh
   pub const FUNCT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
-  /// build tesselation of (x, z) coordinate system
-  pub fn generate(n: u16, width: f32) -> Self {
+  /// Build tesselation of \[0, width\] x \[0, width\] square
+  /// in \(x, z\) coordinate system by smaller squares.
+  pub fn generate(n: u32, width: f32) -> Self {
     let mut ticks: Vec<f32> = vec![];
+    let mut vertices: Vec<Vertex> = vec![];
+    let mut squares = vec![];
 
+    // compute axis subdivision points
     for i in 0..=n {
       ticks.push(i as f32 * (width / n as f32));
     }
 
-    let mut vertices: Vec<Vertex> = vec![];
-
-    // flattened order is important here:
-    //  we go across rows from left to right, visiting rows from back to front
+    // NOTES:
+    // - Flattened order is important here: We go across rows
+    //   from left to right, visiting rows from back to front.
     for z in &ticks {
       for x in &ticks {
         vertices.push([*x, 0.0, *z]);
       }
     }
 
-    let mut squares = vec![];
-
-    // x and z are indices here, not coordinates.
-    //  note: n squares per row/column means n+1 ticks
+    // NOTES:
+    // - x and z are indices here, not coordinates.
+    // - n squares per row/column means n+1 ticks
     for z in 0..n {
       for x in 0..n {
         squares.push(Square {
@@ -131,8 +136,8 @@ impl UnitSquareTesselation {
       }
     }
 
-    UnitSquareTesselation {
-      _n: n,
+    SquareTesselation {
+      n,
       vertices,
       squares,
     }
@@ -150,28 +155,22 @@ impl UnitSquareTesselation {
   }
 
   pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
-    let mut indices: Vec<u16> = vec![];
+    let mut indices: Vec<u32> = vec![];
     let mut normals: Vec<Option<[f32; 3]>> = vec![None; self.vertices.len()];
+    let mut vertices: Vec<mesh::Vertex> = vec![];
 
-    self.squares.iter().for_each(|square| {
-      let triangles = &square.triangles(&self.vertices);
+    for square in &self.squares {
+      let triangles = square.triangles();
 
-      let t1 = &triangles[0];
-      let t2 = &triangles[1];
-
-      indices.extend_from_slice(&t1.vertex_indices);
-      indices.extend_from_slice(&t2.vertex_indices);
-
-      for t in &[t1, t2] {
+      for t in &triangles {
+        indices.extend_from_slice(&t.vertex_indices);
         for v in t.vertex_indices.map(|v| v as usize) {
           if normals[v].is_none() {
-            normals[v] = Some(t.normal);
+            normals[v] = Some(t.compute_normal(&self.vertices));
           }
         }
       }
-    });
-
-    let mut vertices: Vec<mesh::Vertex> = vec![];
+    }
 
     for (i, vertex) in self.vertices.iter().enumerate() {
       vertices.push(mesh::Vertex {

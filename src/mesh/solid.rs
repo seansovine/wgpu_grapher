@@ -25,7 +25,7 @@ pub struct Vertex {
 #[derive(Clone)]
 pub struct MeshData {
   pub vertices: Vec<Vertex>,
-  pub indices: Vec<u16>,
+  pub indices: Vec<u32>,
 }
 
 impl MeshData {
@@ -146,27 +146,34 @@ pub fn test_scene(state: &RenderState) -> Scene {
 
 #[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
-  static SUBDIVISIONS: u16 = 255;
-  static WIDTH: f32 = 2.0;
+  static SUBDIVISIONS: u32 = 750;
+  static WIDTH: f32 = 6.0;
 
-  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
-    .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
-  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -WIDTH / 4.0_f32, -WIDTH / 2.0_f32]);
+  let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
+  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.0f32, -WIDTH / 2.0_f32]);
 
   // example function(s)
 
-  // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-  // let f = graph::shift_scale_input(f, 1.0, 40.0, 1.0, 40.0);
-  // let f = graph::shift_scale_output(f, 0.25, 1.25);
+  let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+  let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
+  let f = graph::shift_scale_output(f, 0.25, 1.25);
 
-  let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
-  let f = graph::shift_scale_input(f, 1.0, 4.0, 1.0, 4.0);
-  let f = graph::shift_scale_output(f, 0.25, 0.25);
+  // const SCALE: f32 = 3.0;
 
-  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
+  // let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+  // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
+  // let f = graph::shift_scale_output(f, 0.25, 0.5);
+
+  // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
+  // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
+  // let f = graph::shift_scale_output(f, 0.001, 0.025);
+
+  let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)
-    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+    .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
+  // omitting:
   build_scene(state, vec![(floor_mesh, matrix), (func_mesh, matrix)])
 }
 
@@ -201,11 +208,11 @@ impl RenderScene for MeltingScene {
 
 #[allow(unused)]
 pub fn melting_graph_scene(state: &RenderState) -> MeltingScene {
-  static SUBDIVISIONS: u16 = 200;
+  static SUBDIVISIONS: u32 = 200;
   static WIDTH: f32 = 2.0;
 
-  let floor_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
-    .mesh_data(graph::UnitSquareTesselation::FLOOR_COLOR);
+  let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -0.2_f32, -WIDTH / 2.0_f32]);
 
   // example function
@@ -213,9 +220,9 @@ pub fn melting_graph_scene(state: &RenderState) -> MeltingScene {
   let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
   let f = graph::shift_scale_output(f, 0.55, 0.5);
 
-  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
+  let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)
-    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+    .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
   let scene = build_scene(
     state,
@@ -238,11 +245,11 @@ pub struct WaveEquationScene {
 pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   // number of squares is 1 less than number of gridpoints
   // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
-  static SUBDIVISIONS: u16 = wave_eqn::X_SIZE as u16 - 1;
+  static SUBDIVISIONS: u32 = wave_eqn::X_SIZE as u32 - 1;
   static WIDTH: f32 = 2.0;
 
-  let func_mesh = graph::UnitSquareTesselation::generate(SUBDIVISIONS, WIDTH)
-    .mesh_data(graph::UnitSquareTesselation::FUNCT_COLOR);
+  let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, -0.2_f32, -WIDTH / 2.0_f32]);
 
   let scene = build_scene(state, vec![(func_mesh.clone(), matrix)]);

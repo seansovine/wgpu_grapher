@@ -107,7 +107,7 @@ fn render_detail(
   }
 
   render_pass.set_vertex_buffer(0, vertex_buffer);
-  render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint16);
+  render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint32);
   render_pass.draw_indexed(0..num_indices, 0, 0..1);
 
   // release borrow of encoder
