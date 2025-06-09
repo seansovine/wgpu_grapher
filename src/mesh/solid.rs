@@ -94,6 +94,7 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
     ],
     // TODO: add option to render as wireframe
     wgpu::PolygonMode::Fill,
+    // wgpu::PolygonMode::Line,
   );
 
   Scene {
@@ -246,11 +247,11 @@ pub struct WaveEquationScene {
 
 #[allow(unused)]
 pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
-  static WAVE_EQN_SUBDIV: usize = 500;
+  static WAVE_EQN_SUBDIV: usize = 800;
   // number of squares is 1 less than number of gridpoints
   // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
   static SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
-  static WIDTH: f32 = 1.0;
+  static WIDTH: f32 = 2.0;
 
   let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH);
   let mesh_data = func_mesh.mesh_data(graph::SquareTesselation::FUNCT_COLOR);
@@ -259,12 +260,12 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
   let mut wave_eqn = wave_eqn::WaveEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
 
-  wave_eqn.disturbance_prob = 0.001;
-  wave_eqn.disturbance_size = 50.0;
-  wave_eqn.damping_factor = 0.9965;
-  wave_eqn.prop_speed = 0.25;
+  wave_eqn.disturbance_prob = 0.0025;
+  wave_eqn.disturbance_size = 25.0;
+  wave_eqn.damping_factor = 0.996;
+  wave_eqn.prop_speed = 0.15;
 
-  let display_scale: f32 = 0.01;
+  let display_scale: f32 = 0.05;
 
   WaveEquationScene {
     scene,
@@ -274,6 +275,15 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
     display_scale,
   }
 }
+
+// impl WaveEquationScene {
+//   pub fn entry_clamped(&mut self, i: usize, j: usize) -> &mut f32 {
+//     let offset = i.clamp(0, self.wave_eqn.y_size - 1) * self.wave_eqn.x_size
+//       + j.clamp(0, self.wave_eqn.x_size - 1);
+
+//     &mut self.mesh_data.vertices[offset].position[1]
+//   }
+// }
 
 impl RenderScene for WaveEquationScene {
   fn scene(&self) -> &Scene {
@@ -288,8 +298,19 @@ impl RenderScene for WaveEquationScene {
     let n = self.wave_eqn.x_size;
     for i in 0..n {
       for j in 0..n {
-        self.mesh_data.vertices[j + i * n].position[1] =
-          self.display_scale * self.wave_eqn.u_0[i][j];
+        // average nearby points for smoothing effect
+        self.mesh_data.vertices[j + i * n].position[1] = self.display_scale
+          * (self.wave_eqn.entry_clamped(i, j)
+            + self.wave_eqn.entry_clamped(i + 1, j)
+            + self.wave_eqn.entry_clamped(i, j + 1)
+            + self.wave_eqn.entry_clamped(i - 1, j)
+            + self.wave_eqn.entry_clamped(i, j - 1)
+            //
+            + self.wave_eqn.entry_clamped(i + 1, j - 1)
+            + self.wave_eqn.entry_clamped(i + 1, j + 1)
+            + self.wave_eqn.entry_clamped(i - 1, j + 1)
+            + self.wave_eqn.entry_clamped(i - 1, j - 1))
+          / 9.0;
       }
     }
 
