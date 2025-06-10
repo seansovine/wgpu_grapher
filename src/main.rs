@@ -1,6 +1,5 @@
 mod camera;
 mod event_loop;
-mod light;
 mod math;
 mod matrix;
 mod mesh;

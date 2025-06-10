@@ -1,5 +1,6 @@
 use crate::camera::CameraState;
-use crate::light::LightState;
+use crate::pipeline::light::LightState;
+use crate::pipeline::render_preferences::RenderPreferences;
 use crate::pipeline::texture::DepthBuffer;
 
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
@@ -11,13 +12,19 @@ pub struct RenderState<'a> {
   pub queue: wgpu::Queue,
   pub config: wgpu::SurfaceConfiguration,
   pub depth_buffer: DepthBuffer,
+
   // winit
   pub size: PhysicalSize<u32>,
   pub window: &'a Window,
+
   // camera
   pub camera_state: CameraState,
   // light
   pub light_state: LightState,
+
+  // shader preferences
+  pub render_preferences: RenderPreferences,
+
   // running framerate
   pub framerate: f32,
 }
@@ -87,6 +94,10 @@ impl<'a> RenderState<'a> {
 
     let depth_buffer = DepthBuffer::create(&config, &device);
 
+    let shader_preferences_state = RenderPreferences::create(&device);
+
+    // construct state
+
     Self {
       surface,
       device,
@@ -97,6 +108,7 @@ impl<'a> RenderState<'a> {
       window,
       camera_state,
       light_state,
+      render_preferences: shader_preferences_state,
       framerate: 1_f32,
     }
   }

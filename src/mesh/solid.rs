@@ -91,9 +91,9 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
       &state.camera_state.matrix.bind_group_layout,
       &last_mesh.matrix.bind_group_layout,
       &state.light_state.bind_group_layout,
+      &state.render_preferences.bind_group_layout,
     ],
-    // TODO: add option to render as wireframe
-    wgpu::PolygonMode::Fill,
+    state.render_preferences.polygon_mode,
   );
 
   Scene {
@@ -246,7 +246,7 @@ pub struct WaveEquationScene {
 
 #[allow(unused)]
 pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
-  static WAVE_EQN_SUBDIV: usize = 500;
+  static WAVE_EQN_SUBDIV: usize = 600;
   // number of squares is 1 less than number of gridpoints
   // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
   static SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
@@ -259,12 +259,12 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
   let mut wave_eqn = wave_eqn::WaveEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
 
-  wave_eqn.disturbance_prob = 0.001;
-  wave_eqn.disturbance_size = 50.0;
+  wave_eqn.disturbance_prob = 0.003;
+  wave_eqn.disturbance_size = 60.0;
   wave_eqn.damping_factor = 0.9965;
-  wave_eqn.prop_speed = 0.25;
+  wave_eqn.prop_speed = 0.20;
 
-  let display_scale: f32 = 0.01;
+  let display_scale: f32 = 0.015;
 
   WaveEquationScene {
     scene,
@@ -293,8 +293,10 @@ impl RenderScene for WaveEquationScene {
       }
     }
 
-    // now update vertex normals
-    self.func_mesh.update_normals(&mut self.mesh_data);
+    if state.render_preferences.lighting_enabled() {
+      // now update vertex normals
+      self.func_mesh.update_normals(&mut self.mesh_data);
+    }
 
     // update vertex buffer
     state.queue.write_buffer(

@@ -18,6 +18,13 @@ struct LightUniform {
 @group(2) @binding(0)
 var<uniform> light: LightUniform;
 
+struct PreferencesUniform {
+    flags: u32,
+}
+
+@group(3) @binding(0)
+var<uniform> preferences: PreferencesUniform;
+
 // buffer structs
 
 struct VertexInput {
@@ -29,7 +36,7 @@ struct VertexInput {
 struct VertexOutput {
     @builtin(position) view_position: vec4<f32>,
     @location(0) color: vec3<f32>,
-    @location(1) light_offset: vec3<f32>,
+    @location(1) light_direction: vec3<f32>,
     @location(2) normal: vec3<f32>,
 }
 
@@ -48,7 +55,7 @@ fn vs_main(
     out.normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
     // fragment shader gets direction from point to light in world space
     var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
-    out.light_offset = normalize(light.position - world_position);
+    out.light_direction = normalize(light.position - world_position);
 
     return out;
 }
@@ -57,12 +64,18 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let ambient_strength = 0.025;
-    let ambient_color = light.color * ambient_strength;
-    let ambient = ambient_color * in.color;
+    let use_light = (preferences.flags & 1) == 1;
 
-    let diffuse_strength = 0.4 * max(0.0, dot(in.light_offset, in.normal));
-    let diffuse = diffuse_strength * (light.color * in.color);
+    if use_light {
+        let ambient_strength = 0.025;
+        let ambient = ambient_strength * (light.color * in.color);
 
-    return vec4<f32>(ambient + diffuse, 1.0);
+        let diffuse_strength = 0.4 * max(0.0, dot(in.light_direction, in.normal));
+        let diffuse = diffuse_strength * (light.color * in.color);
+
+        return vec4<f32>(ambient + diffuse, 1.0);
+    } else {
+        return vec4<f32>(in.color, 1.0);
+    }
+
 }

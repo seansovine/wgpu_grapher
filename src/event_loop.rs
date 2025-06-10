@@ -99,6 +99,7 @@ pub async fn run(args: CliArgs) {
               state.update();
 
               // crude method to update more often than render
+              // TODO: use time accumulator here instead
               if framecount % 2 == 0 {
                 match render::render(&state, scene.scene()) {
                   Ok(_) => {}

@@ -85,14 +85,20 @@ impl WaveEquationData {
     // following Beltoforion's example,
     // add a random disturbance to the space
     if self.rng.random::<f32>() < self.disturbance_prob {
-      let x: usize = self.rng.random_range(5..self.x_size - 5);
-      let y: usize = self.rng.random_range(5..self.y_size - 5);
+      let x: usize = self.rng.random_range(4..self.x_size - 5);
+      let y: usize = self.rng.random_range(4..self.y_size - 5);
 
-      for i in x - 2..x + 2 {
-        for j in y - 2..y + 2 {
-          self.u_0[i][j] = self.disturbance_size;
-        }
-      }
+      self.u_0[x][y] -= self.disturbance_size;
+
+      self.u_0[x - 1][y] -= self.disturbance_size / 4.0;
+      self.u_0[x + 1][y] -= self.disturbance_size / 4.0;
+      self.u_0[x][y - 1] -= self.disturbance_size / 4.0;
+      self.u_0[x][y + 1] -= self.disturbance_size / 4.0;
+
+      self.u_0[x - 1][y + 1] -= self.disturbance_size / 6.0;
+      self.u_0[x + 1][y + 1] -= self.disturbance_size / 6.0;
+      self.u_0[x - 1][y - 1] -= self.disturbance_size / 6.0;
+      self.u_0[x + 1][y - 1] -= self.disturbance_size / 6.0;
     }
   }
 }

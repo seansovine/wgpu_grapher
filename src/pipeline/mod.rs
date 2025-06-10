@@ -1,3 +1,5 @@
+pub mod light;
+pub mod render_preferences;
 pub mod texture;
 
 use crate::mesh::{TexturedVertex, Vertex};
