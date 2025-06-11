@@ -1,7 +1,7 @@
 // Structures and functions for building textured mesh scenes.
 
 use super::{RenderScene, Scene};
-use crate::math::wave_eqn;
+use crate::math::differential_eqn;
 use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::pipeline::texture::{Image, TextureData, TextureMatrix};
@@ -198,7 +198,7 @@ impl RenderScene for FadingCustomTextureScene {
     &self.scene
   }
 
-  fn update(&mut self, state: &RenderState) {
+  fn update(&mut self, state: &RenderState, _pre_render: bool) {
     const DIM_FACTOR: f32 = 0.96;
     if self.decreasing {
       self.multiplier *= DIM_FACTOR;
@@ -299,7 +299,10 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
 // wave equation rendered into texture
 
 pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
-  let texture_dims: (u32, u32) = (wave_eqn::X_SIZE as u32, wave_eqn::Y_SIZE as u32);
+  let texture_dims: (u32, u32) = (
+    differential_eqn::X_SIZE as u32,
+    differential_eqn::Y_SIZE as u32,
+  );
 
   let mut texture_matrix = TextureMatrix::new(texture_dims.0, texture_dims.1);
 
@@ -323,7 +326,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
   let meshes = vec![(mesh_data, MatrixUniform::x_rotation(90.0))];
 
   let scene = build_scene(state, meshes);
-  let mut wave_eqn = wave_eqn::WaveEquationData::new(1000, 1000);
+  let mut wave_eqn = differential_eqn::WaveEquationData::new(1000, 1000);
 
   // update solver properties
   wave_eqn.disturbance_prob = 0.01;
@@ -341,7 +344,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
 pub struct WaveEquationTextureScene {
   texture_matrix: TextureMatrix,
   scene: Scene,
-  pub wave_eqn: wave_eqn::WaveEquationData,
+  pub wave_eqn: differential_eqn::WaveEquationData,
 }
 
 impl RenderScene for WaveEquationTextureScene {
@@ -349,7 +352,7 @@ impl RenderScene for WaveEquationTextureScene {
     &self.scene
   }
 
-  fn update(&mut self, state: &RenderState) {
+  fn update(&mut self, state: &RenderState, _pre_render: bool) {
     // run next finite-difference timestep
     self.wave_eqn.update();
 

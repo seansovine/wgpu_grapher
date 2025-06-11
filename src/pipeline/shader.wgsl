@@ -67,15 +67,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let use_light = (preferences.flags & 1) == 1;
 
     if use_light {
+        let out_color = light.color * in.color;
         let ambient_strength = 0.025;
-        let ambient = ambient_strength * (light.color * in.color);
-
         let diffuse_strength = 0.4 * max(0.0, dot(in.light_direction, in.normal));
-        let diffuse = diffuse_strength * (light.color * in.color);
 
-        return vec4<f32>(ambient + diffuse, 1.0);
+        return vec4<f32>((ambient_strength + diffuse_strength) * out_color, 1.0);
     } else {
         return vec4<f32>(in.color, 1.0);
     }
-
 }

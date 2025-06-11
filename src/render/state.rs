@@ -109,7 +109,8 @@ impl<'a> RenderState<'a> {
       camera_state,
       light_state,
       render_preferences: shader_preferences_state,
-      framerate: 1_f32,
+      // we target 60 fps
+      framerate: 60_f32,
     }
   }
 }

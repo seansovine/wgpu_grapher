@@ -22,6 +22,7 @@ pub enum Command {
   WaveEquation,
   Image(ImageArgs),
   WaveEquationTexture,
+  HeatEquation,
 }
 
 #[derive(Debug, Args)]

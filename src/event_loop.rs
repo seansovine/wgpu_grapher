@@ -11,8 +11,8 @@ use winit::{
 
 use std::{thread, time};
 
-// between-frame delay; aiming for ~60 fps
-const RENDER_TIMEOUT: time::Duration = time::Duration::from_nanos(16_666_667 / 4);
+// time between state updates; helps control CPU usage and simulation timing
+const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(3);
 
 // implement main event loop
 
@@ -25,18 +25,22 @@ pub async fn run(args: CliArgs) {
 
   let mut state = render::RenderState::new(&window).await;
 
-  #[allow(unused_mut)]
   let mut scene: Box<dyn RenderScene> = match args.command {
     Command::Graph => Box::from(mesh::graph_scene(&state)),
     Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
+    Command::HeatEquation => Box::from(mesh::heat_eqn_scene(&state)),
     Command::Image(args) => Box::from(mesh::image_viewer_scene(&state, &args.path)),
     Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
   };
 
   log::info!("Starting event loop!");
 
-  let mut time = time::Instant::now();
-  let mut framecount = 0_usize;
+  let mut last_update_time = time::Instant::now();
+  let mut last_render_time = time::Instant::now();
+  let mut render_count = 0_usize;
+
+  let mut accumulated_time = 0.0_f32;
+  const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
 
   let mut updates_paused = false;
 
@@ -47,7 +51,6 @@ pub async fn run(args: CliArgs) {
         window_id,
       } if window_id == state.window().id() => {
         if !state.handle_user_input(event) {
-          let elapsed = time.elapsed().as_millis();
           match event {
             // window closed or escape pressed
             WindowEvent::CloseRequested
@@ -82,25 +85,19 @@ pub async fn run(args: CliArgs) {
               // request another redraw event after this one for continuous update
               state.window().request_redraw();
 
-              // update framerate
-              framecount += 1;
-              state.framerate = 1000_f32 * framecount as f32 / elapsed as f32;
+              accumulated_time += last_update_time.elapsed().as_secs_f32();
+              last_update_time = time::Instant::now();
 
-              // log framerate once per second
-              if elapsed >= 10_000 {
-                log::info!("FPS: {}", state.framerate);
-                framecount = 0;
-                time = time::Instant::now();
-              }
+              let do_render = accumulated_time >= RENDER_TIME_INCR;
 
               if !updates_paused {
-                scene.update(&state);
+                scene.update(&state, do_render);
               }
-              state.update();
 
-              // crude method to update more often than render
-              // TODO: use time accumulator here instead
-              if framecount % 2 == 0 {
+              if do_render {
+                accumulated_time -= RENDER_TIME_INCR;
+                state.update();
+
                 match render::render(&state, scene.scene()) {
                   Ok(_) => {}
                   // swap chain needs updated or recreated (wgpu docs)
@@ -118,6 +115,17 @@ pub async fn run(args: CliArgs) {
                   Err(wgpu::SurfaceError::Timeout) => {
                     log::warn!("Surface timeout.")
                   }
+                }
+
+                // update framerate
+                render_count += 1;
+                const REPORT_FRAMES: usize = 100;
+
+                if render_count == REPORT_FRAMES {
+                  state.framerate = REPORT_FRAMES as f32 / last_render_time.elapsed().as_secs_f32();
+                  log::info!("FPS: {}", state.framerate);
+                  render_count = 0;
+                  last_render_time = time::Instant::now();
                 }
               }
 

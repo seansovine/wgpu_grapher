@@ -20,7 +20,7 @@ pub struct LightState {
 impl LightState {
   pub fn create(device: &Device) -> Self {
     let uniform = LightUniform {
-      position: [0.0, 8.0, 0.0],
+      position: [0.0, 11.0, 0.0],
       _pad1: 0,
       color: [1.0, 1.0, 1.0],
       _pad2: 0,
