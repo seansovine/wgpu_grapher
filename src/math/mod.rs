@@ -1,2 +1,2 @@
-pub mod differential_eqn;
 pub mod graph;
+pub mod pde;

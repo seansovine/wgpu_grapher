@@ -7,6 +7,7 @@
 //  - a function to update the vertex sets above from an (x, z) -> y closure
 //     (note we're working in OpenGL coordinate system)
 //  - mechanisms to decorate function closures to scale and shift inputs and outputs
+//  - functions to compute normal vectors for mesh triangles
 //
 // This will create the MeshData object used by mesh::build_scene.
 //
@@ -44,6 +45,7 @@ impl Triangle {
   }
 }
 
+#[inline(always)]
 fn triangle_normal(v_1: &Vertex, v_2: &Vertex, v_3: &Vertex, reflect: bool) -> [f32; 3] {
   // first side
   let b = [v_2[0] - v_1[0], v_2[1] - v_1[1], v_2[2] - v_1[2]];

@@ -1,7 +1,7 @@
 // Structures and functions for building textured mesh scenes.
 
 use super::{RenderScene, Scene};
-use crate::math::differential_eqn;
+use crate::math::pde;
 use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::pipeline::texture::{Image, TextureData, TextureMatrix};
@@ -299,10 +299,7 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
 // wave equation rendered into texture
 
 pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
-  let texture_dims: (u32, u32) = (
-    differential_eqn::X_SIZE as u32,
-    differential_eqn::Y_SIZE as u32,
-  );
+  let texture_dims: (u32, u32) = (pde::X_SIZE as u32, pde::Y_SIZE as u32);
 
   let mut texture_matrix = TextureMatrix::new(texture_dims.0, texture_dims.1);
 
@@ -326,7 +323,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
   let meshes = vec![(mesh_data, MatrixUniform::x_rotation(90.0))];
 
   let scene = build_scene(state, meshes);
-  let mut wave_eqn = differential_eqn::WaveEquationData::new(1000, 1000);
+  let mut wave_eqn = pde::WaveEquationData::new(1000, 1000);
 
   // update solver properties
   wave_eqn.disturbance_prob = 0.01;
@@ -344,7 +341,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
 pub struct WaveEquationTextureScene {
   texture_matrix: TextureMatrix,
   scene: Scene,
-  pub wave_eqn: differential_eqn::WaveEquationData,
+  pub wave_eqn: pde::WaveEquationData,
 }
 
 impl RenderScene for WaveEquationTextureScene {
@@ -392,6 +389,7 @@ impl RenderScene for WaveEquationTextureScene {
   }
 }
 
+#[inline(always)]
 #[allow(unused)]
 fn float_to_scaled_u8_grayscale_pixel(x: f32) -> [u8; 3] {
   const SCALE: f32 = 3.0;
@@ -402,6 +400,7 @@ fn float_to_scaled_u8_grayscale_pixel(x: f32) -> [u8; 3] {
   [value, value, value]
 }
 
+#[inline(always)]
 #[allow(unused)]
 fn float_to_scaled_u8_color_pixel(x: f32) -> [u8; 3] {
   const SCALE: f32 = 10.0;

@@ -10,10 +10,9 @@ pub struct Image {
 
 impl Image {
   pub fn from_file(filepath: &str) -> Self {
-    // TODO: handle error vs panicking
+    // TODO: pass error up call stack vs panicking
     let image_bytes = std::fs::read(filepath)
       .unwrap_or_else(|_| panic!("Unable to read image at path: {}", filepath));
-
     let image = image::load_from_memory(&image_bytes).unwrap().to_rgba8();
     let dimensions = image.dimensions();
 

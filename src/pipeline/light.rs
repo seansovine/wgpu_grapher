@@ -11,9 +11,13 @@ pub struct LightUniform {
 }
 
 pub struct LightState {
+  // in case we later update light during render
   pub _uniform: LightUniform,
   pub _buffer: Buffer,
+
+  // to create pipeline
   pub bind_group_layout: BindGroupLayout,
+  // bound during render passes
   pub bind_group: BindGroup,
 }
 

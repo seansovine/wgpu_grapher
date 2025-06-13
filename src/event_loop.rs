@@ -16,6 +16,7 @@ const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(3);
 
 // implement main event loop
 
+/// Setup render state and run event loop.
 pub async fn run(args: CliArgs) {
   env_logger::init();
 
@@ -130,12 +131,12 @@ pub async fn run(args: CliArgs) {
               }
 
               thread::sleep(RENDER_TIMEOUT);
-            }
+            } // RedrawRequested
 
-            _ => {} // other window event
-          }
-        }
-      }
+            _ => {} // other window events ignored
+          } // match event
+        } // if !state.handle_user_input(event)
+      } // Event::WindowEvent
 
       _ => {} // non-window event
     })

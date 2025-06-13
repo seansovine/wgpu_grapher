@@ -67,6 +67,7 @@ pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
   Ok(())
 }
 
+#[inline(always)]
 #[allow(clippy::too_many_arguments)]
 fn render_detail(
   state: &RenderState,

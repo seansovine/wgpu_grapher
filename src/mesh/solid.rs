@@ -1,14 +1,13 @@
 // Structures and functions for meshes with color provided per-vertex.
 
-use crate::math::differential_eqn;
-use crate::math::graph;
-use crate::math::graph::SquareTesselation;
-use crate::matrix;
-use crate::matrix::{MatrixState, MatrixUniform};
+use super::{RenderScene, Scene};
+use crate::math::{
+  graph::{self, SquareTesselation},
+  pde,
+};
+use crate::matrix::{self, MatrixState, MatrixUniform};
 use crate::pipeline;
 use crate::render::RenderState;
-
-use super::{RenderScene, Scene};
 
 use std::sync::LazyLock;
 
@@ -82,7 +81,7 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
 
   let last_mesh = meshes.last().unwrap();
 
-  // only uses matrix layout, so only need one
+  // use this pipeline for all solid meshes
   let pipeline = pipeline::create_render_pipeline::<Vertex>(
     &state.device,
     &state.config,
@@ -106,7 +105,6 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
 
 // test data
 
-#[allow(unused)]
 static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
   vertices: Vec::from([
     Vertex {
@@ -145,7 +143,6 @@ pub fn test_scene(state: &RenderState) -> Scene {
 
 // make scene for function graph
 
-#[allow(unused)]
 pub fn graph_scene(state: &RenderState) -> Scene {
   static SUBDIVISIONS: u32 = 750;
   static WIDTH: f32 = 6.0;
@@ -154,11 +151,15 @@ pub fn graph_scene(state: &RenderState) -> Scene {
     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.0f32, -WIDTH / 2.0_f32]);
 
-  // example function(s)
+  // example functions (uncomment one)
 
   // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
   // let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
   // let f = graph::shift_scale_output(f, 0.25, 1.25);
+
+  // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
+  // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
+  // let f = graph::shift_scale_output(f, 0.001, 0.025);
 
   const SCALE: f32 = 2.0;
 
@@ -166,89 +167,26 @@ pub fn graph_scene(state: &RenderState) -> Scene {
   let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
   let f = graph::shift_scale_output(f, 0.25, 0.5);
 
-  // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
-  // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
-  // let f = graph::shift_scale_output(f, 0.001, 0.025);
-
   let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
     .apply_function(f)
     .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
-  // omitting:
   build_scene(state, vec![(floor_mesh, matrix), (func_mesh, matrix)])
 }
 
-// test a scene with changing buffers
+// scene for simulating the wave equation
 
-pub struct MeltingScene {
-  pub scene: Scene,
-  pub func_mesh: MeshData,
-}
-
-impl MeltingScene {
-  const SCALE_FACTOR: f32 = 0.9995;
-}
-
-impl RenderScene for MeltingScene {
-  fn scene(&self) -> &Scene {
-    &self.scene
-  }
-
-  fn update(&mut self, state: &RenderState, _pre_render: bool) {
-    for vertex in &mut self.func_mesh.vertices {
-      vertex.position[1] *= MeltingScene::SCALE_FACTOR;
-    }
-
-    state.queue.write_buffer(
-      &self.scene.meshes[1].vertex_buffer,
-      0,
-      bytemuck::cast_slice(self.func_mesh.vertices.as_slice()),
-    );
-  }
-}
-
-#[allow(unused)]
-pub fn melting_graph_scene(state: &RenderState) -> MeltingScene {
-  static SUBDIVISIONS: u32 = 200;
-  static WIDTH: f32 = 2.0;
-
-  let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
-    .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
-  let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.0_f32, -WIDTH / 2.0_f32]);
-
-  // example function
-  let mut f = |x: f32, z: f32| x.sin() * z.cos();
-  let f = graph::shift_scale_input(f, 0.5, 8.0, 0.5, 8.0);
-  let f = graph::shift_scale_output(f, 0.55, 0.5);
-
-  let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
-    .apply_function(f)
-    .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
-
-  let scene = build_scene(
-    state,
-    vec![(floor_mesh, matrix), (func_mesh.clone(), matrix)],
-  );
-
-  MeltingScene { scene, func_mesh }
-}
-
-// create a scene for simulating the wave equation
-
-#[allow(unused)]
 pub struct WaveEquationScene {
   pub scene: Scene,
   pub func_mesh: SquareTesselation,
   pub mesh_data: MeshData,
-  pub wave_eqn: differential_eqn::WaveEquationData,
+  pub wave_eqn: pde::WaveEquationData,
   pub display_scale: f32,
 }
 
-#[allow(unused)]
 pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   const WAVE_EQN_SUBDIV: usize = 600;
   // number of squares is 1 less than number of gridpoints
-  // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
   const SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
   const WIDTH: f32 = 1.0;
 
@@ -257,7 +195,7 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
 
   let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
-  let mut wave_eqn = differential_eqn::WaveEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
+  let mut wave_eqn = pde::WaveEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
 
   wave_eqn.disturbance_prob = 0.003;
   wave_eqn.disturbance_size = 2.0;
@@ -284,10 +222,10 @@ impl RenderScene for WaveEquationScene {
     // run next finite-difference timestep
     self.wave_eqn.update();
 
-    // update vertex y-coordinates
     let n = self.wave_eqn.x_size;
     let b = 2_usize;
 
+    // update vertex y-coordinates
     for i in b..n - b {
       for j in b..n - b {
         self.mesh_data.vertices[j + i * n].position[1] =
@@ -295,9 +233,11 @@ impl RenderScene for WaveEquationScene {
       }
     }
 
-    if pre_render && state.render_preferences.lighting_enabled() {
-      // now update vertex normals
-      self.func_mesh.update_normals(&mut self.mesh_data);
+    if pre_render {
+      if state.render_preferences.lighting_enabled() {
+        // update vertex normals
+        self.func_mesh.update_normals(&mut self.mesh_data);
+      }
 
       // update vertex buffer
       state.queue.write_buffer(
@@ -309,28 +249,25 @@ impl RenderScene for WaveEquationScene {
   }
 }
 
-// scene for the heat equation
+// scene for simulating the heat equation
 
-#[allow(unused)]
 pub struct HeatEquationScene {
   pub scene: Scene,
   pub func_mesh: SquareTesselation,
   pub mesh_data: MeshData,
-  pub heat_eqn: differential_eqn::HeatEquationData,
+  pub heat_eqn: pde::HeatEquationData,
   pub display_scale: f32,
 
-  // HACK: don't update boundary each render
-  // keep buffer area fixed to avoid flicker
+  // HACK: we don't update boundary each render,
+  // but keep buffer area fixed to avoid flicker
   b: usize,
 }
 
-#[allow(unused)]
 pub fn heat_eqn_scene(state: &RenderState) -> HeatEquationScene {
   let b: usize = 5;
 
   static WAVE_EQN_SUBDIV: usize = 400;
   // number of squares is 1 less than number of gridpoints
-  // NOTE: we assume wave_eqn::X_SIZE == wave_eqn::Y_SIZE
   let subdivisions: u32 = WAVE_EQN_SUBDIV as u32 - 1 - (b as u32 * 2);
   const WIDTH: f32 = 1.0;
 
@@ -340,12 +277,9 @@ pub fn heat_eqn_scene(state: &RenderState) -> HeatEquationScene {
   func_mesh.update_normals(&mut mesh_data);
 
   let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
-
-  // state.render_preferences.polygon_mode = wgpu::PolygonMode::Line;
   let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
 
-  let heat_eqn = differential_eqn::HeatEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
-
+  let heat_eqn = pde::HeatEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
   let display_scale: f32 = 0.015;
 
   HeatEquationScene {
@@ -367,10 +301,10 @@ impl RenderScene for HeatEquationScene {
     // run next finite-difference timestep
     self.heat_eqn.update();
 
-    // update vertex y-coordinates
     let n = self.heat_eqn.x_size;
     let m = n - self.b * 2;
 
+    // update vertex y-coordinates and color
     for i in 0..m {
       for j in 0..m {
         let new_height = self.display_scale
@@ -386,9 +320,11 @@ impl RenderScene for HeatEquationScene {
       }
     }
 
-    if pre_render && state.render_preferences.lighting_enabled() {
-      // now update vertex normals
-      self.func_mesh.update_normals(&mut self.mesh_data);
+    if pre_render {
+      if state.render_preferences.lighting_enabled() {
+        // update vertex normals
+        self.func_mesh.update_normals(&mut self.mesh_data);
+      }
 
       // update vertex buffer
       state.queue.write_buffer(

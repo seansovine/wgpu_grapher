@@ -1,7 +1,7 @@
-// Finite-difference wave equation solver.
-
 use rand::Rng;
 use rand::rngs::ThreadRng;
+
+// Finite-difference wave equation solver.
 
 pub const X_SIZE: usize = 500;
 pub const Y_SIZE: usize = 500;
@@ -90,6 +90,7 @@ impl WaveEquationData {
 
       const B: usize = 5;
 
+      // add random bump decaying like 1 / r^3
       for i in B..self.y_size - B {
         for j in B..self.x_size - B {
           let dist = ((j - x).pow(2) as f64 + (i - y).pow(2) as f64)
@@ -135,7 +136,7 @@ impl HeatEquationData {
       x_size,
       y_size,
       //
-      k: 0.25,
+      k: 0.25, // want dk / h^2 < 1/2
       h: 1.0,
       d: 1.0,
     };
