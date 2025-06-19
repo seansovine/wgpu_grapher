@@ -5,73 +5,98 @@ pub use state::*;
 
 use crate::mesh::Scene;
 
-use wgpu::{BindGroup, BufferSlice, RenderPipeline, SurfaceError, TextureView};
+use wgpu::{BindGroup, BufferSlice, CommandEncoder, RenderPipeline, SurfaceError, TextureView};
 
 pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
   let output = state.surface.get_current_texture()?;
+
   let view = output
     .texture
     .create_view(&wgpu::TextureViewDescriptor::default());
-  let camera_bind_group = &state.camera_state.matrix.bind_group;
-  let light_bind_group = &state.light_state.bind_group;
-  let preferences_bind_group = &state.render_preferences.bind_group;
 
-  // want to clear depth buffer on first render only
-  let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
+  let mut encoder = state
+    .device
+    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+      label: Some("render encoder"),
+    });
 
-  // render solid meshes if configured
-  if let Some(pipeline) = &scene.pipeline {
-    for mesh in &scene.meshes {
-      render_detail(
-        state,
-        &view,
-        pipeline,
-        mesh.vertex_buffer.slice(..),
-        mesh.index_buffer.slice(..),
-        mesh.num_indices,
-        &[
-          camera_bind_group,
-          &mesh.matrix.bind_group,
-          light_bind_group,
-          preferences_bind_group,
-        ],
-        depth_load_op,
-      )?;
-      depth_load_op = wgpu::LoadOp::Load;
-    }
-  }
-
-  // render textured meshes if configured
-  if let Some(pipeline) = &scene.textured_pipeline {
-    for mesh in &scene.textured_meshes {
-      render_detail(
-        state,
-        &view,
-        pipeline,
-        mesh.vertex_buffer.slice(..),
-        mesh.index_buffer.slice(..),
-        mesh.num_indices,
-        &[
-          camera_bind_group,
-          &mesh.matrix.bind_group,
-          &mesh.texture.bind_group,
-        ],
-        depth_load_op,
-      )?;
-      depth_load_op = wgpu::LoadOp::Load;
-    }
-  }
+  state.render(&view, &mut encoder, scene)?;
 
   output.present();
+  state.queue.submit(std::iter::once(encoder.finish()));
 
   Ok(())
+}
+
+impl<'a> RenderState<'a> {
+  fn render(
+    &self,
+    view: &TextureView,
+    encoder: &mut CommandEncoder,
+    scene: &Scene,
+  ) -> Result<(), SurfaceError> {
+    let camera_bind_group = &self.camera_state.matrix.bind_group;
+    let light_bind_group = &self.light_state.bind_group;
+    let preferences_bind_group = &self.render_preferences.bind_group;
+
+    // want to clear depth buffer on first render only
+    let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
+
+    // render solid meshes if configured
+    if let Some(pipeline) = &scene.pipeline {
+      for mesh in &scene.meshes {
+        render_detail(
+          encoder,
+          view,
+          &self.depth_buffer.view,
+          pipeline,
+          mesh.vertex_buffer.slice(..),
+          mesh.index_buffer.slice(..),
+          mesh.num_indices,
+          &[
+            camera_bind_group,
+            &mesh.matrix.bind_group,
+            light_bind_group,
+            preferences_bind_group,
+          ],
+          depth_load_op,
+        )?;
+        depth_load_op = wgpu::LoadOp::Load;
+      }
+    }
+
+    // render textured meshes if configured
+    if let Some(pipeline) = &scene.textured_pipeline {
+      for mesh in &scene.textured_meshes {
+        render_detail(
+          encoder,
+          view,
+          &self.depth_buffer.view,
+          pipeline,
+          mesh.vertex_buffer.slice(..),
+          mesh.index_buffer.slice(..),
+          mesh.num_indices,
+          &[
+            camera_bind_group,
+            &mesh.matrix.bind_group,
+            &mesh.texture.bind_group,
+          ],
+          depth_load_op,
+        )?;
+        depth_load_op = wgpu::LoadOp::Load;
+      }
+    }
+
+    Ok(())
+  }
 }
 
 #[inline(always)]
 #[allow(clippy::too_many_arguments)]
 fn render_detail(
-  state: &RenderState,
+  encoder: &mut CommandEncoder,
   view: &TextureView,
+  depth_buffer_view: &TextureView,
   pipeline: &RenderPipeline,
   vertex_buffer: BufferSlice,
   index_buffer: BufferSlice,
@@ -79,12 +104,6 @@ fn render_detail(
   bind_groups: &[&BindGroup],
   depth_load_op: wgpu::LoadOp<f32>,
 ) -> Result<(), SurfaceError> {
-  let mut encoder = state
-    .device
-    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-      label: Some("render encoder"),
-    });
-
   let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
     label: Some("render pass"),
     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -96,7 +115,7 @@ fn render_detail(
       },
     })],
     depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-      view: &state.depth_buffer.view,
+      view: depth_buffer_view,
       depth_ops: Some(wgpu::Operations {
         load: depth_load_op,
         store: wgpu::StoreOp::Store,
@@ -119,8 +138,6 @@ fn render_detail(
 
   // release borrow of encoder
   drop(render_pass);
-
-  state.queue.submit(std::iter::once(encoder.finish()));
 
   Ok(())
 }
