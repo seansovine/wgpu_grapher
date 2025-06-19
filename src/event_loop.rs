@@ -3,10 +3,10 @@ use crate::render;
 use crate::{CliArgs, Command};
 
 use winit::{
-  event::*,
-  event_loop::EventLoop,
-  keyboard::{KeyCode, PhysicalKey},
-  window::WindowBuilder,
+    event::*,
+    event_loop::EventLoop,
+    keyboard::{KeyCode, PhysicalKey},
+    window::WindowBuilder,
 };
 
 use std::{thread, time};
@@ -18,127 +18,130 @@ const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(3);
 
 /// Setup render state and run event loop.
 pub async fn run(args: CliArgs) {
-  env_logger::init();
+    env_logger::init();
 
-  let event_loop = EventLoop::new().unwrap();
-  let window = WindowBuilder::new().build(&event_loop).unwrap();
-  window.set_title("wgpu grapher");
+    let event_loop = EventLoop::new().unwrap();
+    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    window.set_title("wgpu grapher");
 
-  let mut state = render::RenderState::new(&window).await;
+    let mut state = render::RenderState::new(&window).await;
 
-  let mut scene: Box<dyn RenderScene> = match args.command {
-    Command::Graph => Box::from(mesh::graph_scene(&state)),
-    Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
-    Command::HeatEquation => Box::from(mesh::heat_eqn_scene(&state)),
-    Command::Image(args) => Box::from(mesh::image_viewer_scene(&state, &args.path)),
-    Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
-  };
+    let mut scene: Box<dyn RenderScene> = match args.command {
+        Command::Graph => Box::from(mesh::graph_scene(&state)),
+        Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
+        Command::HeatEquation => Box::from(mesh::heat_eqn_scene(&state)),
+        Command::Image(args) => Box::from(mesh::image_viewer_scene(&state, &args.path)),
+        Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
+    };
 
-  log::info!("Starting event loop!");
+    log::info!("Starting event loop!");
 
-  let mut last_update_time = time::Instant::now();
-  let mut last_render_time = time::Instant::now();
-  let mut render_count = 0_usize;
+    let mut last_update_time = time::Instant::now();
+    let mut last_render_time = time::Instant::now();
+    let mut render_count = 0_usize;
 
-  let mut accumulated_time = 0.0_f32;
-  const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
+    let mut accumulated_time = 0.0_f32;
+    const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
 
-  let mut updates_paused = false;
+    let mut updates_paused = false;
 
-  event_loop
-    .run(move |event, control_flow| match event {
-      Event::WindowEvent {
-        ref event,
-        window_id,
-      } if window_id == state.window().id() => {
-        if !state.handle_user_input(event) {
-          match event {
-            // window closed or escape pressed
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
-              event:
-                KeyEvent {
-                  state: ElementState::Pressed,
-                  physical_key: PhysicalKey::Code(KeyCode::Escape),
-                  ..
-                },
-              ..
-            } => control_flow.exit(),
+    event_loop
+        .run(move |event, control_flow| match event {
+            Event::WindowEvent {
+                ref event,
+                window_id,
+            } if window_id == state.window().id() => {
+                if !state.handle_user_input(event) {
+                    match event {
+                        // window closed or escape pressed
+                        WindowEvent::CloseRequested
+                        | WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    state: ElementState::Pressed,
+                                    physical_key: PhysicalKey::Code(KeyCode::Escape),
+                                    ..
+                                },
+                            ..
+                        } => control_flow.exit(),
 
-            // pause state updates
-            WindowEvent::KeyboardInput {
-              event:
-                KeyEvent {
-                  state: ElementState::Pressed,
-                  physical_key: PhysicalKey::Code(KeyCode::KeyP),
-                  ..
-                },
-              ..
-            } => updates_paused = !updates_paused,
+                        // pause state updates
+                        WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    state: ElementState::Pressed,
+                                    physical_key: PhysicalKey::Code(KeyCode::KeyP),
+                                    ..
+                                },
+                            ..
+                        } => updates_paused = !updates_paused,
 
-            // handle window resize
-            WindowEvent::Resized(physical_size) => {
-              state.resize(*physical_size);
-            }
+                        // handle window resize
+                        WindowEvent::Resized(physical_size) => {
+                            state.resize(*physical_size);
+                        }
 
-            // handle redraw
-            WindowEvent::RedrawRequested => {
-              // request another redraw event after this one for continuous update
-              state.window().request_redraw();
+                        // handle redraw
+                        WindowEvent::RedrawRequested => {
+                            // request another redraw event after this one for continuous update
+                            state.window().request_redraw();
 
-              accumulated_time += last_update_time.elapsed().as_secs_f32();
-              last_update_time = time::Instant::now();
+                            accumulated_time += last_update_time.elapsed().as_secs_f32();
+                            last_update_time = time::Instant::now();
 
-              let do_render = accumulated_time >= RENDER_TIME_INCR;
+                            let do_render = accumulated_time >= RENDER_TIME_INCR;
 
-              if !updates_paused {
-                scene.update(&state, do_render);
-              }
+                            if !updates_paused {
+                                scene.update(&state, do_render);
+                            }
 
-              if do_render {
-                accumulated_time -= RENDER_TIME_INCR;
-                state.update();
+                            if do_render {
+                                accumulated_time -= RENDER_TIME_INCR;
+                                state.update();
 
-                match render::render(&state, scene.scene()) {
-                  Ok(_) => {}
-                  // swap chain needs updated or recreated (wgpu docs)
-                  Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                    state.resize(state.size)
-                  }
+                                match render::render(&state, scene.scene()) {
+                                    Ok(_) => {}
+                                    // swap chain needs updated or recreated (wgpu docs)
+                                    Err(
+                                        wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated,
+                                    ) => state.resize(state.size),
 
-                  // out of memory or other error considered fatal
-                  Err(wgpu::SurfaceError::OutOfMemory | wgpu::SurfaceError::Other) => {
-                    log::error!("Out of memory or other error.");
-                    control_flow.exit();
-                  }
+                                    // out of memory or other error considered fatal
+                                    Err(
+                                        wgpu::SurfaceError::OutOfMemory | wgpu::SurfaceError::Other,
+                                    ) => {
+                                        log::error!("Out of memory or other error.");
+                                        control_flow.exit();
+                                    }
 
-                  // present has taken too long
-                  Err(wgpu::SurfaceError::Timeout) => {
-                    log::warn!("Surface timeout.")
-                  }
-                }
+                                    // present has taken too long
+                                    Err(wgpu::SurfaceError::Timeout) => {
+                                        log::warn!("Surface timeout.")
+                                    }
+                                }
 
-                // update framerate
-                render_count += 1;
-                const REPORT_FRAMES: usize = 100;
+                                // update framerate
+                                render_count += 1;
+                                const REPORT_FRAMES: usize = 100;
 
-                if render_count == REPORT_FRAMES {
-                  state.framerate = REPORT_FRAMES as f32 / last_render_time.elapsed().as_secs_f32();
-                  log::info!("FPS: {}", state.framerate);
-                  render_count = 0;
-                  last_render_time = time::Instant::now();
-                }
-              }
+                                if render_count == REPORT_FRAMES {
+                                    state.framerate = REPORT_FRAMES as f32
+                                        / last_render_time.elapsed().as_secs_f32();
+                                    log::info!("FPS: {}", state.framerate);
+                                    render_count = 0;
+                                    last_render_time = time::Instant::now();
+                                }
+                            }
 
-              thread::sleep(RENDER_TIMEOUT);
-            } // RedrawRequested
+                            thread::sleep(RENDER_TIMEOUT);
+                        } // RedrawRequested
 
-            _ => {} // other window events ignored
-          } // match event
-        } // if !state.handle_user_input(event)
-      } // Event::WindowEvent
+                        _ => {} // other window events ignored
+                    } // match event
+                } // if !state.handle_user_input(event)
+            } // Event::WindowEvent
 
-      _ => {} // non-window event
-    })
-    .unwrap();
+            _ => {} // non-window event
+        })
+        .unwrap();
 }

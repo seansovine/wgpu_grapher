@@ -12,45 +12,45 @@ use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser)]
 pub struct CliArgs {
-  #[clap(subcommand)]
-  pub command: Command,
+    #[clap(subcommand)]
+    pub command: Command,
 }
 
 #[derive(Subcommand)]
 pub enum Command {
-  Graph,
-  WaveEquation,
-  Image(ImageArgs),
-  WaveEquationTexture,
-  HeatEquation,
+    Graph,
+    WaveEquation,
+    Image(ImageArgs),
+    WaveEquationTexture,
+    HeatEquation,
 }
 
 #[derive(Debug, Args)]
 pub struct ImageArgs {
-  #[clap(long, required = true)]
-  path: String,
+    #[clap(long, required = true)]
+    path: String,
 }
 
 // program entrypoint
 
 fn main() -> Result<(), String> {
-  let args = CliArgs::parse();
-  if let Command::Image(ref args) = args.command {
-    validate_path(args)?;
-  }
+    let args = CliArgs::parse();
+    if let Command::Image(ref args) = args.command {
+        validate_path(args)?;
+    }
 
-  pollster::block_on(event_loop::run(args));
+    pollster::block_on(event_loop::run(args));
 
-  Ok(())
+    Ok(())
 }
 
 // arg validation
 
 fn validate_path(args: &ImageArgs) -> Result<(), String> {
-  let exists = std::path::Path::new(&args.path).exists();
-  if !exists {
-    Err(format!("File not found at location: {}", &args.path))
-  } else {
-    Ok(())
-  }
+    let exists = std::path::Path::new(&args.path).exists();
+    if !exists {
+        Err(format!("File not found at location: {}", &args.path))
+    } else {
+        Ok(())
+    }
 }
