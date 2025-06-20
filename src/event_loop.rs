@@ -24,14 +24,38 @@ pub async fn run(args: CliArgs) {
     let window = WindowBuilder::new().build(&event_loop).unwrap();
     window.set_title("wgpu grapher");
 
-    let mut state = render::RenderState::new(&window).await;
+    let mut gpu_state = render::GpuState::new(&window).await;
+    let mut state = render::RenderState::new(&gpu_state.device, &gpu_state.config).await;
 
     let mut scene: Box<dyn RenderScene> = match args.command {
-        Command::Graph => Box::from(mesh::graph_scene(&state)),
-        Command::WaveEquation => Box::from(mesh::wave_eqn_scene(&state)),
-        Command::HeatEquation => Box::from(mesh::heat_eqn_scene(&state)),
-        Command::Image(args) => Box::from(mesh::image_viewer_scene(&state, &args.path)),
-        Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(&state)),
+        Command::Graph => Box::from(mesh::graph_scene(
+            &gpu_state.device,
+            &gpu_state.config,
+            &state,
+        )),
+        Command::WaveEquation => Box::from(mesh::wave_eqn_scene(
+            &gpu_state.device,
+            &gpu_state.config,
+            &state,
+        )),
+        Command::HeatEquation => Box::from(mesh::heat_eqn_scene(
+            &gpu_state.device,
+            &gpu_state.config,
+            &state,
+        )),
+        Command::Image(args) => Box::from(mesh::image_viewer_scene(
+            &gpu_state.device,
+            &gpu_state.queue,
+            &gpu_state.config,
+            &state,
+            &args.path,
+        )),
+        Command::WaveEquationTexture => Box::from(mesh::wave_eqn_texture_scene(
+            &gpu_state.device,
+            &gpu_state.queue,
+            &gpu_state.config,
+            &state,
+        )),
     };
 
     log::info!("Starting event loop!");
@@ -50,7 +74,7 @@ pub async fn run(args: CliArgs) {
             Event::WindowEvent {
                 ref event,
                 window_id,
-            } if window_id == state.window().id() => {
+            } if window_id == gpu_state.window().id() => {
                 if !state.handle_user_input(event) {
                     match event {
                         // window closed or escape pressed
@@ -78,13 +102,13 @@ pub async fn run(args: CliArgs) {
 
                         // handle window resize
                         WindowEvent::Resized(physical_size) => {
-                            state.resize(*physical_size);
+                            gpu_state.resize(*physical_size, &mut state);
                         }
 
                         // handle redraw
                         WindowEvent::RedrawRequested => {
                             // request another redraw event after this one for continuous update
-                            state.window().request_redraw();
+                            gpu_state.window().request_redraw();
 
                             accumulated_time += last_update_time.elapsed().as_secs_f32();
                             last_update_time = time::Instant::now();
@@ -92,19 +116,19 @@ pub async fn run(args: CliArgs) {
                             let do_render = accumulated_time >= RENDER_TIME_INCR;
 
                             if !updates_paused {
-                                scene.update(&state, do_render);
+                                scene.update(&gpu_state.queue, &state, do_render);
                             }
 
                             if do_render {
                                 accumulated_time -= RENDER_TIME_INCR;
-                                state.update();
+                                state.update(&mut gpu_state.queue);
 
-                                match render::render(&state, scene.scene()) {
+                                match render::render(&mut gpu_state, &state, scene.scene()) {
                                     Ok(_) => {}
                                     // swap chain needs updated or recreated (wgpu docs)
                                     Err(
                                         wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated,
-                                    ) => state.resize(state.size),
+                                    ) => gpu_state.resize(gpu_state.size, &mut state),
 
                                     // out of memory or other error considered fatal
                                     Err(

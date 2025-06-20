@@ -3,33 +3,23 @@ use crate::pipeline::light::LightState;
 use crate::pipeline::render_preferences::RenderPreferences;
 use crate::pipeline::texture::DepthBuffer;
 
+use wgpu::{Device, Queue, Surface, SurfaceConfiguration};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
 
-pub struct RenderState<'a> {
+pub struct GpuState<'a> {
     // wgpu
-    pub surface: wgpu::Surface<'a>,
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub config: wgpu::SurfaceConfiguration,
+    pub surface: Surface<'a>,
+    pub device: Device,
+    pub queue: Queue,
+    pub config: SurfaceConfiguration,
     pub depth_buffer: DepthBuffer,
 
     // winit
     pub size: PhysicalSize<u32>,
     pub window: &'a Window,
-
-    // camera
-    pub camera_state: CameraState,
-    // light
-    pub light_state: LightState,
-
-    // shader preferences
-    pub render_preferences: RenderPreferences,
-
-    // running framerate
-    pub framerate: f32,
 }
 
-impl<'a> RenderState<'a> {
+impl<'a> GpuState<'a> {
     pub async fn new(window: &'a Window) -> Self {
         let size = window.inner_size();
 
@@ -86,19 +76,9 @@ impl<'a> RenderState<'a> {
 
         surface.configure(&device, &config);
 
-        // make camera and depth buffer
-
-        let camera_state = CameraState::init(&device, &config);
-
-        let light_state = LightState::create(&device);
-
         let depth_buffer = DepthBuffer::create(&config, &device);
 
-        let shader_preferences_state = RenderPreferences::create(&device);
-
-        // construct state
-
-        Self {
+        GpuState {
             surface,
             device,
             queue,
@@ -106,6 +86,60 @@ impl<'a> RenderState<'a> {
             depth_buffer,
             size,
             window,
+        }
+    }
+
+    pub fn window(&self) -> &Window {
+        self.window
+    }
+
+    pub fn resize(
+        &mut self,
+        new_size: winit::dpi::PhysicalSize<u32>,
+        render_state: &mut RenderState,
+    ) {
+        if new_size.width > 0 && new_size.height > 0 {
+            self.size = new_size;
+            self.config.width = new_size.width;
+            self.config.height = new_size.height;
+            self.surface.configure(&self.device, &self.config);
+
+            // update camera aspect ratio
+            render_state.camera_state.camera.aspect =
+                self.config.width as f32 / self.config.height as f32;
+
+            // update depth buffer size
+            self.depth_buffer = DepthBuffer::create(&self.config, &self.device);
+
+            render_state.update(&mut self.queue)
+        }
+    }
+}
+
+pub struct RenderState {
+    // camera
+    pub camera_state: CameraState,
+    // light
+    pub light_state: LightState,
+    // shader preferences
+    pub render_preferences: RenderPreferences,
+    // running framerate
+    pub framerate: f32,
+}
+
+impl RenderState {
+    pub async fn new(device: &Device, surface_config: &SurfaceConfiguration) -> Self {
+        // make camera, light, shader preferences
+
+        let camera_state = CameraState::init(device, surface_config);
+
+        let light_state = LightState::create(device);
+
+        let shader_preferences_state = RenderPreferences::create(device);
+
+        // construct state
+
+        Self {
             camera_state,
             light_state,
             render_preferences: shader_preferences_state,
@@ -115,33 +149,12 @@ impl<'a> RenderState<'a> {
     }
 }
 
-impl RenderState<'_> {
-    pub fn window(&self) -> &Window {
-        self.window
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.size = new_size;
-            self.config.width = new_size.width;
-            self.config.height = new_size.height;
-            self.surface.configure(&self.device, &self.config);
-
-            // update camera aspect ratio
-            self.camera_state.camera.aspect = self.config.width as f32 / self.config.height as f32;
-
-            // update depth buffer size
-            self.depth_buffer = DepthBuffer::create(&self.config, &self.device);
-
-            self.update()
-        }
-    }
-
+impl RenderState {
     pub fn handle_user_input(&mut self, event: &WindowEvent) -> bool {
         self.camera_state.controller.process_events(event)
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self, queue: &mut Queue) {
         // adjust controller speed based on framerate
         self.camera_state.controller.speed = 2.125 / self.framerate;
 
@@ -155,7 +168,7 @@ impl RenderState<'_> {
             .update(self.camera_state.camera.get_matrix());
 
         // update camera matrix uniform
-        self.queue.write_buffer(
+        queue.write_buffer(
             &self.camera_state.matrix.buffer,
             0,
             bytemuck::cast_slice(&[self.camera_state.matrix.uniform]),

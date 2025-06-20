@@ -7,31 +7,36 @@ use crate::mesh::Scene;
 
 use wgpu::{BindGroup, BufferSlice, CommandEncoder, RenderPipeline, SurfaceError, TextureView};
 
-pub fn render(state: &RenderState, scene: &Scene) -> Result<(), SurfaceError> {
-    let output = state.surface.get_current_texture()?;
+pub fn render(
+    gpu_state: &mut GpuState,
+    state: &RenderState,
+    scene: &Scene,
+) -> Result<(), SurfaceError> {
+    let output = gpu_state.surface.get_current_texture()?;
 
     let view = output
         .texture
         .create_view(&wgpu::TextureViewDescriptor::default());
 
-    let mut encoder = state
+    let mut encoder = gpu_state
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: Some("render encoder"),
         });
 
-    state.render(&view, &mut encoder, scene)?;
+    state.render(&view, &gpu_state.depth_buffer.view, &mut encoder, scene)?;
 
+    gpu_state.queue.submit(std::iter::once(encoder.finish()));
     output.present();
-    state.queue.submit(std::iter::once(encoder.finish()));
 
     Ok(())
 }
 
-impl<'a> RenderState<'a> {
+impl RenderState {
     fn render(
         &self,
         view: &TextureView,
+        depth_buffer_view: &TextureView,
         encoder: &mut CommandEncoder,
         scene: &Scene,
     ) -> Result<(), SurfaceError> {
@@ -48,7 +53,7 @@ impl<'a> RenderState<'a> {
                 render_detail(
                     encoder,
                     view,
-                    &self.depth_buffer.view,
+                    depth_buffer_view,
                     pipeline,
                     mesh.vertex_buffer.slice(..),
                     mesh.index_buffer.slice(..),
@@ -71,7 +76,7 @@ impl<'a> RenderState<'a> {
                 render_detail(
                     encoder,
                     view,
-                    &self.depth_buffer.view,
+                    depth_buffer_view,
                     pipeline,
                     mesh.vertex_buffer.slice(..),
                     mesh.index_buffer.slice(..),
@@ -135,9 +140,6 @@ fn render_detail(
     render_pass.set_vertex_buffer(0, vertex_buffer);
     render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint32);
     render_pass.draw_indexed(0..num_indices, 0, 0..1);
-
-    // release borrow of encoder
-    drop(render_pass);
 
     Ok(())
 }

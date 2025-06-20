@@ -8,6 +8,7 @@ use crate::pipeline::texture::{Image, TextureData, TextureMatrix};
 use crate::render::RenderState;
 
 use wgpu::util::DeviceExt;
+use wgpu::{Device, Queue, SurfaceConfiguration};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -64,13 +65,15 @@ impl TexturedMeshRenderData {
 // build scene from (mesh, matrix) vector
 
 pub fn build_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
     state: &RenderState,
     mesh_data: Vec<(TexturedMeshData, MatrixUniform)>,
 ) -> Scene {
     let mut textured_meshes = vec![];
 
     for (mesh, matrix) in mesh_data {
-        let mesh_render_data = TexturedMeshRenderData::from_mesh_data(&state.device, mesh, matrix);
+        let mesh_render_data = TexturedMeshRenderData::from_mesh_data(device, mesh, matrix);
         textured_meshes.push(mesh_render_data);
     }
 
@@ -79,8 +82,8 @@ pub fn build_scene(
 
     // we'll try to get away with just one textured render pipeline
     let pipeline = pipeline::create_render_pipeline::<TexturedVertex>(
-        &state.device,
-        &state.config,
+        device,
+        surface_config,
         pipeline::get_textured_shader(),
         &[
             &state.camera_state.matrix.bind_group_layout,
@@ -149,10 +152,16 @@ const TEST_INDICES: &[u32] = &[
 ];
 
 /// Render the scene onto both sides of a square canvas.
-pub fn image_viewer_scene(state: &RenderState, image_path: &str) -> Scene {
+pub fn image_viewer_scene(
+    device: &Device,
+    queue: &Queue,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+    image_path: &str,
+) -> Scene {
     let image = Image::from_file(image_path);
 
-    let texture_data_front = TextureData::from_image(&image, state);
+    let texture_data_front = TextureData::from_image(&image, device, queue);
 
     let mesh_data_front = TexturedMeshData {
         vertices: Vec::from(TEST_VERTICES_VERTICAL),
@@ -162,7 +171,7 @@ pub fn image_viewer_scene(state: &RenderState, image_path: &str) -> Scene {
 
     // second image behind first, to test depth buffer
 
-    let texture_data_back = TextureData::from_image(&image, state);
+    let texture_data_back = TextureData::from_image(&image, device, queue);
 
     let mesh_data_back = TexturedMeshData {
         vertices: Vec::from(TEST_VERTICES_VERTICAL),
@@ -181,7 +190,7 @@ pub fn image_viewer_scene(state: &RenderState, image_path: &str) -> Scene {
         ),
     ];
 
-    build_scene(state, meshes)
+    build_scene(device, surface_config, state, meshes)
 }
 
 // experiment in animated hand-designed texture
@@ -198,7 +207,7 @@ impl RenderScene for FadingCustomTextureScene {
         &self.scene
     }
 
-    fn update(&mut self, state: &RenderState, _pre_render: bool) {
+    fn update(&mut self, queue: &Queue, _state: &RenderState, _pre_render: bool) {
         const DIM_FACTOR: f32 = 0.96;
         if self.decreasing {
             self.multiplier *= DIM_FACTOR;
@@ -231,7 +240,7 @@ impl RenderScene for FadingCustomTextureScene {
         let texture = &self.scene.textured_meshes[0].texture.texture;
 
         // write updated bytes into texture
-        state.queue.write_texture(
+        queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture,
                 mip_level: 0,
@@ -251,7 +260,12 @@ impl RenderScene for FadingCustomTextureScene {
 
 #[allow(unused)]
 /// Render the scene onto both sides of a square canvas.
-pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureScene {
+pub fn custom_fading_texture_scene(
+    device: &Device,
+    queue: &Queue,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> FadingCustomTextureScene {
     const TEXTURE_DIMS: (u32, u32) = (500, 500);
     let mut texture_matrix = TextureMatrix::new(TEXTURE_DIMS.0, TEXTURE_DIMS.1);
 
@@ -275,7 +289,7 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
         }
     }
 
-    let texture_data = TextureData::from_matrix(&texture_matrix, state);
+    let texture_data = TextureData::from_matrix(&texture_matrix, device, queue);
 
     let mesh_data = TexturedMeshData {
         vertices: Vec::from(TEST_VERTICES_VERTICAL),
@@ -286,7 +300,7 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
     let meshes: Vec<(TexturedMeshData, MatrixUniform)> =
         vec![(mesh_data, MatrixUniform::translation(&[0.0, 0.0, 0.0]))];
 
-    let scene = build_scene(state, meshes);
+    let scene = build_scene(device, surface_config, state, meshes);
 
     FadingCustomTextureScene {
         texture_matrix,
@@ -298,7 +312,12 @@ pub fn custom_fading_texture_scene(state: &RenderState) -> FadingCustomTextureSc
 
 // wave equation rendered into texture
 
-pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
+pub fn wave_eqn_texture_scene(
+    device: &Device,
+    queue: &Queue,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> WaveEquationTextureScene {
     let texture_dims: (u32, u32) = (pde::X_SIZE as u32, pde::Y_SIZE as u32);
 
     let mut texture_matrix = TextureMatrix::new(texture_dims.0, texture_dims.1);
@@ -312,7 +331,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
         }
     }
 
-    let texture_data = TextureData::from_matrix(&texture_matrix, state);
+    let texture_data = TextureData::from_matrix(&texture_matrix, device, queue);
 
     let mesh_data = TexturedMeshData {
         vertices: Vec::from(TEST_VERTICES_FLAT),
@@ -322,7 +341,7 @@ pub fn wave_eqn_texture_scene(state: &RenderState) -> WaveEquationTextureScene {
 
     let meshes = vec![(mesh_data, MatrixUniform::x_rotation(90.0))];
 
-    let scene = build_scene(state, meshes);
+    let scene = build_scene(device, surface_config, state, meshes);
     let mut wave_eqn = pde::WaveEquationData::new(1000, 1000);
 
     // update solver properties
@@ -349,7 +368,7 @@ impl RenderScene for WaveEquationTextureScene {
         &self.scene
     }
 
-    fn update(&mut self, state: &RenderState, _pre_render: bool) {
+    fn update(&mut self, queue: &Queue, _state: &RenderState, _pre_render: bool) {
         // run next finite-difference timestep
         self.wave_eqn.update();
 
@@ -372,7 +391,7 @@ impl RenderScene for WaveEquationTextureScene {
         let texture = &self.scene.textured_meshes[0].texture.texture;
 
         // write updated bytes into texture
-        state.queue.write_texture(
+        queue.write_texture(
             wgpu::TexelCopyTextureInfo {
                 texture,
                 mip_level: 0,

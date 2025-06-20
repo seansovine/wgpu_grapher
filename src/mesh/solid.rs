@@ -12,7 +12,7 @@ use crate::render::RenderState;
 use std::sync::LazyLock;
 
 use wgpu::util::DeviceExt;
-use wgpu::{Buffer, Device};
+use wgpu::{Buffer, Device, Queue, SurfaceConfiguration};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -71,11 +71,16 @@ impl MeshRenderData {
 
 // build scene from (mesh, matrix) vector
 
-pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)>) -> Scene {
+pub fn build_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+    mesh_data: Vec<(MeshData, MatrixUniform)>,
+) -> Scene {
     let mut meshes = vec![];
 
     for (mesh, matrix) in mesh_data {
-        let mesh_render_data = MeshRenderData::from_mesh_data(&state.device, mesh, matrix);
+        let mesh_render_data = MeshRenderData::from_mesh_data(device, mesh, matrix);
         meshes.push(mesh_render_data);
     }
 
@@ -83,8 +88,8 @@ pub fn build_scene(state: &RenderState, mesh_data: Vec<(MeshData, MatrixUniform)
 
     // use this pipeline for all solid meshes
     let pipeline = pipeline::create_render_pipeline::<Vertex>(
-        &state.device,
-        &state.config,
+        device,
+        surface_config,
         pipeline::get_shader(),
         &[
             &state.camera_state.matrix.bind_group_layout,
@@ -127,7 +132,11 @@ static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
 });
 
 #[allow(unused)]
-pub fn test_scene(state: &RenderState) -> Scene {
+pub fn test_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> Scene {
     let mut meshes: Vec<(MeshData, MatrixUniform)> = vec![];
 
     let mut back_mesh = (*TEST_MESH).clone();
@@ -138,12 +147,16 @@ pub fn test_scene(state: &RenderState) -> Scene {
     let front_mesh = (*TEST_MESH).clone();
     meshes.push((front_mesh, MatrixUniform::translation(&[0.0, -0.5, 0.5])));
 
-    build_scene(state, meshes)
+    build_scene(device, surface_config, state, meshes)
 }
 
 // make scene for function graph
 
-pub fn graph_scene(state: &RenderState) -> Scene {
+pub fn graph_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> Scene {
     static SUBDIVISIONS: u32 = 750;
     static WIDTH: f32 = 6.0;
 
@@ -171,7 +184,12 @@ pub fn graph_scene(state: &RenderState) -> Scene {
         .apply_function(f)
         .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
-    build_scene(state, vec![(floor_mesh, matrix), (func_mesh, matrix)])
+    build_scene(
+        device,
+        surface_config,
+        state,
+        vec![(floor_mesh, matrix), (func_mesh, matrix)],
+    )
 }
 
 // scene for simulating the wave equation
@@ -184,7 +202,11 @@ pub struct WaveEquationScene {
     pub display_scale: f32,
 }
 
-pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
+pub fn wave_eqn_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> WaveEquationScene {
     const WAVE_EQN_SUBDIV: usize = 600;
     // number of squares is 1 less than number of gridpoints
     const SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
@@ -194,7 +216,12 @@ pub fn wave_eqn_scene(state: &RenderState) -> WaveEquationScene {
     let mesh_data = func_mesh.mesh_data(graph::SquareTesselation::FUNCT_COLOR);
     let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
 
-    let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
+    let scene = build_scene(
+        device,
+        surface_config,
+        state,
+        vec![(mesh_data.clone(), matrix)],
+    );
     let mut wave_eqn = pde::WaveEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
 
     wave_eqn.disturbance_prob = 0.003;
@@ -218,7 +245,7 @@ impl RenderScene for WaveEquationScene {
         &self.scene
     }
 
-    fn update(&mut self, state: &RenderState, pre_render: bool) {
+    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool) {
         // run next finite-difference timestep
         self.wave_eqn.update();
 
@@ -240,7 +267,7 @@ impl RenderScene for WaveEquationScene {
             }
 
             // update vertex buffer
-            state.queue.write_buffer(
+            queue.write_buffer(
                 &self.scene.meshes[0].vertex_buffer,
                 0,
                 bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),
@@ -263,7 +290,11 @@ pub struct HeatEquationScene {
     b: usize,
 }
 
-pub fn heat_eqn_scene(state: &RenderState) -> HeatEquationScene {
+pub fn heat_eqn_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> HeatEquationScene {
     let b: usize = 5;
 
     static WAVE_EQN_SUBDIV: usize = 400;
@@ -277,7 +308,12 @@ pub fn heat_eqn_scene(state: &RenderState) -> HeatEquationScene {
     func_mesh.update_normals(&mut mesh_data);
 
     let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
-    let scene = build_scene(state, vec![(mesh_data.clone(), matrix)]);
+    let scene = build_scene(
+        device,
+        surface_config,
+        state,
+        vec![(mesh_data.clone(), matrix)],
+    );
 
     let heat_eqn = pde::HeatEquationData::new(WAVE_EQN_SUBDIV, WAVE_EQN_SUBDIV);
     let display_scale: f32 = 0.015;
@@ -297,7 +333,7 @@ impl RenderScene for HeatEquationScene {
         &self.scene
     }
 
-    fn update(&mut self, state: &RenderState, pre_render: bool) {
+    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool) {
         // run next finite-difference timestep
         self.heat_eqn.update();
 
@@ -327,7 +363,7 @@ impl RenderScene for HeatEquationScene {
             }
 
             // update vertex buffer
-            state.queue.write_buffer(
+            queue.write_buffer(
                 &self.scene.meshes[0].vertex_buffer,
                 0,
                 bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),

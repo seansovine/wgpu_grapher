@@ -1,7 +1,5 @@
-use crate::render::RenderState;
-
 use image::{ImageBuffer, Rgba};
-use wgpu::{Device, SurfaceConfiguration, Texture, TextureView};
+use wgpu::{Device, Queue, SurfaceConfiguration, Texture, TextureView};
 
 pub struct Image {
     pub image: ImageBuffer<Rgba<u8>, Vec<u8>>,
@@ -27,10 +25,10 @@ pub struct TextureData {
 }
 
 impl TextureData {
-    pub fn from_texture(texture: Texture, state: &RenderState) -> Self {
+    pub fn from_texture(texture: Texture, device: &Device) -> Self {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        let sampler = state.device.create_sampler(&wgpu::SamplerDescriptor {
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             address_mode_u: wgpu::AddressMode::ClampToEdge,
             address_mode_v: wgpu::AddressMode::ClampToEdge,
             address_mode_w: wgpu::AddressMode::ClampToEdge,
@@ -40,32 +38,29 @@ impl TextureData {
             ..Default::default()
         });
 
-        let bind_group_layout =
-            state
-                .device
-                .create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-                    entries: &[
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 0,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Texture {
-                                multisampled: false,
-                                view_dimension: wgpu::TextureViewDimension::D2,
-                                sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                            },
-                            count: None,
-                        },
-                        wgpu::BindGroupLayoutEntry {
-                            binding: 1,
-                            visibility: wgpu::ShaderStages::FRAGMENT,
-                            ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                            count: None,
-                        },
-                    ],
-                    label: Some("texture bind group layout"),
-                });
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                    count: None,
+                },
+            ],
+            label: Some("texture bind group layout"),
+        });
 
-        let bind_group = state.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
@@ -87,21 +82,22 @@ impl TextureData {
         }
     }
 
-    pub fn from_image(image: &Image, state: &RenderState) -> Self {
-        let texture = texture_from_image(image, state);
-        TextureData::from_texture(texture, state)
+    pub fn from_image(image: &Image, device: &Device, queue: &Queue) -> Self {
+        let texture = texture_from_image(image, device, queue);
+        TextureData::from_texture(texture, device)
     }
 
-    pub fn from_matrix(matrix: &TextureMatrix, state: &RenderState) -> Self {
-        let texture = texture_from_matrix(matrix, state);
-        TextureData::from_texture(texture, state)
+    pub fn from_matrix(matrix: &TextureMatrix, device: &Device, queue: &Queue) -> Self {
+        let texture = texture_from_matrix(matrix, device, queue);
+        TextureData::from_texture(texture, device)
     }
 }
 
 pub fn texture_from_data_and_dims(
     data: &[u8],
     dims: (u32, u32),
-    state: &RenderState,
+    device: &Device,
+    queue: &Queue,
 ) -> wgpu::Texture {
     let texture_dimensions = wgpu::Extent3d {
         width: dims.0,
@@ -109,7 +105,7 @@ pub fn texture_from_data_and_dims(
         depth_or_array_layers: 1,
     };
 
-    let texture = state.device.create_texture(&wgpu::TextureDescriptor {
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
         size: texture_dimensions,
         mip_level_count: 1,
         sample_count: 1,
@@ -121,7 +117,7 @@ pub fn texture_from_data_and_dims(
     });
 
     // write image bytes into texture
-    state.queue.write_texture(
+    queue.write_texture(
         wgpu::TexelCopyTextureInfo {
             texture: &texture,
             mip_level: 0,
@@ -140,8 +136,8 @@ pub fn texture_from_data_and_dims(
     texture
 }
 
-pub fn texture_from_image(image: &Image, state: &RenderState) -> wgpu::Texture {
-    texture_from_data_and_dims(&image.image, image.dimensions, state)
+pub fn texture_from_image(image: &Image, device: &Device, queue: &Queue) -> wgpu::Texture {
+    texture_from_data_and_dims(&image.image, image.dimensions, device, queue)
 }
 
 // texture matrix
@@ -170,8 +166,12 @@ impl TextureMatrix {
     }
 }
 
-pub fn texture_from_matrix(matrix: &TextureMatrix, state: &RenderState) -> wgpu::Texture {
-    texture_from_data_and_dims(&matrix.data, matrix.dimensions, state)
+pub fn texture_from_matrix(
+    matrix: &TextureMatrix,
+    device: &Device,
+    queue: &Queue,
+) -> wgpu::Texture {
+    texture_from_data_and_dims(&matrix.data, matrix.dimensions, device, queue)
 }
 
 // depth buffer
