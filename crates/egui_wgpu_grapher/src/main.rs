@@ -4,6 +4,8 @@ mod egui_tools;
 #[allow(unused)]
 mod grapher;
 #[allow(unused)]
+mod grapher_egui;
+#[allow(unused)]
 mod graphics;
 mod ui;
 

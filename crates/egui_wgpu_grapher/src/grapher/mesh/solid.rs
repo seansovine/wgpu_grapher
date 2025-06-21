@@ -151,35 +151,38 @@ pub fn test_scene(
 
 // make scene for function graph
 
-pub fn graph_scene(
+pub struct GraphParameters {
+    pub scale_x: f32,
+    pub scale_z: f32,
+}
+
+pub struct GraphScene {
+    // all the data for rendering
+    pub scene: Scene,
+    pub width: f32,
+
+    // TODO: generalize this and move it to RenderScene
+    pub needs_update: bool,
+
+    // publicly adjustable parameters
+    pub parameters: GraphParameters,
+}
+
+fn build_scene_for_graph(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
+    width: f32,
+    parameters: &GraphParameters,
+    f: impl Fn(f32, f32) -> f32,
 ) -> Scene {
-    static SUBDIVISIONS: u32 = 750;
-    static WIDTH: f32 = 6.0;
+    const SUBDIVISIONS: u32 = 750;
 
-    let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
         .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
-    let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.0f32, -WIDTH / 2.0_f32]);
+    let matrix = MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
 
-    // example functions (uncomment one)
-
-    // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-    // let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
-    // let f = graph::shift_scale_output(f, 0.25, 1.25);
-
-    // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
-    // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
-    // let f = graph::shift_scale_output(f, 0.001, 0.025);
-
-    const SCALE: f32 = 2.0;
-
-    let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
-    let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
-    let f = graph::shift_scale_output(f, 0.25, 0.5);
-
-    let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, WIDTH)
+    let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
         .apply_function(f)
         .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
@@ -189,6 +192,87 @@ pub fn graph_scene(
         state,
         vec![(floor_mesh, matrix), (func_mesh, matrix)],
     )
+}
+
+// placeholder for now until we find a better solution
+pub fn get_graph_func(width: f32, parameters: &GraphParameters) -> impl Fn(f32, f32) -> f32 {
+    // other example functions (uncomment one)
+
+    // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+    // let f = graph::shift_scale_input(f, 2.0, 40.0, 2.0, 40.0);
+    // let f = graph::shift_scale_output(f, 0.25, 1.25);
+
+    // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
+    // let f = graph::shift_scale_input(f, WIDTH / 2.0_f32, SCALE, WIDTH / 2.0_f32, SCALE);
+    // let f = graph::shift_scale_output(f, 0.001, 0.025);
+
+    let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+    let f = graph::shift_scale_input(
+        f,
+        width / 2.0_f32,
+        parameters.scale_x,
+        width / 2.0_f32,
+        parameters.scale_z,
+    );
+    let f = graph::shift_scale_output(f, 0.25, 0.5);
+
+    f
+}
+
+pub fn graph_scene(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    state: &RenderState,
+) -> GraphScene {
+    let parameters = GraphParameters {
+        scale_x: 2.0_f32,
+        scale_z: 2.0_f32,
+    };
+
+    let width: f32 = 6.0;
+
+    let f = get_graph_func(width, &parameters);
+
+    let scene = build_scene_for_graph(device, surface_config, state, width, &parameters, f);
+
+    let needs_update = false;
+
+    GraphScene {
+        scene,
+        width,
+        needs_update,
+        parameters,
+    }
+}
+
+impl GraphScene {
+    // will be called when gui updates graph parameters, etc.
+    fn rebuild_scene(
+        &mut self,
+        device: &Device,
+        surface_config: &SurfaceConfiguration,
+        state: &RenderState,
+    ) {
+        let f = get_graph_func(self.width, &self.parameters);
+        self.scene = build_scene_for_graph(
+            device,
+            surface_config,
+            state,
+            self.width,
+            &self.parameters,
+            f,
+        );
+    }
+}
+
+impl RenderScene for GraphScene {
+    fn scene(&self) -> &Scene {
+        &self.scene
+    }
+
+    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool) {
+        // no-op for now
+    }
 }
 
 // scene for simulating the wave equation
