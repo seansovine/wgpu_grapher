@@ -1,6 +1,13 @@
 use egui::Ui;
 
-pub fn render_window(scale_factor: &mut f32, pixels_per_point: f32, ui: &mut Ui) {
+use crate::grapher_egui::GrapherScene;
+
+pub fn render_window(
+    scale_factor: &mut f32,
+    pixels_per_point: f32,
+    ui: &mut Ui,
+    grapher_scene: &mut GrapherScene,
+) {
     ui.label("Label!");
 
     if ui.button("Button!").clicked() {
@@ -17,4 +24,6 @@ pub fn render_window(scale_factor: &mut f32, pixels_per_point: f32, ui: &mut Ui)
             *scale_factor = (*scale_factor + 0.1).min(3.0);
         }
     });
+
+    grapher_scene.parameter_ui(ui);
 }

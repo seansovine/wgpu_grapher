@@ -1,5 +1,6 @@
 use crate::egui_tools::EguiRenderer;
 use crate::grapher;
+use crate::grapher_egui::GrapherScene;
 use crate::graphics::GraphicsState;
 use crate::ui::render_window;
 use egui_wgpu::wgpu::core::device;
@@ -24,9 +25,8 @@ pub struct AppState {
     pub surface: wgpu::Surface<'static>,
     pub scale_factor: f32,
     pub egui_renderer: EguiRenderer,
-    pub graphics: GraphicsState,
     pub grapher_state: grapher::render::RenderState,
-    pub scene: Box<dyn grapher::mesh::RenderScene>,
+    pub grapher_scene: GrapherScene,
 }
 
 impl AppState {
@@ -86,11 +86,9 @@ impl AppState {
 
         let scale_factor = 1.0;
 
-        let graphics = GraphicsState::new(&device, &surface_config);
-
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        let scene: Box<dyn grapher::mesh::RenderScene> = Box::from(grapher::mesh::graph_scene(
+        let mut grapher_scene: GrapherScene = GrapherScene::Graph(grapher::mesh::graph_scene(
             &device,
             &surface_config,
             &grapher_state,
@@ -103,9 +101,8 @@ impl AppState {
             surface_config,
             egui_renderer,
             scale_factor,
-            graphics,
             grapher_state,
-            scene,
+            grapher_scene,
         }
     }
 
@@ -248,11 +245,9 @@ impl App {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        //state.graphics.render(&surface_view, &mut encoder);
-
         state
-            .grapher_state
-            .render(&surface_view, &mut encoder, state.scene.scene());
+            .grapher_scene
+            .render(&surface_view, &mut encoder, &state.grapher_state);
 
         let window = self.window.as_ref().unwrap();
 
@@ -265,7 +260,12 @@ impl App {
                 .vscroll(true)
                 .default_open(false)
                 .show(context, |ui| {
-                    render_window(&mut state.scale_factor, context.pixels_per_point(), ui);
+                    render_window(
+                        &mut state.scale_factor,
+                        context.pixels_per_point(),
+                        ui,
+                        &mut state.grapher_scene,
+                    );
                 });
 
             state.egui_renderer.end_frame_and_draw(
@@ -331,7 +331,7 @@ impl ApplicationHandler for App {
 
                 if !self.scene_updates_paused {
                     state
-                        .scene
+                        .grapher_scene
                         .update(&state.queue, &state.grapher_state, do_render);
                 }
 
