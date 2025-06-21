@@ -5,11 +5,16 @@ use crate::ui::render_window;
 use egui_wgpu::wgpu::core::device;
 use egui_wgpu::wgpu::SurfaceError;
 use egui_wgpu::{wgpu, ScreenDescriptor};
-use std::{sync::Arc, thread, time};
+use std::{
+    sync::Arc,
+    thread,
+    time::{self, Instant},
+};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
-use winit::event::WindowEvent;
+use winit::event::{ElementState, KeyEvent, WindowEvent};
 use winit::event_loop::ActiveEventLoop;
+use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 pub struct AppState {
@@ -20,7 +25,7 @@ pub struct AppState {
     pub scale_factor: f32,
     pub egui_renderer: EguiRenderer,
     pub graphics: GraphicsState,
-    pub grapher: grapher::render::RenderState,
+    pub grapher_state: grapher::render::RenderState,
     pub scene: Box<dyn grapher::mesh::RenderScene>,
 }
 
@@ -83,12 +88,12 @@ impl AppState {
 
         let graphics = GraphicsState::new(&device, &surface_config);
 
-        let grapher = grapher::render::RenderState::new(&device, &surface_config).await;
+        let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
         let scene: Box<dyn grapher::mesh::RenderScene> = Box::from(grapher::mesh::graph_scene(
             &device,
             &surface_config,
-            &grapher,
+            &grapher_state,
         ));
 
         Self {
@@ -99,7 +104,7 @@ impl AppState {
             egui_renderer,
             scale_factor,
             graphics,
-            grapher,
+            grapher_state,
             scene,
         }
     }
@@ -110,12 +115,12 @@ impl AppState {
         self.surface.configure(&self.device, &self.surface_config);
 
         // resize depth buffer
-        self.grapher.depth_buffer =
+        self.grapher_state.depth_buffer =
             grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
 
         // update camera aspect ratio
-        self.grapher.camera_state.camera.aspect = width as f32 / height as f32;
-        self.grapher.update(&mut self.queue);
+        self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
+        self.grapher_state.update(&mut self.queue);
     }
 }
 
@@ -123,18 +128,48 @@ pub struct App {
     instance: wgpu::Instance,
     state: Option<AppState>,
     window: Option<Arc<Window>>,
+
+    // timing variables
+    last_update_time: Instant,
+    last_render_time: Instant,
+    accumulated_secs: f32,
+    render_count: usize,
+    avg_framerate: f32,
+
+    // whether to update scene state on each redraw event
+    scene_updates_paused: bool,
 }
 
 impl App {
     // time between state updates; helps control CPU usage and simulation timing
-    const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(100);
+    const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(20);
+    // only render after this much time has elapsed; for accumulator
+    const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
+    // after how many frame renders to update the framerate estimate
+    const REPORT_FRAMES_INTERVAL: usize = 100;
 
     pub fn new() -> Self {
         let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+
+        let last_update_time = time::Instant::now();
+        let last_render_time = time::Instant::now();
+        let accumulated_secs = 0.0_f32;
+        let render_count = 0_usize;
+        let avg_framerate = 60.0f32;
+
+        // scene updates disabled for now
+        let scene_updates_paused = false;
+
         Self {
             instance,
             state: None,
             window: None,
+            last_update_time,
+            last_render_time,
+            accumulated_secs,
+            render_count,
+            avg_framerate,
+            scene_updates_paused,
         }
     }
 
@@ -216,7 +251,7 @@ impl App {
         //state.graphics.render(&surface_view, &mut encoder);
 
         state
-            .grapher
+            .grapher_state
             .render(&surface_view, &mut encoder, state.scene.scene());
 
         let window = self.window.as_ref().unwrap();
@@ -245,12 +280,6 @@ impl App {
 
         state.queue.submit(Some(encoder.finish()));
         surface_texture.present();
-
-        // poll less often for efficiency
-        thread::sleep(Self::RENDER_TIMEOUT);
-        if let Some(inner) = self.window.as_ref() {
-            inner.request_redraw();
-        }
     }
 }
 
@@ -263,23 +292,71 @@ impl ApplicationHandler for App {
     }
 
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
+        let Some(state) = self.state.as_mut() else {
+            return;
+        };
+        let Some(window) = self.window.as_mut() else {
+            return;
+        };
+
         // let egui render to process the event first
-        self.state
-            .as_mut()
-            .unwrap()
-            .egui_renderer
-            .handle_input(self.window.as_ref().unwrap(), &event);
+        state.egui_renderer.handle_input(window, &event);
+
+        if state.grapher_state.handle_user_input(&event) {
+            return;
+        }
 
         match event {
-            WindowEvent::CloseRequested => {
-                println!("The close button was pressed; stopping");
+            WindowEvent::CloseRequested
+            | WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        state: ElementState::Pressed,
+                        physical_key: PhysicalKey::Code(KeyCode::Escape),
+                        ..
+                    },
+                ..
+            } => {
                 event_loop.exit();
             }
-            WindowEvent::RedrawRequested => {
-                self.handle_redraw();
 
-                self.window.as_ref().unwrap().request_redraw();
+            WindowEvent::RedrawRequested => {
+                window.request_redraw();
+
+                // allow state updates and renders to have different frequencies
+                self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
+                self.last_update_time = time::Instant::now();
+
+                let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
+
+                if !self.scene_updates_paused {
+                    state
+                        .scene
+                        .update(&state.queue, &state.grapher_state, do_render);
+                }
+
+                if do_render {
+                    self.accumulated_secs -= Self::RENDER_TIME_INCR;
+
+                    // allow grapher to do things like updating the camera
+                    state.grapher_state.update(&mut state.queue);
+
+                    self.handle_redraw();
+                    self.render_count += 1;
+
+                    // update framerate estimate
+                    if self.render_count == Self::REPORT_FRAMES_INTERVAL {
+                        self.avg_framerate = Self::REPORT_FRAMES_INTERVAL as f32
+                            / self.last_render_time.elapsed().as_secs_f32();
+                        self.render_count = 0;
+                        self.last_render_time = time::Instant::now();
+                    }
+                }
+
+                // send/handle events less often for efficiency
+                thread::sleep(Self::RENDER_TIMEOUT);
             }
+
             WindowEvent::Resized(new_size) => {
                 self.handle_resized(new_size.width, new_size.height);
             }
