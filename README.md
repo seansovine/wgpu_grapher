@@ -1,33 +1,20 @@
 # WGPU Grapher
 
-This is a hobby project to make a 3D rendering engine in Rust using WGPU. It is a work in progress
-for learning and (mostly) for fun. I started learning WGPU by following the _Learn WGPU_
-tutorial.
-
-There are definitely many things I'd like to do to build on and improve what is here.
-
-## 3D function grapher
-
-The initial feature is a 3D function grapher that draws the graph of a function that
-is specified in the code. It can graph pretty much any numerical function `z = f(x, y)` that you can define
-in Rust,
-but eventually I'd like to add a mathematical expression parsing library and a GUI that allows
-the user to type in a function for it to graph.
-
-__Example__:
+This is an application to graph functions of the form `y = f(x,z)` in 3D using the
+Rust `wgpu` crate. It now has a (work in progress) GUI built using `egui`.
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_2.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="images/screenshot_gui_grapher.png" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-It has two main parts: A simple rendering engine to render a
-vector of meshes with solid colored or textured primitives; and code to generate
-the meshes for rendering a function graph.
+The `wgpu_grapher` crate in this repository has an older version of the app with
+some features that haven't been ported to the GUI version. Some of those are discussed
+[here](./GrapherCaps.md).
 
-The designs of the camera controller and main event
-loop were inspired by the _Learn WGPU_ tutorial.
+In the future I plan to add an expression parsing library so a function to graph can be
+entered in the UI, and I plan to expand the UI for adjusting and interacting with the graph.
 
-### Key controls:
+## Key controls
 
 | key     | action       |
 | :------ | :------:     |
@@ -37,38 +24,14 @@ loop were inspired by the _Learn WGPU_ tutorial.
 | `down`  | rotate down  |
 | `z`     | zoom in      |
 | `x`     | zoom out     |
-| `p`     | pause/resume state updates |
 | `esc`   | exit         |
 
-## 2D wave equation simulation
+## Credit and license
 
-It also includes a "real-time" finite-difference simulation of the 2D wave equation.
-
-<p align="center" margin="20px">
-	<img src="images/screenshot_wave_eqn.png" alt="drawing" width="500" style="padding-top: 15px; padding-bottom: 10px"/>
-</p>
-
-The idea for the random disturbances and energy damping in this simulation
-came from [Beltoforion](https://beltoforion.de/en/recreational_mathematics/).
-(His work is awesome; it's definitely worth checking out.)
-
-It can also render the wave equation simulation into a texture on a 2D canvas.
-
-<p align="center" margin="20px">
-	<img src="images/screenshot_wave_eqn_texture.png" alt="drawing" width="500" style="padding-top: 15px; padding-bottom: 10px"/>
-</p>
-
-This looks similar to Beltoforion's example referenced above.
-
-## Image viewer
-
-There is an image viewer mode that renders an image from a file on a canvas
-that can be zoomed and rotated, as in the other modes.
-
-<p align="center" margin="20px">
-	<img src="images/screenshot_image_viewer.png" alt="drawing" width="500" style="padding-top: 10px; padding-bottom: 10px"/>
-</p>
-
-(Sample image credit to Arjay Neyra on [Pexels](https://www.pexels.com/photo/spectacular-himalayan-mountain-valley-in-nepal-32225792/).)
-
-In the future this will be used for some image processing and further animated simulation applications.
+This software is licensed under the MIT license. For the `egui` integration I started
+with the `winit` + `egui` + `wgpu` template [here](https://github.com/kaphula/winit-egui-wgpu-template),
+which is also licensed under the MIT license. In setting up the `wgpu` code I
+followed the [Learn WGPU](https://sotrh.github.io/learn-wgpu/)
+tutorial, and was influenced by the design of the code there. For some of the
+graphics concepts and implementations I learned from the [Learn OpenGL](https://learnopengl.com/)
+tutorial.
