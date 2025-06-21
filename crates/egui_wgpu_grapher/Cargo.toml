@@ -1,0 +1,20 @@
+[package]
+name = "egui_wgpu_grapher"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+egui = "0.31.1"
+egui-wgpu = { version = "0.31.1",features = ["winit"] }
+egui-winit = "0.31.1"
+winit = "0.30.9"
+pollster = "0.4.0"
+bytemuck = "1.23.1"
+cgmath = "0.18.0"
+rand = { version = "0.9.1", features = ["thread_rng"] }
+
+[dependencies.image]
+version = "0.24"
+default-features = false
+features = ["png", "jpeg"]
+
