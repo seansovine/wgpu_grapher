@@ -5,7 +5,7 @@ use crate::ui::render_window;
 use egui_wgpu::wgpu::core::device;
 use egui_wgpu::wgpu::SurfaceError;
 use egui_wgpu::{wgpu, ScreenDescriptor};
-use std::sync::Arc;
+use std::{sync::Arc, thread, time};
 use winit::application::ApplicationHandler;
 use winit::dpi::PhysicalSize;
 use winit::event::WindowEvent;
@@ -126,6 +126,9 @@ pub struct App {
 }
 
 impl App {
+    // time between state updates; helps control CPU usage and simulation timing
+    const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(100);
+
     pub fn new() -> Self {
         let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         Self {
@@ -242,6 +245,12 @@ impl App {
 
         state.queue.submit(Some(encoder.finish()));
         surface_texture.present();
+
+        // poll less often for efficiency
+        thread::sleep(Self::RENDER_TIMEOUT);
+        if let Some(inner) = self.window.as_ref() {
+            inner.request_redraw();
+        }
     }
 }
 
