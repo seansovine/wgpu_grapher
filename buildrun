@@ -3,4 +3,5 @@
 # turn on env_log logging
 export RUST_LOG=wgpu_grapher=info
 
-cargo run --release --quiet -- "$@"
+# run w/ e.g. --bin egui_wgpu_grapher
+cargo run --release --quiet "$@"

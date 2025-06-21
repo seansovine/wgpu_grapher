@@ -26,7 +26,7 @@ entered in the UI, and I plan to expand the UI for adjusting and interacting wit
 | `x`     | zoom out     |
 | `esc`   | exit         |
 
-## Credit and license
+## License and credit
 
 This software is licensed under the MIT license. For the `egui` integration I started
 with the `winit` + `egui` + `wgpu` template [here](https://github.com/kaphula/winit-egui-wgpu-template),

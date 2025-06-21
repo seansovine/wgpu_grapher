@@ -214,9 +214,7 @@ pub fn get_graph_func(width: f32, parameters: &GraphParameters) -> impl Fn(f32, 
         width / 2.0_f32,
         parameters.scale_z,
     );
-    let f = graph::shift_scale_output(f, 0.25, 0.5);
-
-    f
+    graph::shift_scale_output(f, 0.25, 0.5)
 }
 
 pub fn graph_scene(

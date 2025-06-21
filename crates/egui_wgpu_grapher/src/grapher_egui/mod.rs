@@ -27,7 +27,7 @@ impl GrapherScene {
         match self {
             GrapherScene::Graph(data) => {
                 // pass scene in to state render function
-                render_state.render(view, encoder, &data.graph_scene.scene());
+                render_state.render(view, encoder, data.graph_scene.scene());
             }
             _ => unimplemented!(),
         }
@@ -49,6 +49,7 @@ impl GrapherScene {
                         .rebuild_scene(device, surface_config, state);
                     data.graph_scene.needs_update = false;
                 }
+                // currently a no-op; would perform state update
                 data.graph_scene.update(queue, state, pre_render);
             }
             _ => unimplemented!(),
@@ -67,7 +68,6 @@ impl GrapherScene {
     }
 }
 
-#[derive(Default)]
 pub struct GraphSceneUiData {
     scale_x_text: String,
     scale_z_text: String,
@@ -101,25 +101,22 @@ fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mut Ui
     let needs_update = &mut data.graph_scene.needs_update;
 
     Grid::new("graph scale input").show(ui, |ui| {
-        *needs_update = *needs_update
-            || float_edit_line(
-                "Graph x scale",
-                &mut data.ui_data.scale_x_text,
-                scale_x,
-                editing,
-                ui,
-            );
+        *needs_update = float_edit_line(
+            "Graph x scale",
+            &mut data.ui_data.scale_x_text,
+            scale_x,
+            editing,
+            ui,
+        ) || *needs_update;
         ui.end_row();
-        // NOTE: when this one loses focus there's a delay before next is rendered
 
-        *needs_update = *needs_update
-            || float_edit_line(
-                "Graph z scale",
-                &mut data.ui_data.scale_z_text,
-                scale_z,
-                editing,
-                ui,
-            );
+        *needs_update = float_edit_line(
+            "Graph z scale",
+            &mut data.ui_data.scale_z_text,
+            scale_z,
+            editing,
+            ui,
+        ) || *needs_update;
         ui.end_row();
     });
 }
@@ -135,6 +132,7 @@ fn float_edit_line(
 
     ui.horizontal(|ui| {
         ui.label(format!("{label}: "));
+
         let response = ui.add(egui::TextEdit::singleline(edit_text));
 
         if response.gained_focus() {
@@ -142,14 +140,13 @@ fn float_edit_line(
         }
 
         if response.lost_focus() {
-            // parse and update if valid
+            // parse text and update value if valid
             if let Ok(f_val) = edit_text.parse::<f32>() {
                 *edit_value = f_val;
                 changed = true;
             } else {
                 *edit_text = edit_value.to_string();
             }
-
             *editing = false;
         }
     });
