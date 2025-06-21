@@ -247,7 +247,7 @@ pub fn graph_scene(
 
 impl GraphScene {
     // will be called when gui updates graph parameters, etc.
-    fn rebuild_scene(
+    pub fn rebuild_scene(
         &mut self,
         device: &Device,
         surface_config: &SurfaceConfiguration,

@@ -676,6 +676,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "egui-typed-input"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "73494ec0e2cbd1008c9ca6709cea0fabe2dffefbd070be4976a6d03d842b058c"
+dependencies = [
+ "egui",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "egui-wgpu"
 version = "0.31.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -721,6 +731,7 @@ dependencies = [
  "bytemuck",
  "cgmath",
  "egui",
+ "egui-typed-input",
  "egui-wgpu",
  "egui-winit",
  "image 0.24.9",

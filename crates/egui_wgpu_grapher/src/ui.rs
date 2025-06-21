@@ -14,6 +14,13 @@ pub fn render_window(
         println!("boom!")
     }
 
+    // parameters for the grapher scene
+
+    ui.separator();
+    grapher_scene.parameter_ui(ui);
+
+    // ui scale parameter
+
     ui.separator();
     ui.horizontal(|ui| {
         ui.label(format!("Pixels per point: {}", pixels_per_point));
@@ -24,6 +31,4 @@ pub fn render_window(
             *scale_factor = (*scale_factor + 0.1).min(3.0);
         }
     });
-
-    grapher_scene.parameter_ui(ui);
 }

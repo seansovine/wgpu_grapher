@@ -1,6 +1,6 @@
 use crate::egui_tools::EguiRenderer;
 use crate::grapher;
-use crate::grapher_egui::GrapherScene;
+use crate::grapher_egui::{GraphSceneData, GrapherScene};
 use crate::graphics::GraphicsState;
 use crate::ui::render_window;
 use egui_wgpu::wgpu::core::device;
@@ -88,11 +88,9 @@ impl AppState {
 
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        let mut grapher_scene: GrapherScene = GrapherScene::Graph(grapher::mesh::graph_scene(
-            &device,
-            &surface_config,
-            &grapher_state,
-        ));
+        let graph_scene = grapher::mesh::graph_scene(&device, &surface_config, &grapher_state);
+
+        let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
 
         Self {
             device,
@@ -330,9 +328,13 @@ impl ApplicationHandler for App {
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
                 if !self.scene_updates_paused {
-                    state
-                        .grapher_scene
-                        .update(&state.queue, &state.grapher_state, do_render);
+                    state.grapher_scene.update(
+                        &state.device,
+                        &state.surface_config,
+                        &state.queue,
+                        &state.grapher_state,
+                        do_render,
+                    );
                 }
 
                 if do_render {
