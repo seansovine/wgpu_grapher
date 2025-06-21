@@ -133,6 +133,8 @@ pub struct App {
 
     // whether to update scene state on each redraw event
     scene_updates_paused: bool,
+    // indicates a ui component is focused, to block other input
+    editing: bool,
 }
 
 impl App {
@@ -155,6 +157,8 @@ impl App {
         // scene updates disabled for now
         let scene_updates_paused = false;
 
+        let editing = false;
+
         Self {
             instance,
             state: None,
@@ -165,6 +169,7 @@ impl App {
             render_count,
             avg_framerate,
             scene_updates_paused,
+            editing,
         }
     }
 
@@ -252,16 +257,20 @@ impl App {
         {
             state.egui_renderer.begin_frame(window);
 
+            let editing = &mut self.editing;
+
             let context = &state.egui_renderer.context();
-            egui::Window::new("egui + wgpu grapher says hello!")
+            egui::Window::new("Settings")
                 .resizable(true)
+                .default_size([200.0, 150.00])
                 .vscroll(true)
-                .default_open(false)
+                .default_open(true)
                 .show(context, |ui| {
                     render_window(
                         &mut state.scale_factor,
                         context.pixels_per_point(),
                         ui,
+                        editing,
                         &mut state.grapher_scene,
                     );
                 });
@@ -300,7 +309,8 @@ impl ApplicationHandler for App {
         // let egui render to process the event first
         state.egui_renderer.handle_input(window, &event);
 
-        if state.grapher_state.handle_user_input(&event) {
+        // short-circuits if editing
+        if !self.editing && state.grapher_state.handle_user_input(&event) {
             return;
         }
 

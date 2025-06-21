@@ -38,10 +38,10 @@ impl CameraController {
 
         // use of look-at from Learn WGPU
         if self.is_z_pressed && forward_mag > self.speed {
-            camera.eye += forward_norm * self.speed;
+            camera.eye += forward_norm * self.speed * 1.2;
         }
         if self.is_x_pressed {
-            camera.eye -= forward_norm * self.speed;
+            camera.eye -= forward_norm * self.speed * 1.2;
         }
 
         let angle_incr = self.speed * PI / 4.0;

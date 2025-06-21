@@ -57,10 +57,10 @@ impl GrapherScene {
 }
 
 impl GrapherScene {
-    pub fn parameter_ui(&mut self, ui: &mut Ui) {
+    pub fn parameter_ui(&mut self, editing: &mut bool, ui: &mut Ui) {
         match self {
             GrapherScene::Graph(graph_scene) => {
-                parameter_ui_graph(graph_scene, ui);
+                parameter_ui_graph(graph_scene, editing, ui);
             }
             _ => unimplemented!(),
         }
@@ -94,49 +94,65 @@ impl GraphSceneData {
 }
 
 // graph-specific parameter ui
-fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
+fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mut Ui) {
     let scale_x = &mut data.graph_scene.parameters.scale_x;
     let scale_z = &mut data.graph_scene.parameters.scale_z;
 
     let needs_update = &mut data.graph_scene.needs_update;
 
     Grid::new("graph scale input").show(ui, |ui| {
-        ui.horizontal(|ui| {
-            let mut scale_x_text = &mut data.ui_data.scale_x_text;
-
-            ui.label(format!("Graph x scale: "));
-            let x_response = ui.add(egui::TextEdit::singleline(scale_x_text));
-
-            if x_response.lost_focus() {
-                // parse and update if valid
-                if let Ok(f_val) = scale_x_text.parse::<f32>() {
-                    *scale_x = f_val;
-                    println!("Updated x scale to {scale_x}.");
-                    *needs_update = true;
-                } else {
-                    *scale_x_text = scale_x.to_string();
-                }
-            }
-        });
+        *needs_update = *needs_update
+            || float_edit_line(
+                "Graph x scale",
+                &mut data.ui_data.scale_x_text,
+                scale_x,
+                editing,
+                ui,
+            );
         ui.end_row();
+        // NOTE: when this one loses focus there's a delay before next is rendered
 
-        ui.horizontal(|ui| {
-            let mut scale_z_text = &mut data.ui_data.scale_z_text;
-
-            ui.label(format!("Graph z scale: "));
-            let z_response = ui.add(egui::TextEdit::singleline(scale_z_text));
-
-            if z_response.lost_focus() {
-                // parse and update if valid
-                if let Ok(f_val) = scale_z_text.parse::<f32>() {
-                    *scale_z = f_val;
-                    println!("Updated x scale to {scale_x}.");
-                    *needs_update = true;
-                } else {
-                    *scale_z_text = scale_z.to_string();
-                }
-            }
-        });
+        *needs_update = *needs_update
+            || float_edit_line(
+                "Graph z scale",
+                &mut data.ui_data.scale_z_text,
+                scale_z,
+                editing,
+                ui,
+            );
         ui.end_row();
     });
+}
+
+fn float_edit_line(
+    label: &str,
+    edit_text: &mut String,
+    edit_value: &mut f32,
+    editing: &mut bool,
+    ui: &mut Ui,
+) -> bool {
+    let mut changed = false;
+
+    ui.horizontal(|ui| {
+        ui.label(format!("{label}: "));
+        let response = ui.add(egui::TextEdit::singleline(edit_text));
+
+        if response.gained_focus() {
+            *editing = true;
+        }
+
+        if response.lost_focus() {
+            // parse and update if valid
+            if let Ok(f_val) = edit_text.parse::<f32>() {
+                *edit_value = f_val;
+                changed = true;
+            } else {
+                *edit_text = edit_value.to_string();
+            }
+
+            *editing = false;
+        }
+    });
+
+    changed
 }
