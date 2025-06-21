@@ -9,31 +9,6 @@ use egui_wgpu::wgpu::{
     self, BindGroup, BufferSlice, CommandEncoder, RenderPipeline, SurfaceError, TextureView,
 };
 
-pub fn render(
-    gpu_state: &mut GpuState,
-    state: &RenderState,
-    scene: &Scene,
-) -> Result<(), SurfaceError> {
-    let output = gpu_state.surface.get_current_texture()?;
-
-    let view = output
-        .texture
-        .create_view(&wgpu::TextureViewDescriptor::default());
-
-    let mut encoder = gpu_state
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: Some("render encoder"),
-        });
-
-    state.render(&view, &mut encoder, scene)?;
-
-    gpu_state.queue.submit(std::iter::once(encoder.finish()));
-    output.present();
-
-    Ok(())
-}
-
 impl RenderState {
     pub fn render(
         &self,
