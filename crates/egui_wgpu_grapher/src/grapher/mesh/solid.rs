@@ -154,6 +154,11 @@ pub fn test_scene(
 pub struct GraphParameters {
     pub scale_x: f32,
     pub scale_z: f32,
+    pub scale_y: f32,
+
+    pub shift_x: f32,
+    pub shift_z: f32,
+    pub shift_y: f32,
 }
 
 pub struct GraphScene {
@@ -209,12 +214,12 @@ pub fn get_graph_func(width: f32, parameters: &GraphParameters) -> impl Fn(f32, 
     let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
     let f = graph::shift_scale_input(
         f,
-        width / 2.0_f32,
+        parameters.shift_x,
         parameters.scale_x,
-        width / 2.0_f32,
+        parameters.shift_z,
         parameters.scale_z,
     );
-    graph::shift_scale_output(f, 0.25, 0.5)
+    graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y)
 }
 
 pub fn graph_scene(
@@ -222,22 +227,27 @@ pub fn graph_scene(
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
 ) -> GraphScene {
+    const WIDTH: f32 = 6.0;
+
     let parameters = GraphParameters {
-        scale_x: 2.0_f32,
-        scale_z: 2.0_f32,
+        scale_x: 2.0,
+        scale_z: 2.0,
+        scale_y: 0.5,
+
+        shift_x: WIDTH / 2.0,
+        shift_z: WIDTH / 2.0,
+        shift_y: 0.25,
     };
 
-    let width: f32 = 6.0;
+    let f = get_graph_func(WIDTH, &parameters);
 
-    let f = get_graph_func(width, &parameters);
-
-    let scene = build_scene_for_graph(device, surface_config, state, width, &parameters, f);
+    let scene = build_scene_for_graph(device, surface_config, state, WIDTH, &parameters, f);
 
     let needs_update = false;
 
     GraphScene {
         scene,
-        width,
+        width: WIDTH,
         needs_update,
         parameters,
     }

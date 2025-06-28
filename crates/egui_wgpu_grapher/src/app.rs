@@ -1,8 +1,8 @@
 use crate::egui_tools::EguiRenderer;
 use crate::grapher;
-use crate::grapher_egui::{GraphSceneData, GrapherScene};
+use crate::grapher_egui::{GraphSceneData, GrapherScene, RenderUiState};
 use crate::graphics::GraphicsState;
-use crate::ui::render_window;
+use crate::ui::{render_window, UiState};
 use egui_wgpu::wgpu::core::device;
 use egui_wgpu::wgpu::SurfaceError;
 use egui_wgpu::{wgpu, ScreenDescriptor};
@@ -25,6 +25,9 @@ pub struct AppState {
     pub surface: wgpu::Surface<'static>,
     pub scale_factor: f32,
     pub egui_renderer: EguiRenderer,
+
+    pub ui_state: UiState,
+
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 }
@@ -92,6 +95,12 @@ impl AppState {
 
         let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
 
+        let render_ui_state = RenderUiState {
+            lighting_enabled: grapher_state.render_preferences.lighting_enabled(),
+            needs_update: false,
+        };
+
+        let ui_state = UiState { render_ui_state };
         Self {
             device,
             queue,
@@ -99,6 +108,7 @@ impl AppState {
             surface_config,
             egui_renderer,
             scale_factor,
+            ui_state,
             grapher_state,
             grapher_scene,
         }
@@ -262,7 +272,7 @@ impl App {
             let context = &state.egui_renderer.context();
             egui::Window::new("Settings")
                 .resizable(true)
-                .default_size([200.0, 150.00])
+                .default_size([200.0, 300.00])
                 .vscroll(true)
                 .default_open(true)
                 .show(context, |ui| {
@@ -272,6 +282,8 @@ impl App {
                         ui,
                         editing,
                         &mut state.grapher_scene,
+                        &mut state.grapher_state,
+                        &mut state.ui_state,
                     );
                 });
 
@@ -345,6 +357,11 @@ impl ApplicationHandler for App {
                         &state.grapher_state,
                         do_render,
                     );
+                }
+
+                if state.ui_state.render_ui_state.needs_update {
+                    state.grapher_state.render_preferences.update(&state.queue);
+                    state.ui_state.render_ui_state.needs_update = false;
                 }
 
                 if do_render {

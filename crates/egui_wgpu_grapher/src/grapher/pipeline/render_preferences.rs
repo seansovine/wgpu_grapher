@@ -1,7 +1,8 @@
 // Preferences passed to shaders as a uniform.
 
 use egui_wgpu::wgpu::{
-    self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, PolygonMode,
+    self, core::device::queue, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device,
+    PolygonMode, Queue,
 };
 
 #[repr(C)]
@@ -15,7 +16,7 @@ pub struct ShaderPreferencesUniform {
 pub struct RenderPreferences {
     // data for uniform passed to shader
     pub uniform: ShaderPreferencesUniform,
-    pub _buffer: Buffer,
+    pub buffer: Buffer,
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 
@@ -26,6 +27,19 @@ pub struct RenderPreferences {
 impl RenderPreferences {
     pub fn lighting_enabled(&self) -> bool {
         self.uniform.flags & 1 == 1
+    }
+
+    pub fn set_lighting_enabled(&mut self, enabled: bool) {
+        if enabled {
+            self.uniform.flags |= 1_u32;
+        } else {
+            self.uniform.flags &= !1_u32;
+        }
+    }
+
+    pub fn update(&mut self, queue: &Queue) {
+        // update uniform buffer
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }
 
@@ -72,7 +86,7 @@ impl RenderPreferences {
 
         Self {
             uniform,
-            _buffer: buffer,
+            buffer,
             bind_group_layout,
             bind_group,
             //

@@ -1,6 +1,7 @@
 use egui::{RichText, Ui};
 
-use crate::grapher_egui::GrapherScene;
+use crate::grapher::render::RenderState;
+use crate::grapher_egui::{parameter_ui_render, GrapherScene, RenderUiState};
 
 pub fn render_window(
     scale_factor: &mut f32,
@@ -8,6 +9,8 @@ pub fn render_window(
     ui: &mut Ui,
     editing: &mut bool,
     grapher_scene: &mut GrapherScene,
+    render_state: &mut RenderState,
+    ui_state: &mut UiState,
 ) {
     // parameters for the grapher scene
 
@@ -19,6 +22,15 @@ pub fn render_window(
     ui.add_space(AFTER_LABEL_SPACE);
 
     grapher_scene.parameter_ui(editing, ui);
+
+    // general rendere parameters
+
+    ui.separator();
+
+    ui.label(RichText::new("Render parameters").strong());
+    ui.add_space(AFTER_LABEL_SPACE);
+
+    parameter_ui_render(render_state, &mut ui_state.render_ui_state, ui);
 
     // ui scale parameter
 
@@ -36,4 +48,10 @@ pub fn render_window(
             *scale_factor = (*scale_factor + 0.1).min(3.0);
         }
     });
+}
+
+// Place to put persistent ui state that doesn't fit elsewhere.
+
+pub struct UiState {
+    pub render_ui_state: RenderUiState,
 }
