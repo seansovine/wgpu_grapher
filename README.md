@@ -4,7 +4,7 @@ This is an application to graph functions of the form `y = f(x,z)` in 3D using t
 Rust `wgpu` crate. It now has a (work in progress) GUI built using `egui`.
 
 <p align="center" margin="20px">
-	<img src="images/screenshot_gui_grapher.png" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher_2025-06-28.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
 The `wgpu_grapher` crate in this repository has an older version of the app with
