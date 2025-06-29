@@ -37,6 +37,18 @@ impl RenderPreferences {
         }
     }
 
+    pub fn wireframe_enabled(&self) -> bool {
+        self.polygon_mode == PolygonMode::Line
+    }
+
+    pub fn set_wireframe(&mut self, enabled: bool) {
+        if enabled {
+            self.polygon_mode = PolygonMode::Line;
+        } else {
+            self.polygon_mode = PolygonMode::Fill;
+        }
+    }
+
     pub fn update(&mut self, queue: &Queue) {
         // update uniform buffer
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));

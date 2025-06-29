@@ -19,6 +19,7 @@ use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowId};
 
 pub struct AppState {
+    // wgpu and egui state
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub surface_config: wgpu::SurfaceConfiguration,
@@ -26,8 +27,10 @@ pub struct AppState {
     pub scale_factor: f32,
     pub egui_renderer: EguiRenderer,
 
+    // ui state needed persisted across renders
     pub ui_state: UiState,
 
+    // state for grapher render objects
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 }
@@ -50,7 +53,7 @@ impl AppState {
             .await
             .expect("Failed to find an appropriate adapter");
 
-        let features = wgpu::Features::empty();
+        let features = wgpu::Features::POLYGON_MODE_LINE;
         let (device, queue) = adapter
             .request_device(
                 &wgpu::DeviceDescriptor {
@@ -95,12 +98,11 @@ impl AppState {
 
         let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
 
-        let render_ui_state = RenderUiState {
-            lighting_enabled: grapher_state.render_preferences.lighting_enabled(),
-            needs_update: false,
-        };
+        let render_ui_state =
+            RenderUiState::from_render_preferences(&grapher_state.render_preferences);
 
         let ui_state = UiState { render_ui_state };
+
         Self {
             device,
             queue,
@@ -164,7 +166,6 @@ impl App {
         let render_count = 0_usize;
         let avg_framerate = 60.0f32;
 
-        // scene updates disabled for now
         let scene_updates_paused = false;
 
         let editing = false;
@@ -215,11 +216,10 @@ impl App {
     }
 
     fn handle_redraw(&mut self) {
-        // Attempt to handle minimizing window
+        // if minimized don't redraw
         if let Some(window) = self.window.as_ref() {
             if let Some(min) = window.is_minimized() {
                 if min {
-                    println!("Window is minimized");
                     return;
                 }
             }
@@ -237,11 +237,11 @@ impl App {
 
         match surface_texture {
             Err(SurfaceError::Outdated) => {
-                // Ignoring outdated to allow resizing and minimization
-                println!("wgpu surface outdated");
+                // template authors: for resizing and minimization handling
                 return;
             }
             Err(_) => {
+                // panic on other errors (for now)
                 surface_texture.expect("Failed to acquire next swap chain texture");
                 return;
             }

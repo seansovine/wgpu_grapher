@@ -1,7 +1,7 @@
 use egui::{RichText, Ui};
 
 use crate::grapher::render::RenderState;
-use crate::grapher_egui::{parameter_ui_render, GrapherScene, RenderUiState};
+use crate::grapher_egui::{render_parameter_ui, GrapherScene, RenderUiState};
 
 pub fn render_window(
     scale_factor: &mut f32,
@@ -30,7 +30,12 @@ pub fn render_window(
     ui.label(RichText::new("Render parameters").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
-    parameter_ui_render(render_state, &mut ui_state.render_ui_state, ui);
+    render_parameter_ui(
+        render_state,
+        &mut ui_state.render_ui_state,
+        grapher_scene,
+        ui,
+    );
 
     // ui scale parameter
 
