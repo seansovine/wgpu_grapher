@@ -1,5 +1,4 @@
-use rand::Rng;
-use rand::rngs::ThreadRng;
+use rand::{Rng, rngs::ThreadRng};
 
 // Finite-difference wave equation solver.
 

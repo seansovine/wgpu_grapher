@@ -1,8 +1,7 @@
 // Preferences passed to shaders as a uniform.
 
 use egui_wgpu::wgpu::{
-    self, core::device::queue, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device,
-    PolygonMode, Queue,
+    self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, PolygonMode, Queue,
 };
 
 #[repr(C)]

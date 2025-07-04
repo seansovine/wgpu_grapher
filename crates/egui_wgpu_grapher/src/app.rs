@@ -1,22 +1,23 @@
-use crate::egui_tools::EguiRenderer;
-use crate::grapher;
-use crate::grapher_egui::{GraphSceneData, GrapherScene, RenderUiState};
-use crate::graphics::GraphicsState;
-use crate::ui::{render_window, UiState};
-use egui_wgpu::wgpu::core::device;
-use egui_wgpu::wgpu::SurfaceError;
-use egui_wgpu::{wgpu, ScreenDescriptor};
+use crate::{
+    egui_tools::EguiRenderer,
+    grapher,
+    grapher_egui::{GraphSceneData, GrapherScene, RenderUiState},
+    ui::{render_window, UiState},
+};
+use egui_wgpu::{wgpu, wgpu::SurfaceError, ScreenDescriptor};
 use std::{
     sync::Arc,
     thread,
     time::{self, Instant},
 };
-use winit::application::ApplicationHandler;
-use winit::dpi::PhysicalSize;
-use winit::event::{ElementState, KeyEvent, WindowEvent};
-use winit::event_loop::ActiveEventLoop;
-use winit::keyboard::{KeyCode, PhysicalKey};
-use winit::window::{Window, WindowId};
+use winit::{
+    application::ApplicationHandler,
+    dpi::PhysicalSize,
+    event::{ElementState, KeyEvent, WindowEvent},
+    event_loop::ActiveEventLoop,
+    keyboard::{KeyCode, PhysicalKey},
+    window::{Window, WindowId},
+};
 
 pub struct AppState {
     // wgpu and egui state
@@ -94,7 +95,8 @@ impl AppState {
 
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        let graph_scene = grapher::mesh::graph_scene(&device, &surface_config, &grapher_state);
+        let graph_scene =
+            grapher::mesh::solid::graph_scene(&device, &surface_config, &grapher_state);
 
         let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
 

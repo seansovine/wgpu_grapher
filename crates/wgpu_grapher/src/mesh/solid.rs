@@ -1,18 +1,19 @@
 // Structures and functions for meshes with color provided per-vertex.
 
 use super::{RenderScene, Scene};
-use crate::math::{
-    graph::{self, SquareTesselation},
-    pde,
+use crate::{
+    math::{
+        graph::{self, SquareTesselation},
+        pde,
+    },
+    matrix::{self, MatrixState, MatrixUniform},
+    pipeline,
+    render::RenderState,
 };
-use crate::matrix::{self, MatrixState, MatrixUniform};
-use crate::pipeline;
-use crate::render::RenderState;
 
 use std::sync::LazyLock;
 
-use wgpu::util::DeviceExt;
-use wgpu::{Buffer, Device, Queue, SurfaceConfiguration};
+use wgpu::{Buffer, Device, Queue, SurfaceConfiguration, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

@@ -14,7 +14,7 @@
 
 use std::vec;
 
-use crate::grapher::mesh::{self, MeshData};
+use crate::grapher::mesh::{self, solid::MeshData};
 
 // geometric data
 

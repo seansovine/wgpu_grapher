@@ -1,5 +1,4 @@
-use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, util::DeviceExt};
 
 const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
 

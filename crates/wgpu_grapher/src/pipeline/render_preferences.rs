@@ -1,7 +1,6 @@
 // Preferences passed to shaders as a uniform.
 
-use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, PolygonMode};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, PolygonMode, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

@@ -1,8 +1,10 @@
-use egui_wgpu::wgpu::util::DeviceExt;
+// General code for creating matrix uniforms and associated buffers.
+
 use egui_wgpu::wgpu::{
-    util::BufferInitDescriptor, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType,
-    BufferUsages, Device, ShaderStages,
+    util::{BufferInitDescriptor, DeviceExt},
+    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
+    ShaderStages,
 };
 
 const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
@@ -32,6 +34,7 @@ impl MatrixUniform {
         }
     }
 
+    #[allow(dead_code)]
     pub fn x_rotation(degrees: f32) -> Self {
         Self {
             view_proj: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),

@@ -5,17 +5,10 @@ pub use state::*;
 
 use super::mesh::Scene;
 
-use egui_wgpu::wgpu::{
-    self, BindGroup, BufferSlice, CommandEncoder, RenderPipeline, SurfaceError, TextureView,
-};
+use egui_wgpu::wgpu::{self, BindGroup, BufferSlice, CommandEncoder, RenderPipeline, TextureView};
 
 impl RenderState {
-    pub fn render(
-        &self,
-        view: &TextureView,
-        encoder: &mut CommandEncoder,
-        scene: &Scene,
-    ) -> Result<(), SurfaceError> {
+    pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene) {
         let camera_bind_group = &self.camera_state.matrix.bind_group;
         let light_bind_group = &self.light_state.bind_group;
         let preferences_bind_group = &self.render_preferences.bind_group;
@@ -41,7 +34,7 @@ impl RenderState {
                         preferences_bind_group,
                     ],
                     depth_load_op,
-                )?;
+                );
                 depth_load_op = wgpu::LoadOp::Load;
             }
         }
@@ -63,12 +56,10 @@ impl RenderState {
                         &mesh.texture.bind_group,
                     ],
                     depth_load_op,
-                )?;
+                );
                 depth_load_op = wgpu::LoadOp::Load;
             }
         }
-
-        Ok(())
     }
 }
 
@@ -84,7 +75,7 @@ fn render_detail(
     num_indices: u32,
     bind_groups: &[&BindGroup],
     depth_load_op: wgpu::LoadOp<f32>,
-) -> Result<(), SurfaceError> {
+) {
     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
         label: Some("render pass"),
         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -116,6 +107,4 @@ fn render_detail(
     render_pass.set_vertex_buffer(0, vertex_buffer);
     render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint32);
     render_pass.draw_indexed(0..num_indices, 0, 0..1);
-
-    Ok(())
 }

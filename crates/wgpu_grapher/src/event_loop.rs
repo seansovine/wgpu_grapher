@@ -1,6 +1,8 @@
-use crate::mesh::{self, RenderScene};
-use crate::render;
-use crate::{CliArgs, Command};
+use crate::{
+    CliArgs, Command,
+    mesh::{self, RenderScene},
+    render,
+};
 
 use winit::{
     event::*,

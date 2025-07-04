@@ -1,7 +1,7 @@
-use crate::camera::CameraState;
-use crate::pipeline::light::LightState;
-use crate::pipeline::render_preferences::RenderPreferences;
-use crate::pipeline::texture::DepthBuffer;
+use crate::{
+    camera::CameraState,
+    pipeline::{light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer},
+};
 
 use wgpu::{Device, Queue, Surface, SurfaceConfiguration};
 use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};

@@ -1,12 +1,8 @@
-#[allow(unused)]
 mod app;
 mod egui_tools;
-#[allow(unused)]
 mod grapher;
-#[allow(unused)]
+#[allow(unreachable_patterns)]
 mod grapher_egui;
-#[allow(unused)]
-mod graphics;
 mod ui;
 
 use winit::event_loop::{ControlFlow, EventLoop};

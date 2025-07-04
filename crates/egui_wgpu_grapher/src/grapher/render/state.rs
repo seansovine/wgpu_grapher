@@ -1,10 +1,10 @@
-use crate::grapher::camera::CameraState;
-use crate::grapher::pipeline::light::LightState;
-use crate::grapher::pipeline::render_preferences::RenderPreferences;
-use crate::grapher::pipeline::texture::DepthBuffer;
+use crate::grapher::{
+    camera::CameraState,
+    pipeline::{light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer},
+};
 
-use egui_wgpu::wgpu::{self, Device, Queue, Surface, SurfaceConfiguration};
-use winit::{dpi::PhysicalSize, event::WindowEvent, window::Window};
+use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
+use winit::event::WindowEvent;
 
 pub struct RenderState {
     // camera

@@ -1,5 +1,4 @@
-use wgpu::util::DeviceExt;
-use wgpu::{BindGroup, BindGroupLayout, Buffer, Device};
+use wgpu::{BindGroup, BindGroupLayout, Buffer, Device, util::DeviceExt};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]

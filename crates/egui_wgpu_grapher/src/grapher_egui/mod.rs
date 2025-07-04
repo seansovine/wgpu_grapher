@@ -1,7 +1,7 @@
 // The code in this module is a bridge between egui and function graphing code.
 
 use crate::grapher::{
-    mesh::{GraphScene, RenderScene},
+    mesh::{solid::GraphScene, RenderScene},
     pipeline::render_preferences::RenderPreferences,
     render::RenderState,
 };

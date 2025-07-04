@@ -1,11 +1,13 @@
 // Structures and functions for building textured mesh scenes.
 
 use super::{RenderScene, Scene};
-use crate::grapher::math::pde;
-use crate::grapher::matrix::{self, MatrixState, MatrixUniform};
-use crate::grapher::pipeline;
-use crate::grapher::pipeline::texture::{Image, TextureData, TextureMatrix};
-use crate::grapher::render::RenderState;
+use crate::grapher::{
+    math::pde,
+    matrix::{self, MatrixState, MatrixUniform},
+    pipeline,
+    pipeline::texture::{Image, TextureData, TextureMatrix},
+    render::RenderState,
+};
 
 use egui_wgpu::wgpu::{self, util::DeviceExt, Device, Queue, SurfaceConfiguration};
 
