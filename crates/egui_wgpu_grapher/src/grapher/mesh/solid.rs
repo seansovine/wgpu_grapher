@@ -216,6 +216,7 @@ pub fn get_graph_func(parameters: &GraphParameters) -> impl Fn(f32, f32) -> f32 
     graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y)
 }
 
+#[allow(dead_code)]
 pub fn graph_scene(
     device: &Device,
     surface_config: &SurfaceConfiguration,

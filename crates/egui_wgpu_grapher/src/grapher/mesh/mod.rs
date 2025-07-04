@@ -1,4 +1,6 @@
 #[allow(dead_code)]
+pub mod model;
+#[allow(dead_code)]
 pub mod pde;
 #[allow(dead_code)]
 pub mod textured;

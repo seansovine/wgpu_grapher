@@ -1,7 +1,7 @@
 use crate::{
     egui_tools::EguiRenderer,
     grapher,
-    grapher_egui::{GraphSceneData, GrapherScene, RenderUiState},
+    grapher_egui::{model, GrapherScene, RenderUiState},
     ui::{render_window, UiState},
 };
 use egui_wgpu::{wgpu, wgpu::SurfaceError, ScreenDescriptor};
@@ -95,10 +95,19 @@ impl AppState {
 
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        let graph_scene =
-            grapher::mesh::solid::graph_scene(&device, &surface_config, &grapher_state);
+        // Actual function graph code:
 
-        let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
+        // let graph_scene =
+        //     grapher::mesh::solid::graph_scene(&device, &surface_config, &grapher_state);
+
+        // let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
+
+        // Model viewer code, hardcoded for testing: (TODO add parameter somewhere)
+
+        let model_scene =
+            grapher::mesh::model::model_scene(&device, &surface_config, &grapher_state);
+
+        let grapher_scene = GrapherScene::Model(model::ModelSceneData::new(model_scene));
 
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);
