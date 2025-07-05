@@ -37,6 +37,7 @@ pub struct AppState {
     pub ui_state: UiState,
 
     // state for grapher render objects
+    pub selected_scene: GrapherSceneMode,
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 }
@@ -102,49 +103,22 @@ impl AppState {
 
         let scale_factor = 1.0;
 
-        let mut grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
+        let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        const SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Graph;
+        const DEFAULT_SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Graph;
 
-        let grapher_scene = match SCENE_CHOICE {
-            GrapherSceneMode::Graph => {
-                let graph_scene = grapher::mesh::solid::graph::graph_scene(
-                    &device,
-                    &surface_config,
-                    &grapher_state,
-                );
+        let graph_scene =
+            grapher::mesh::solid::graph::graph_scene(&device, &surface_config, &grapher_state);
 
-                GrapherScene::Graph(graph::GraphSceneData::new(graph_scene))
-            }
-            GrapherSceneMode::Model => {
-                let model_scene = grapher::mesh::solid::model::model_scene(
-                    &device,
-                    &surface_config,
-                    &grapher_state,
-                );
-
-                GrapherScene::Model(model::ModelSceneData::new(model_scene))
-            }
-            GrapherSceneMode::ImageViewer => {
-                // TODO: hard-coded path for testing
-                const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
-
-                let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
-                    &device,
-                    &queue,
-                    &surface_config,
-                    &mut grapher_state,
-                    TEST_IMAGE,
-                );
-
-                GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(image_scene))
-            }
-        };
+        let grapher_scene = GrapherScene::Graph(graph::GraphSceneData::new(graph_scene));
 
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);
 
-        let ui_state = UiState { render_ui_state };
+        let ui_state = UiState {
+            render_ui_state,
+            selected_scene_index: DEFAULT_SCENE_CHOICE.into(),
+        };
 
         Self {
             device,
@@ -153,7 +127,10 @@ impl AppState {
             surface_config,
             egui_renderer,
             scale_factor,
+
             ui_state,
+
+            selected_scene: DEFAULT_SCENE_CHOICE,
             grapher_state,
             grapher_scene,
         }
@@ -171,6 +148,57 @@ impl AppState {
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
         self.grapher_state.update(&mut self.queue);
+    }
+
+    fn update_grapher_scene(&mut self) {
+        let grapher_scene = match self.selected_scene {
+            GrapherSceneMode::Graph => {
+                if matches!(self.grapher_scene, GrapherScene::Graph(_)) {
+                    return;
+                }
+
+                let graph_scene = grapher::mesh::solid::graph::graph_scene(
+                    &self.device,
+                    &self.surface_config,
+                    &self.grapher_state,
+                );
+
+                GrapherScene::Graph(graph::GraphSceneData::new(graph_scene))
+            }
+            GrapherSceneMode::Model => {
+                if matches!(self.grapher_scene, GrapherScene::Model(_)) {
+                    return;
+                }
+
+                let model_scene = grapher::mesh::solid::model::model_scene(
+                    &self.device,
+                    &self.surface_config,
+                    &self.grapher_state,
+                );
+
+                GrapherScene::Model(model::ModelSceneData::new(model_scene))
+            }
+            GrapherSceneMode::ImageViewer => {
+                if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
+                    return;
+                }
+
+                // TODO: hard-coded path for testing
+                const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
+
+                let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
+                    &self.device,
+                    &self.queue,
+                    &self.surface_config,
+                    &mut self.grapher_state,
+                    TEST_IMAGE,
+                );
+
+                GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(image_scene))
+            }
+        };
+
+        self.grapher_scene = grapher_scene;
     }
 }
 
@@ -315,7 +343,7 @@ impl App {
             let context = &state.egui_renderer.context();
             egui::Window::new("Settings")
                 .resizable(true)
-                .default_size([200.0, 300.00])
+                .default_size([200.0, 330.00])
                 .vscroll(true)
                 .default_open(true)
                 .show(context, |ui| {
@@ -327,6 +355,7 @@ impl App {
                         &mut state.grapher_scene,
                         &mut state.grapher_state,
                         &mut state.ui_state,
+                        &mut state.selected_scene,
                     );
                 });
 
@@ -418,6 +447,9 @@ impl ApplicationHandler for App {
 
                     self.handle_redraw();
                     self.render_count += 1;
+
+                    // check if scene needs changed; reborrow to satisfy checker
+                    self.state.as_mut().unwrap().update_grapher_scene();
 
                     // update framerate estimate
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {

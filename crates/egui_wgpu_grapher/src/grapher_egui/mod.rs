@@ -8,6 +8,7 @@ pub mod image_viewer;
 pub mod model;
 
 use crate::{
+    egui::ui::UiState,
     grapher::{
         mesh::{solid::graph::GraphScene, RenderScene},
         pipeline::render_preferences::RenderPreferences,
@@ -28,6 +29,45 @@ pub enum GrapherSceneMode {
     Graph,
     Model,
     ImageViewer,
+}
+
+impl From<GrapherSceneMode> for usize {
+    fn from(value: GrapherSceneMode) -> Self {
+        match value {
+            GrapherSceneMode::Graph => 0,
+            GrapherSceneMode::Model => 1,
+            GrapherSceneMode::ImageViewer => 2,
+        }
+    }
+}
+
+impl From<usize> for GrapherSceneMode {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => GrapherSceneMode::Graph,
+            1 => GrapherSceneMode::Model,
+            2 => GrapherSceneMode::ImageViewer,
+            _ => unimplemented!(),
+        }
+    }
+}
+
+pub fn scene_selection_ui(
+    selected_scene: &mut GrapherSceneMode,
+    ui_state: &mut UiState,
+    ui: &mut Ui,
+) {
+    let alternatives = ["graph", "model", "image"];
+    let selected_scene_index = &mut ui_state.selected_scene_index;
+
+    egui::ComboBox::from_id_salt("select scene").show_index(
+        ui,
+        selected_scene_index,
+        alternatives.len(),
+        |i| alternatives[i],
+    );
+
+    *selected_scene = (*selected_scene_index).into();
 }
 
 // The following enum replaces dynamic dispatch and allows the
