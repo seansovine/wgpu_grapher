@@ -4,7 +4,7 @@ use crate::{
         ui::{render_window, UiState},
     },
     grapher,
-    grapher_egui::{model, GrapherScene, RenderUiState},
+    grapher_egui::{graph, model, GrapherScene, GrapherSceneMode, RenderUiState},
 };
 use egui_wgpu::{wgpu, wgpu::SurfaceError, ScreenDescriptor};
 use std::{
@@ -97,19 +97,28 @@ impl AppState {
 
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        // Actual function graph code:
+        const SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Model;
 
-        // let graph_scene =
-        //     grapher::mesh::solid::graph_scene(&device, &surface_config, &grapher_state);
+        let grapher_scene = match SCENE_CHOICE {
+            GrapherSceneMode::Graph => {
+                let graph_scene = grapher::mesh::solid::graph::graph_scene(
+                    &device,
+                    &surface_config,
+                    &grapher_state,
+                );
 
-        // let grapher_scene = GrapherScene::Graph(GraphSceneData::new(graph_scene));
+                GrapherScene::Graph(graph::GraphSceneData::new(graph_scene))
+            }
+            GrapherSceneMode::Model => {
+                let model_scene = grapher::mesh::solid::model::model_scene(
+                    &device,
+                    &surface_config,
+                    &grapher_state,
+                );
 
-        // Model viewer code, hardcoded for testing: (TODO add parameter somewhere)
-
-        let model_scene =
-            grapher::mesh::solid::model::model_scene(&device, &surface_config, &grapher_state);
-
-        let grapher_scene = GrapherScene::Model(model::ModelSceneData::new(model_scene));
+                GrapherScene::Model(model::ModelSceneData::new(model_scene))
+            }
+        };
 
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);

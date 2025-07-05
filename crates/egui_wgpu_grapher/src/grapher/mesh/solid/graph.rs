@@ -61,11 +61,11 @@ fn build_scene_for_graph(
 pub fn get_graph_func(parameters: &GraphParameters) -> impl Fn(f32, f32) -> f32 {
     // other example functions (uncomment one)
 
-    let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
+    // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
 
     // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
 
-    // let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+    let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
 
     let f = graph::shift_scale_input(
         f,

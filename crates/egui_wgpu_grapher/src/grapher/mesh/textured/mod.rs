@@ -3,7 +3,7 @@
 pub mod image_viewer;
 pub mod pde;
 
-use super::{Bufferable, Scene};
+use super::{Scene, Vertex};
 use crate::grapher::{
     matrix::{self, MatrixState, MatrixUniform},
     pipeline,
@@ -12,37 +12,10 @@ use crate::grapher::{
 };
 
 use egui_wgpu::wgpu::{self, util::DeviceExt, Device, SurfaceConfiguration};
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct TexturedVertex {
-    pub position: [f32; 3],
-    pub tex_coords: [f32; 2],
-}
-
-impl Bufferable for TexturedVertex {
-    fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<TexturedVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-            ],
-        }
-    }
-}
+use std::sync::LazyLock;
 
 pub struct TexturedMeshData {
-    pub vertices: Vec<TexturedVertex>,
+    pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     pub texture: TextureData,
 }
@@ -105,13 +78,15 @@ pub fn build_scene(
     let last_mesh = textured_meshes.last().unwrap();
 
     // we'll try to get away with just one textured render pipeline
-    let pipeline = pipeline::create_render_pipeline::<TexturedVertex>(
+    let pipeline = pipeline::create_render_pipeline::<Vertex>(
         device,
         surface_config,
         pipeline::get_textured_shader(),
         &[
             &state.camera_state.matrix.bind_group_layout,
             &last_mesh.matrix.bind_group_layout,
+            &state.light_state.bind_group_layout,
+            &state.render_preferences.bind_group_layout,
             &last_mesh.texture.bind_group_layout,
         ],
         wgpu::PolygonMode::Fill,
@@ -127,43 +102,55 @@ pub fn build_scene(
 
 // mesh data to render two-sided square
 
-const SQUARE_VERTICES_VERTICAL: &[TexturedVertex] = &[
-    TexturedVertex {
-        position: [-0.5, -0.5, 0.0],
-        tex_coords: [0.0, 1.0],
-    },
-    TexturedVertex {
-        position: [0.5, -0.5, 0.0],
-        tex_coords: [1.0, 1.0],
-    },
-    TexturedVertex {
-        position: [0.5, 0.5, 0.0],
-        tex_coords: [1.0, 0.0],
-    },
-    TexturedVertex {
-        position: [-0.5, 0.5, 0.0],
-        tex_coords: [0.0, 0.0],
-    },
-];
+static SQUARE_VERTICES_VERTICAL: LazyLock<Vec<Vertex>> = LazyLock::new(|| {
+    vec![
+        Vertex {
+            position: [-0.5, -0.5, 0.0],
+            tex_coords: [0.0, 1.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [0.5, -0.5, 0.0],
+            tex_coords: [1.0, 1.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [0.5, 0.5, 0.0],
+            tex_coords: [1.0, 0.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [-0.5, 0.5, 0.0],
+            tex_coords: [0.0, 0.0],
+            ..Default::default()
+        },
+    ]
+});
 
-const SQUARE_VERTICES_FLAT: &[TexturedVertex] = &[
-    TexturedVertex {
-        position: [-0.5, 0.0, 0.5],
-        tex_coords: [0.0, 1.0],
-    },
-    TexturedVertex {
-        position: [0.5, 0.0, 0.5],
-        tex_coords: [1.0, 1.0],
-    },
-    TexturedVertex {
-        position: [0.5, 0.0, -0.5],
-        tex_coords: [1.0, 0.0],
-    },
-    TexturedVertex {
-        position: [-0.5, 0.0, -0.5],
-        tex_coords: [0.0, 0.0],
-    },
-];
+static SQUARE_VERTICES_FLAT: LazyLock<Vec<Vertex>> = LazyLock::new(|| {
+    vec![
+        Vertex {
+            position: [-0.5, 0.0, 0.5],
+            tex_coords: [0.0, 1.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [0.5, 0.0, 0.5],
+            tex_coords: [1.0, 1.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [0.5, 0.0, -0.5],
+            tex_coords: [1.0, 0.0],
+            ..Default::default()
+        },
+        Vertex {
+            position: [-0.5, 0.0, -0.5],
+            tex_coords: [0.0, 0.0],
+            ..Default::default()
+        },
+    ]
+});
 
 #[rustfmt::skip]
 const SQUARE_INDICES: &[u32] = &[

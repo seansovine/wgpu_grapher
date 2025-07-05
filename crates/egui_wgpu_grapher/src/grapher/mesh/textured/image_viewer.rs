@@ -23,7 +23,7 @@ pub fn image_viewer_scene(
     let texture_data_front = TextureData::from_image(&image, device, queue);
 
     let mesh_data_front = TexturedMeshData {
-        vertices: Vec::from(SQUARE_VERTICES_VERTICAL),
+        vertices: SQUARE_VERTICES_VERTICAL.clone(),
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data_front,
     };
@@ -33,7 +33,7 @@ pub fn image_viewer_scene(
     let texture_data_back = TextureData::from_image(&image, device, queue);
 
     let mesh_data_back = TexturedMeshData {
-        vertices: Vec::from(SQUARE_VERTICES_VERTICAL),
+        vertices: SQUARE_VERTICES_VERTICAL.clone(),
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data_back,
     };

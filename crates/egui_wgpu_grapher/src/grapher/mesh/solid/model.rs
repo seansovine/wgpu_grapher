@@ -39,7 +39,16 @@ pub fn load_solid_model() -> Vec<MeshData> {
                 position,
                 color: TEST_COLOR,
                 normal,
+                ..Default::default()
             });
+        }
+
+        // add "first" mesh text coords if present
+        if let Some(iter) = reader.read_tex_coords(0) {
+            vertices
+                .iter_mut()
+                .zip(iter.into_f32())
+                .for_each(|(vertex, tex_coords)| vertex.tex_coords = tex_coords);
         }
 
         let indices: Vec<u32> = reader.read_indices().unwrap().into_u32().collect();

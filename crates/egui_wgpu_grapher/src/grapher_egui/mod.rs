@@ -16,56 +16,12 @@ use model::{parameter_ui_model, ModelSceneData};
 use egui::Ui;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, TextureView};
 
-// Code for building the grapher renderer parameter ui.
+// For use with user input.
 
-pub struct RenderUiState {
-    // state for ui rendering
-    pub lighting_enabled: bool,
-    pub use_wireframe: bool,
-
-    // was there and update that needs processed
-    pub needs_update: bool,
-}
-
-impl RenderUiState {
-    pub fn from_render_preferences(render_prefs: &RenderPreferences) -> Self {
-        Self {
-            lighting_enabled: render_prefs.lighting_enabled(),
-            use_wireframe: render_prefs.wireframe_enabled(),
-            needs_update: false,
-        }
-    }
-}
-
-pub fn render_parameter_ui(
-    render_state: &mut RenderState,
-    render_ui_state: &mut RenderUiState,
-    grapher_scene: &mut GrapherScene,
-    ui: &mut Ui,
-) {
-    ui.horizontal(|ui| {
-        let response = ui.checkbox(&mut render_ui_state.lighting_enabled, "Lighting ");
-
-        if response.changed() {
-            render_state
-                .render_preferences
-                .set_lighting_enabled(render_ui_state.lighting_enabled);
-
-            // only requires updating a uniform with write_buffer
-            render_ui_state.needs_update = true;
-        }
-
-        let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
-
-        if response.changed() {
-            render_state
-                .render_preferences
-                .set_wireframe(render_ui_state.use_wireframe);
-
-            // requires changing polygon mode, and so recreating pipeline
-            grapher_scene.set_needs_update(true);
-        }
-    });
+#[allow(dead_code)]
+pub enum GrapherSceneMode {
+    Graph,
+    Model,
 }
 
 // The following enum replaces dynamic dispatch and allows the
@@ -184,4 +140,56 @@ fn float_edit_line(
     });
 
     changed
+}
+
+// Code for building the grapher renderer parameter ui.
+
+pub struct RenderUiState {
+    // state for ui rendering
+    pub lighting_enabled: bool,
+    pub use_wireframe: bool,
+
+    // was there and update that needs processed
+    pub needs_update: bool,
+}
+
+impl RenderUiState {
+    pub fn from_render_preferences(render_prefs: &RenderPreferences) -> Self {
+        Self {
+            lighting_enabled: render_prefs.lighting_enabled(),
+            use_wireframe: render_prefs.wireframe_enabled(),
+            needs_update: false,
+        }
+    }
+}
+
+pub fn render_parameter_ui(
+    render_state: &mut RenderState,
+    render_ui_state: &mut RenderUiState,
+    grapher_scene: &mut GrapherScene,
+    ui: &mut Ui,
+) {
+    ui.horizontal(|ui| {
+        let response = ui.checkbox(&mut render_ui_state.lighting_enabled, "Lighting ");
+
+        if response.changed() {
+            render_state
+                .render_preferences
+                .set_lighting_enabled(render_ui_state.lighting_enabled);
+
+            // only requires updating a uniform with write_buffer
+            render_ui_state.needs_update = true;
+        }
+
+        let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
+
+        if response.changed() {
+            render_state
+                .render_preferences
+                .set_wireframe(render_ui_state.use_wireframe);
+
+            // requires changing polygon mode, and so recreating pipeline
+            grapher_scene.set_needs_update(true);
+        }
+    });
 }

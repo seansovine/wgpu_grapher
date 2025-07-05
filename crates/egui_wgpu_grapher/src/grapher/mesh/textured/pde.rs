@@ -34,7 +34,7 @@ pub fn wave_eqn_texture_scene(
     let texture_data = TextureData::from_matrix(&texture_matrix, device, queue);
 
     let mesh_data = TexturedMeshData {
-        vertices: Vec::from(SQUARE_VERTICES_FLAT),
+        vertices: SQUARE_VERTICES_FLAT.clone(),
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data,
     };

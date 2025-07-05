@@ -7,7 +7,7 @@ pub mod model;
 #[allow(dead_code)]
 pub mod pde;
 
-use super::{Bufferable, Scene};
+use super::{Scene, Vertex};
 use crate::grapher::{
     matrix::{self, MatrixState, MatrixUniform},
     pipeline,
@@ -16,40 +16,6 @@ use crate::grapher::{
 
 use egui_wgpu::wgpu::{self, util::DeviceExt, Buffer, Device, SurfaceConfiguration};
 use std::sync::LazyLock;
-
-#[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
-    pub position: [f32; 3],
-    pub color: [f32; 3],
-    pub normal: [f32; 3],
-}
-
-impl Bufferable for Vertex {
-    fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-            ],
-        }
-    }
-}
 
 #[derive(Clone)]
 pub struct MeshData {
@@ -145,16 +111,19 @@ static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
             position: [0.0, 1.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],
+            ..Default::default()
         },
         Vertex {
             position: [-0.5, 0.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],
+            ..Default::default()
         },
         Vertex {
             position: [0.5, 0.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],
+            ..Default::default()
         },
     ]),
     indices: Vec::from([0, 1, 2, 0, 2, 1]),

@@ -9,6 +9,7 @@ use egui_wgpu::wgpu::{
 
 pub struct ShaderPreferencesUniform {
     // 1-bit - enable lighting
+    // 2-bit - use texture
     pub flags: u32,
 }
 
