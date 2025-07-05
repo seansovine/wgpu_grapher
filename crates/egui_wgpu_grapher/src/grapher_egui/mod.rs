@@ -3,12 +3,17 @@
 #[allow(dead_code)]
 pub mod graph;
 #[allow(dead_code)]
+pub mod image_viewer;
+#[allow(dead_code)]
 pub mod model;
 
-use crate::grapher::{
-    mesh::{solid::graph::GraphScene, RenderScene},
-    pipeline::render_preferences::RenderPreferences,
-    render::RenderState,
+use crate::{
+    grapher::{
+        mesh::{solid::graph::GraphScene, RenderScene},
+        pipeline::render_preferences::RenderPreferences,
+        render::RenderState,
+    },
+    grapher_egui::image_viewer::{parameter_ui_image_viewer, ImageViewerSceneData},
 };
 use graph::{parameter_ui_graph, GraphSceneData};
 use model::{parameter_ui_model, ModelSceneData};
@@ -22,6 +27,7 @@ use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, Textu
 pub enum GrapherSceneMode {
     Graph,
     Model,
+    ImageViewer,
 }
 
 // The following enum replaces dynamic dispatch and allows the
@@ -32,7 +38,7 @@ pub enum GrapherSceneMode {
 pub enum GrapherScene {
     Graph(GraphSceneData),
     Model(ModelSceneData),
-    // TODO: add other available scene types
+    ImageViewer(ImageViewerSceneData),
 }
 
 impl GrapherScene {
@@ -50,6 +56,10 @@ impl GrapherScene {
             GrapherScene::Model(data) => {
                 // pass scene in to state render function
                 render_state.render(view, encoder, data.model_scene.scene());
+            }
+            GrapherScene::ImageViewer(data) => {
+                // pass scene in to state render function
+                render_state.render(view, encoder, data.image_viewer_scene.scene());
             }
             _ => unimplemented!(),
         }
@@ -78,6 +88,10 @@ impl GrapherScene {
                 // currently a no-op; would perform state update
                 data.model_scene.update(queue, state, pre_render);
             }
+            GrapherScene::ImageViewer(data) => {
+                // currently a no-op; would perform state update
+                data.image_viewer_scene.update(queue, state, pre_render);
+            }
             _ => unimplemented!(),
         }
     }
@@ -92,6 +106,9 @@ impl GrapherScene {
             GrapherScene::Model(data) => {
                 parameter_ui_model(data, editing, ui);
             }
+            GrapherScene::ImageViewer(data) => {
+                parameter_ui_image_viewer(data, editing, ui);
+            }
             _ => unimplemented!(),
         }
     }
@@ -102,6 +119,9 @@ impl GrapherScene {
                 data.graph_scene.needs_update = needs_update;
             }
             GrapherScene::Model(_data) => {
+                // no-op
+            }
+            GrapherScene::ImageViewer(_data) => {
                 // no-op
             }
             _ => unimplemented!(),
@@ -181,15 +201,17 @@ pub fn render_parameter_ui(
             render_ui_state.needs_update = true;
         }
 
-        let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
+        if matches!(grapher_scene, GrapherScene::Graph(_)) {
+            let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
 
-        if response.changed() {
-            render_state
-                .render_preferences
-                .set_wireframe(render_ui_state.use_wireframe);
+            if response.changed() {
+                render_state
+                    .render_preferences
+                    .set_wireframe(render_ui_state.use_wireframe);
 
-            // requires changing polygon mode, and so recreating pipeline
-            grapher_scene.set_needs_update(true);
+                // requires changing polygon mode, and so recreating pipeline
+                grapher_scene.set_needs_update(true);
+            }
         }
     });
 }

@@ -37,6 +37,14 @@ impl RenderPreferences {
         }
     }
 
+    pub fn set_use_texture(&mut self, enabled: bool) {
+        if enabled {
+            self.uniform.flags |= 2_u32;
+        } else {
+            self.uniform.flags &= !2_u32;
+        }
+    }
+
     pub fn wireframe_enabled(&self) -> bool {
         self.polygon_mode == PolygonMode::Line
     }
@@ -49,7 +57,7 @@ impl RenderPreferences {
         }
     }
 
-    pub fn update(&mut self, queue: &Queue) {
+    pub fn update_uniform(&mut self, queue: &Queue) {
         // update uniform buffer
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }

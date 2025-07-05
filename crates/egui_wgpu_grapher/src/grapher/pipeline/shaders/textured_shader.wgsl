@@ -75,20 +75,20 @@ var diffuse_samp: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & 1) == 1;
-    let use_texture = (preferences.flags & 2) == 1;
+    let use_light = (preferences.flags & 1) > 0;
+    let use_texture = (preferences.flags & 2) > 0;
 
     var color: vec3<f32>;
     if use_texture {
-        color = textureSample(diffuse_tex, diffuse_samp, in.tex_coords);
+        color = textureSample(diffuse_tex, diffuse_samp, in.tex_coords).xyz;
     } else {
         color = in.color;
     }
 
     if use_light {
         let out_color = light.color * color;
-        let ambient_strength = 0.025;
-        let diffuse_strength = 0.4 * max(0.0, dot(in.light_direction, in.normal));
+        let ambient_strength = 0.05;
+        let diffuse_strength = 0.95 * max(0.0, dot(in.light_direction, in.normal));
 
         return vec4<f32>((ambient_strength + diffuse_strength) * out_color, 1.0);
     } else {

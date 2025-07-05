@@ -4,9 +4,12 @@ use crate::{
         ui::{render_window, UiState},
     },
     grapher,
-    grapher_egui::{graph, model, GrapherScene, GrapherSceneMode, RenderUiState},
+    grapher_egui::{graph, image_viewer, model, GrapherScene, GrapherSceneMode, RenderUiState},
 };
-use egui_wgpu::{wgpu, wgpu::SurfaceError, ScreenDescriptor};
+use egui_wgpu::{
+    wgpu::{self, Limits, SurfaceError},
+    ScreenDescriptor,
+};
 use std::{
     sync::Arc,
     thread,
@@ -62,7 +65,11 @@ impl AppState {
                 &wgpu::DeviceDescriptor {
                     label: None,
                     required_features: features,
-                    required_limits: Default::default(),
+                    required_limits: Limits {
+                        // TODO: combine bindings into fewer groups
+                        max_bind_groups: 5,
+                        ..Default::default()
+                    },
                     memory_hints: Default::default(),
                 },
                 None,
@@ -95,9 +102,9 @@ impl AppState {
 
         let scale_factor = 1.0;
 
-        let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
+        let mut grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
 
-        const SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Model;
+        const SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Graph;
 
         let grapher_scene = match SCENE_CHOICE {
             GrapherSceneMode::Graph => {
@@ -117,6 +124,23 @@ impl AppState {
                 );
 
                 GrapherScene::Model(model::ModelSceneData::new(model_scene))
+            }
+            GrapherSceneMode::ImageViewer => {
+                grapher_state.render_preferences.set_use_texture(true);
+                grapher_state.render_preferences.update_uniform(&queue);
+
+                // TODO: hard-coded path for testing
+                const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
+
+                let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
+                    &device,
+                    &queue,
+                    &surface_config,
+                    &mut grapher_state,
+                    TEST_IMAGE,
+                );
+
+                GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(image_scene))
             }
         };
 
@@ -382,7 +406,10 @@ impl ApplicationHandler for App {
                 }
 
                 if state.ui_state.render_ui_state.needs_update {
-                    state.grapher_state.render_preferences.update(&state.queue);
+                    state
+                        .grapher_state
+                        .render_preferences
+                        .update_uniform(&state.queue);
                     state.ui_state.render_ui_state.needs_update = false;
                 }
 

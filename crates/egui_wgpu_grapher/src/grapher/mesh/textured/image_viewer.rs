@@ -3,7 +3,7 @@
 use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_VERTICAL};
 use crate::grapher::{
     matrix::MatrixUniform,
-    mesh::Scene,
+    mesh::{RenderScene, Scene},
     pipeline::texture::{Image, TextureData},
     render::RenderState,
 };
@@ -15,10 +15,16 @@ pub fn image_viewer_scene(
     device: &Device,
     queue: &Queue,
     surface_config: &SurfaceConfiguration,
-    state: &RenderState,
+    state: &mut RenderState,
     image_path: &str,
-) -> Scene {
+) -> ImageViewerScene {
     let image = Image::from_file(image_path);
+
+    // update light position
+    state.light_state.set_position([0.0, 0.0, 3.0]);
+    state.light_state.update_uniform(queue);
+
+    // main image being displayed
 
     let texture_data_front = TextureData::from_image(&image, device, queue);
 
@@ -38,6 +44,9 @@ pub fn image_viewer_scene(
         texture: texture_data_back,
     };
 
+    // TODO: add orthographic projection for this matrix
+    //  and set initial camera position and orientation
+
     let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![
         (
             mesh_data_front,
@@ -49,5 +58,21 @@ pub fn image_viewer_scene(
         ),
     ];
 
-    build_scene(device, surface_config, state, meshes)
+    ImageViewerScene {
+        scene: build_scene(device, surface_config, state, meshes),
+    }
+}
+
+pub struct ImageViewerScene {
+    scene: Scene,
+}
+
+impl RenderScene for ImageViewerScene {
+    fn scene(&self) -> &Scene {
+        &self.scene
+    }
+
+    fn update(&mut self, _queue: &Queue, _state: &RenderState, _pre_render: bool) {
+        // no-op for now
+    }
 }

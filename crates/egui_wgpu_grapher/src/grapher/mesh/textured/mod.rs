@@ -107,21 +107,25 @@ static SQUARE_VERTICES_VERTICAL: LazyLock<Vec<Vertex>> = LazyLock::new(|| {
         Vertex {
             position: [-0.5, -0.5, 0.0],
             tex_coords: [0.0, 1.0],
+            normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
         Vertex {
             position: [0.5, -0.5, 0.0],
             tex_coords: [1.0, 1.0],
+            normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
         Vertex {
             position: [0.5, 0.5, 0.0],
             tex_coords: [1.0, 0.0],
+            normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
         Vertex {
             position: [-0.5, 0.5, 0.0],
             tex_coords: [0.0, 0.0],
+            normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
     ]

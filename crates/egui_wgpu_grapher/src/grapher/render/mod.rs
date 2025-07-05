@@ -53,6 +53,8 @@ impl RenderState {
                     &[
                         camera_bind_group,
                         &mesh.matrix.bind_group,
+                        light_bind_group,
+                        preferences_bind_group,
                         &mesh.texture.bind_group,
                     ],
                     depth_load_op,

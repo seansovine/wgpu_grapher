@@ -1,4 +1,4 @@
-use egui_wgpu::wgpu::{self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device};
+use egui_wgpu::wgpu::{self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, Queue};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -11,13 +11,24 @@ pub struct LightUniform {
 
 pub struct LightState {
     // in case we later update light during render
-    pub _uniform: LightUniform,
-    pub _buffer: Buffer,
+    pub uniform: LightUniform,
+    pub buffer: Buffer,
 
     // to create pipeline
     pub bind_group_layout: BindGroupLayout,
     // bound during render passes
     pub bind_group: BindGroup,
+}
+
+impl LightState {
+    pub fn set_position(&mut self, new_position: [f32; 3]) {
+        self.uniform.position = new_position;
+    }
+
+    pub fn update_uniform(&mut self, queue: &Queue) {
+        // update uniform buffer
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
+    }
 }
 
 impl LightState {
@@ -59,8 +70,8 @@ impl LightState {
         });
 
         Self {
-            _uniform: uniform,
-            _buffer: buffer,
+            uniform,
+            buffer,
             bind_group_layout,
             bind_group,
         }
