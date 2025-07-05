@@ -126,9 +126,6 @@ impl AppState {
                 GrapherScene::Model(model::ModelSceneData::new(model_scene))
             }
             GrapherSceneMode::ImageViewer => {
-                grapher_state.render_preferences.set_use_texture(true);
-                grapher_state.render_preferences.update_uniform(&queue);
-
                 // TODO: hard-coded path for testing
                 const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
 

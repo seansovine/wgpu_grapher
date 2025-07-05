@@ -24,6 +24,15 @@ pub fn image_viewer_scene(
     state.light_state.set_position([0.0, 0.0, 3.0]);
     state.light_state.update_uniform(queue);
 
+    // tell shader to use texture for color
+    state.render_preferences.set_use_texture(true);
+    state.render_preferences.update_uniform(queue);
+
+    // update camera position and distance for this
+    state.camera_state.set_from_z(1.5);
+    state.camera_state.update_uniform(queue);
+    // TODO: add orthographic projection camera matrix for this scene
+
     // main image being displayed
 
     let texture_data_front = TextureData::from_image(&image, device, queue);
@@ -43,9 +52,6 @@ pub fn image_viewer_scene(
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data_back,
     };
-
-    // TODO: add orthographic projection for this matrix
-    //  and set initial camera position and orientation
 
     let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![
         (

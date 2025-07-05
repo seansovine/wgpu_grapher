@@ -34,7 +34,6 @@ impl MatrixUniform {
         }
     }
 
-    #[allow(dead_code)]
     pub fn x_rotation(degrees: f32) -> Self {
         Self {
             view_proj: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),

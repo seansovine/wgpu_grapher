@@ -21,15 +21,11 @@ pub struct RenderState {
 
 impl RenderState {
     pub async fn new(device: &Device, surface_config: &SurfaceConfiguration) -> Self {
-        // make camera, light, shader preferences
-
         let camera_state = CameraState::init(device, surface_config);
 
         let light_state = LightState::create(device);
 
         let shader_preferences_state = RenderPreferences::create(device);
-
-        // construct state
 
         let depth_buffer = DepthBuffer::create(surface_config, device);
 
@@ -37,8 +33,7 @@ impl RenderState {
             camera_state,
             light_state,
             render_preferences: shader_preferences_state,
-            // we target 60 fps
-            framerate: 60_f32,
+            framerate: 60_f32, // we target 60 fps
             depth_buffer,
         }
     }
@@ -63,10 +58,6 @@ impl RenderState {
             .update(self.camera_state.camera.get_matrix());
 
         // update camera matrix uniform
-        queue.write_buffer(
-            &self.camera_state.matrix.buffer,
-            0,
-            bytemuck::cast_slice(&[self.camera_state.matrix.uniform]),
-        );
+        self.camera_state.update_uniform(queue);
     }
 }
