@@ -6,7 +6,7 @@ pub mod graph;
 pub mod model;
 
 use crate::grapher::{
-    mesh::{solid::GraphScene, RenderScene},
+    mesh::{solid::graph::GraphScene, RenderScene},
     pipeline::render_preferences::RenderPreferences,
     render::RenderState,
 };

@@ -12,11 +12,11 @@ use egui_wgpu::wgpu::{self, BindGroupLayout, Device, RenderPipeline, SurfaceConf
 // include shaders and make accessor functions
 
 pub fn get_shader() -> wgpu::ShaderSource<'static> {
-    wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into())
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/shader.wgsl").into())
 }
 
 pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
-    wgpu::ShaderSource::Wgsl(include_str!("textured_shader.wgsl").into())
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/textured_shader.wgsl").into())
 }
 
 // create a render pipeline

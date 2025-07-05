@@ -12,9 +12,9 @@
 // This will create the MeshData object used by mesh::build_scene.
 //
 
-use std::vec;
-
 use crate::grapher::mesh::{self, solid::MeshData};
+
+use std::vec;
 
 // geometric data
 
@@ -169,7 +169,7 @@ impl SquareTesselation {
     pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
         let mut indices: Vec<u32> = vec![];
         let mut normals: Vec<Option<[f32; 3]>> = vec![None; self.vertices.len()];
-        let mut vertices: Vec<mesh::Vertex> = vec![];
+        let mut vertices: Vec<mesh::solid::Vertex> = vec![];
 
         for square in &self.squares {
             for t in square.triangles() {
@@ -183,7 +183,7 @@ impl SquareTesselation {
         }
 
         for (i, vertex) in self.vertices.iter().enumerate() {
-            vertices.push(mesh::Vertex {
+            vertices.push(mesh::solid::Vertex {
                 position: *vertex,
                 color,
                 normal: normals[i].take().unwrap(),

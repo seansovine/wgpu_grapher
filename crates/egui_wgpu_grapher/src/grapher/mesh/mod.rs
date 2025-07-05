@@ -1,15 +1,9 @@
-#[allow(dead_code)]
-pub mod model;
-#[allow(dead_code)]
-pub mod pde;
+pub mod solid;
+
 #[allow(dead_code)]
 pub mod textured;
 
-pub mod solid;
-
 use super::render::RenderState;
-pub use solid::Vertex;
-pub use textured::TexturedVertex;
 
 use egui_wgpu::wgpu::{self, Queue, RenderPipeline};
 
@@ -40,55 +34,8 @@ impl RenderScene for Scene {
     }
 }
 
-// vertex buffer layouts
+// trait for structs that can provide a vertex buffer layout
 
 pub(crate) trait Bufferable {
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static>;
-}
-
-impl Bufferable for Vertex {
-    fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 6]>() as wgpu::BufferAddress,
-                    shader_location: 2,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-            ],
-        }
-    }
-}
-
-impl Bufferable for TexturedVertex {
-    fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
-        wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<TexturedVertex>() as wgpu::BufferAddress,
-            step_mode: wgpu::VertexStepMode::Vertex,
-            attributes: &[
-                wgpu::VertexAttribute {
-                    offset: 0,
-                    shader_location: 0,
-                    format: wgpu::VertexFormat::Float32x3,
-                },
-                wgpu::VertexAttribute {
-                    offset: std::mem::size_of::<[f32; 3]>() as wgpu::BufferAddress,
-                    shader_location: 1,
-                    format: wgpu::VertexFormat::Float32x2,
-                },
-            ],
-        }
-    }
 }

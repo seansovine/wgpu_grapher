@@ -1,7 +1,9 @@
-use super::solid;
+// Code to build a scene from data imported from a glTF archive.
+
+use super::{build_scene, MeshData, Vertex};
 use crate::grapher::{
     matrix,
-    mesh::{solid::MeshData, RenderScene, Scene},
+    mesh::{RenderScene, Scene},
     render::RenderState,
 };
 
@@ -14,7 +16,7 @@ const TEST_FILE_2: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_he
 
 const TEST_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
-pub fn load_solid_model() -> Vec<solid::MeshData> {
+pub fn load_solid_model() -> Vec<MeshData> {
     let (gltf, buffers, _) = gltf::import(TEST_FILE_2).unwrap();
 
     let mut meshes = vec![];
@@ -30,10 +32,10 @@ pub fn load_solid_model() -> Vec<solid::MeshData> {
             .unwrap()
             .zip(reader.read_normals().unwrap());
 
-        let mut vertices: Vec<solid::Vertex> = vec![];
+        let mut vertices: Vec<Vertex> = vec![];
 
         for (position, normal) in iter {
-            vertices.push(solid::Vertex {
+            vertices.push(Vertex {
                 position,
                 color: TEST_COLOR,
                 normal,
@@ -43,6 +45,8 @@ pub fn load_solid_model() -> Vec<solid::MeshData> {
         let indices: Vec<u32> = reader.read_indices().unwrap().into_u32().collect();
 
         meshes.push(MeshData { vertices, indices });
+
+        // TODO: consider loading matrices as well
     }
 
     meshes
@@ -64,7 +68,7 @@ pub fn model_scene(
         mesh_data.push((mesh, matrix));
     }
 
-    let scene = solid::build_scene(device, surface_config, state, mesh_data);
+    let scene = build_scene(device, surface_config, state, mesh_data);
 
     ModelScene { scene }
 }
