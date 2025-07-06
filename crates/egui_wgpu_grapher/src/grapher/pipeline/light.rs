@@ -18,6 +18,9 @@ pub struct LightState {
     pub bind_group_layout: BindGroupLayout,
     // bound during render passes
     pub bind_group: BindGroup,
+
+    // provides a basic restore for light
+    pub previous_uniform: Option<LightUniform>,
 }
 
 impl LightState {
@@ -74,6 +77,19 @@ impl LightState {
             buffer,
             bind_group_layout,
             bind_group,
+            previous_uniform: None,
+        }
+    }
+
+    pub fn save_light(&mut self) {
+        self.previous_uniform = Some(self.uniform);
+    }
+
+    // restores camera from previous if previous was saved
+    pub fn maybe_restore_light(&mut self, queue: &Queue) {
+        if let Some(uniform) = self.previous_uniform.take() {
+            self.uniform = uniform;
+            self.update_uniform(queue);
         }
     }
 }

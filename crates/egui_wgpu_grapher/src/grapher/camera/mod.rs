@@ -1,9 +1,10 @@
 pub mod controller;
 
-use super::matrix::{self, MatrixState, MatrixUniform};
+use super::matrix::{self, MatrixState, MatrixUniform, X_AXIS, Y_AXIS};
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 use std::f32::consts::PI;
 
+#[derive(Clone)]
 pub struct Camera {
     // for look-at matrix
     pub eye: cgmath::Point3<f32>,
@@ -29,9 +30,6 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
     0.0, 0.0, 0.0, 1.0,
 );
 
-const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
-const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
-
 impl Camera {
     pub fn get_matrix(&self) -> cgmath::Matrix4<f32> {
         let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
@@ -47,6 +45,9 @@ pub struct CameraState {
     pub camera: Camera,
     pub matrix: MatrixState,
     pub controller: controller::CameraController,
+
+    // provides a basic undo for camera changes
+    pub previous_camera: Option<Camera>,
 }
 
 impl CameraState {
@@ -75,6 +76,7 @@ impl CameraState {
             camera,
             matrix,
             controller,
+            previous_camera: None,
         }
     }
 
@@ -91,5 +93,16 @@ impl CameraState {
             0,
             bytemuck::cast_slice(&[self.matrix.uniform]),
         );
+    }
+
+    pub fn save_camera(&mut self) {
+        self.previous_camera = Some(self.camera.clone());
+    }
+
+    // restores camera from previous if previous was saved
+    pub fn maybe_restore_camera(&mut self) {
+        if let Some(camera) = self.previous_camera.take() {
+            self.camera = camera;
+        }
     }
 }

@@ -7,25 +7,26 @@ use egui_wgpu::wgpu::{
     ShaderStages,
 };
 
-const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
+pub const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
+pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MatrixUniform {
-    view_proj: [[f32; 4]; 4],
+    matrix: [[f32; 4]; 4],
 }
 
 impl MatrixUniform {
     pub fn identity() -> Self {
         use cgmath::SquareMatrix;
         Self {
-            view_proj: cgmath::Matrix4::identity().into(),
+            matrix: cgmath::Matrix4::identity().into(),
         }
     }
 
     pub fn translation(coords: &[f32]) -> Self {
         Self {
-            view_proj: cgmath::Matrix4::from_translation(cgmath::Vector3 {
+            matrix: cgmath::Matrix4::from_translation(cgmath::Vector3 {
                 x: coords[0],
                 y: coords[1],
                 z: coords[2],
@@ -36,12 +37,12 @@ impl MatrixUniform {
 
     pub fn x_rotation(degrees: f32) -> Self {
         Self {
-            view_proj: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),
+            matrix: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),
         }
     }
 
     pub fn update(&mut self, matrix: cgmath::Matrix4<f32>) {
-        self.view_proj = matrix.into();
+        self.matrix = matrix.into();
     }
 }
 

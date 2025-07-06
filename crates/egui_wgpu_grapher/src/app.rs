@@ -157,6 +157,12 @@ impl AppState {
                     return;
                 }
 
+                // restore previous camera and light if they were saved
+                self.grapher_state.camera_state.maybe_restore_camera();
+                self.grapher_state
+                    .light_state
+                    .maybe_restore_light(&self.queue);
+
                 let graph_scene = grapher::mesh::solid::graph::graph_scene(
                     &self.device,
                     &self.surface_config,
@@ -170,6 +176,12 @@ impl AppState {
                     return;
                 }
 
+                // restore previous camera and light if they were saved
+                self.grapher_state.camera_state.maybe_restore_camera();
+                self.grapher_state
+                    .light_state
+                    .maybe_restore_light(&self.queue);
+
                 let model_scene = grapher::mesh::solid::model::model_scene(
                     &self.device,
                     &self.surface_config,
@@ -182,6 +194,10 @@ impl AppState {
                 if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
                     return;
                 }
+
+                // save old camera and lightstate
+                self.grapher_state.camera_state.save_camera();
+                self.grapher_state.light_state.save_light();
 
                 // TODO: hard-coded path for testing
                 const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
