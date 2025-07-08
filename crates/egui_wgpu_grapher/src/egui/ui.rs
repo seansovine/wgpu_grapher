@@ -9,7 +9,6 @@ use crate::{
 
 #[allow(clippy::too_many_arguments)]
 pub fn render_window(
-    scale_factor: &mut f32,
     pixels_per_point: f32,
     ui: &mut Ui,
     editing: &mut bool,
@@ -24,6 +23,7 @@ pub fn render_window(
 
     ui.label(RichText::new("Select scene").strong());
     ui.add_space(AFTER_LABEL_SPACE);
+
     scene_selection_ui(selected_scene, ui_state, ui);
 
     // parameters for the grapher scene
@@ -53,6 +53,8 @@ pub fn render_window(
     ui.label(RichText::new("UI settings").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
+    let scale_factor = &mut ui_state.scale_factor;
+
     ui.horizontal(|ui| {
         ui.label(format!("Pixels per point: {}", pixels_per_point));
         if ui.button("-").clicked() {
@@ -69,4 +71,5 @@ pub fn render_window(
 pub struct UiState {
     pub render_ui_state: RenderUiState,
     pub selected_scene_index: usize,
+    pub scale_factor: f32,
 }

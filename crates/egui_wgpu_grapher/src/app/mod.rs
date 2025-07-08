@@ -1,13 +1,9 @@
-use crate::{
-    egui::{
-        egui_tools::EguiRenderer,
-        ui::{render_window, UiState},
-    },
-    grapher,
-    grapher_egui::{graph, image_viewer, model, GrapherScene, GrapherSceneMode, RenderUiState},
-};
+mod state;
+use state::*;
+
+use crate::egui::ui::render_window;
 use egui_wgpu::{
-    wgpu::{self, Limits, SurfaceError},
+    wgpu::{self, SurfaceError},
     ScreenDescriptor,
 };
 use std::{
@@ -21,207 +17,14 @@ use winit::{
     event::{ElementState, KeyEvent, WindowEvent},
     event_loop::ActiveEventLoop,
     keyboard::{KeyCode, PhysicalKey},
-    window::{Window, WindowId},
+    window::{Window, WindowAttributes, WindowId},
 };
-
-pub struct AppState {
-    // wgpu and egui state
-    pub device: wgpu::Device,
-    pub queue: wgpu::Queue,
-    pub surface_config: wgpu::SurfaceConfiguration,
-    pub surface: wgpu::Surface<'static>,
-    pub scale_factor: f32,
-    pub egui_renderer: EguiRenderer,
-
-    // ui state needed persisted across renders
-    pub ui_state: UiState,
-
-    // state for grapher render objects
-    pub selected_scene: GrapherSceneMode,
-    pub grapher_state: grapher::render::RenderState,
-    pub grapher_scene: GrapherScene,
-}
-
-impl AppState {
-    async fn new(
-        instance: &wgpu::Instance,
-        surface: wgpu::Surface<'static>,
-        window: &Window,
-        width: u32,
-        height: u32,
-    ) -> Self {
-        let power_pref = wgpu::PowerPreference::default();
-        let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: power_pref,
-                force_fallback_adapter: false,
-                compatible_surface: Some(&surface),
-            })
-            .await
-            .expect("Failed to find an appropriate adapter");
-
-        let features = wgpu::Features::POLYGON_MODE_LINE;
-        let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    required_features: features,
-                    required_limits: Limits {
-                        // TODO: combine bindings into fewer groups
-                        max_bind_groups: 5,
-                        ..Default::default()
-                    },
-                    memory_hints: Default::default(),
-                },
-                None,
-            )
-            .await
-            .expect("Failed to create device");
-
-        let swapchain_capabilities = surface.get_capabilities(&adapter);
-        let selected_format = wgpu::TextureFormat::Bgra8UnormSrgb;
-        let swapchain_format = swapchain_capabilities
-            .formats
-            .iter()
-            .find(|d| **d == selected_format)
-            .expect("failed to select proper surface texture format!");
-
-        let surface_config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format: *swapchain_format,
-            width,
-            height,
-            present_mode: wgpu::PresentMode::AutoVsync,
-            desired_maximum_frame_latency: 0,
-            alpha_mode: swapchain_capabilities.alpha_modes[0],
-            view_formats: vec![],
-        };
-
-        surface.configure(&device, &surface_config);
-
-        let egui_renderer = EguiRenderer::new(&device, surface_config.format, None, 1, window);
-
-        let scale_factor = 1.0;
-
-        let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
-
-        const DEFAULT_SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Graph;
-
-        let graph_scene =
-            grapher::mesh::solid::graph::graph_scene(&device, &surface_config, &grapher_state);
-
-        let grapher_scene = GrapherScene::Graph(graph::GraphSceneData::new(graph_scene));
-
-        let render_ui_state =
-            RenderUiState::from_render_preferences(&grapher_state.render_preferences);
-
-        let ui_state = UiState {
-            render_ui_state,
-            selected_scene_index: DEFAULT_SCENE_CHOICE.into(),
-        };
-
-        Self {
-            device,
-            queue,
-            surface,
-            surface_config,
-            egui_renderer,
-            scale_factor,
-
-            ui_state,
-
-            selected_scene: DEFAULT_SCENE_CHOICE,
-            grapher_state,
-            grapher_scene,
-        }
-    }
-
-    fn resize_surface(&mut self, width: u32, height: u32) {
-        self.surface_config.width = width;
-        self.surface_config.height = height;
-        self.surface.configure(&self.device, &self.surface_config);
-
-        // resize depth buffer
-        self.grapher_state.depth_buffer =
-            grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
-
-        // update camera aspect ratio
-        self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
-        self.grapher_state.update(&mut self.queue);
-    }
-
-    fn update_grapher_scene(&mut self) {
-        let grapher_scene = match self.selected_scene {
-            GrapherSceneMode::Graph => {
-                if matches!(self.grapher_scene, GrapherScene::Graph(_)) {
-                    return;
-                }
-
-                // restore previous camera and light if they were saved
-                self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_state
-                    .light_state
-                    .maybe_restore_light(&self.queue);
-
-                let graph_scene = grapher::mesh::solid::graph::graph_scene(
-                    &self.device,
-                    &self.surface_config,
-                    &self.grapher_state,
-                );
-
-                GrapherScene::Graph(graph::GraphSceneData::new(graph_scene))
-            }
-            GrapherSceneMode::Model => {
-                if matches!(self.grapher_scene, GrapherScene::Model(_)) {
-                    return;
-                }
-
-                // restore previous camera and light if they were saved
-                self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_state
-                    .light_state
-                    .maybe_restore_light(&self.queue);
-
-                let model_scene = grapher::mesh::solid::model::model_scene(
-                    &self.device,
-                    &self.surface_config,
-                    &self.grapher_state,
-                );
-
-                GrapherScene::Model(model::ModelSceneData::new(model_scene))
-            }
-            GrapherSceneMode::ImageViewer => {
-                if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
-                    return;
-                }
-
-                // save old camera and lightstate
-                self.grapher_state.camera_state.save_camera();
-                self.grapher_state.light_state.save_light();
-
-                // TODO: hard-coded path for testing
-                const TEST_IMAGE: &str = "/home/sean/Code_projects/wgpu_grapher/assets/pexels-arjay-neyra-2152024526-32225792.jpg";
-
-                let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
-                    &self.device,
-                    &self.queue,
-                    &self.surface_config,
-                    &mut self.grapher_state,
-                    TEST_IMAGE,
-                );
-
-                GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(image_scene))
-            }
-        };
-
-        self.grapher_scene = grapher_scene;
-    }
-}
 
 pub struct App {
     instance: wgpu::Instance,
     state: Option<AppState>,
     window: Option<Arc<Window>>,
+    window_attributes: WindowAttributes,
 
     // timing variables
     last_update_time: Instant,
@@ -246,6 +49,7 @@ impl App {
 
     pub fn new() -> Self {
         let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        let window_attributes = Window::default_attributes().with_title("WGPU Grapher");
 
         let last_update_time = time::Instant::now();
         let last_render_time = time::Instant::now();
@@ -254,18 +58,20 @@ impl App {
         let avg_framerate = 60.0f32;
 
         let scene_updates_paused = false;
-
         let editing = false;
 
         Self {
             instance,
             state: None,
             window: None,
+            window_attributes,
+
             last_update_time,
             last_render_time,
             accumulated_secs,
             render_count,
             avg_framerate,
+
             scene_updates_paused,
             editing,
         }
@@ -292,8 +98,11 @@ impl App {
         )
         .await;
 
-        self.window.get_or_insert(window);
-        self.state.get_or_insert(state);
+        // Docs: gracefully handle redundant... Resumed events
+        if self.window.is_none() {
+            self.window.replace(window);
+            self.state.replace(state);
+        }
     }
 
     fn handle_resized(&mut self, width: u32, height: u32) {
@@ -317,7 +126,7 @@ impl App {
         let screen_descriptor = ScreenDescriptor {
             size_in_pixels: [state.surface_config.width, state.surface_config.height],
             pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
-                * state.scale_factor,
+                * state.ui_state.scale_factor,
         };
 
         let surface_texture = state.surface.get_current_texture();
@@ -355,8 +164,8 @@ impl App {
             state.egui_renderer.begin_frame(window);
 
             let editing = &mut self.editing;
-
             let context = &state.egui_renderer.context();
+
             egui::Window::new("Settings")
                 .resizable(true)
                 .default_size([200.0, 330.00])
@@ -364,7 +173,6 @@ impl App {
                 .default_open(true)
                 .show(context, |ui| {
                     render_window(
-                        &mut state.scale_factor,
                         context.pixels_per_point(),
                         ui,
                         editing,
@@ -391,9 +199,11 @@ impl App {
 }
 
 impl ApplicationHandler for App {
+    /// Handles startup and resume from system suspsend. See discussion in
+    ///  [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop
-            .create_window(Window::default_attributes())
+            .create_window(self.window_attributes.clone())
             .unwrap();
         pollster::block_on(self.set_window(window));
     }

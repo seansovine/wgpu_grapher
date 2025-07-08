@@ -56,7 +56,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
 
     Grid::new("graph parameter input").show(ui, |ui| {
         *needs_update = float_edit_line(
-            "Graph x scale",
+            "x scale",
             &mut data.ui_data.scale_x_text,
             scale_x,
             editing,
@@ -67,7 +67,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
         // scale parameter edits
 
         *needs_update = float_edit_line(
-            "Graph z scale",
+            "z scale",
             &mut data.ui_data.scale_z_text,
             scale_z,
             editing,
@@ -76,7 +76,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
         ui.end_row();
 
         *needs_update = float_edit_line(
-            "Graph y scale",
+            "y scale",
             &mut data.ui_data.scale_y_text,
             scale_y,
             editing,
@@ -90,7 +90,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
         // shift parameter edits
 
         *needs_update = float_edit_line(
-            "Graph x shift",
+            "x shift",
             &mut data.ui_data.shift_x_text,
             shift_x,
             editing,
@@ -99,7 +99,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
         ui.end_row();
 
         *needs_update = float_edit_line(
-            "Graph z shift",
+            "z shift",
             &mut data.ui_data.shift_z_text,
             shift_z,
             editing,
@@ -108,7 +108,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
         ui.end_row();
 
         *needs_update = float_edit_line(
-            "Graph y shift",
+            "y shift",
             &mut data.ui_data.shift_y_text,
             shift_y,
             editing,
