@@ -3,8 +3,6 @@
 #[allow(dead_code)]
 pub mod graph;
 #[allow(dead_code)]
-pub mod model;
-#[allow(dead_code)]
 pub mod pde;
 
 use super::{Scene, Vertex};

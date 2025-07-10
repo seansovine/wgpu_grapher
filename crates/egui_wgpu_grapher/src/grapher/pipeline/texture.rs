@@ -91,6 +91,18 @@ impl TextureData {
         let texture = texture_from_matrix(matrix, device, queue);
         TextureData::from_texture(texture, device)
     }
+
+    pub fn solid_color_texture(rgba: &[u8; 4], device: &Device, queue: &Queue) -> Self {
+        let mut data = vec![];
+        for _ in 0..4 {
+            data.extend_from_slice(rgba.as_slice());
+        }
+        let matrix = TextureMatrix {
+            dimensions: (2, 2),
+            data,
+        };
+        TextureData::from_matrix(&matrix, device, queue)
+    }
 }
 
 pub fn texture_from_data_and_dims(

@@ -159,10 +159,11 @@ impl AppState {
                     .light_state
                     .maybe_restore_light(&self.queue);
 
-                let model_scene = grapher::mesh::solid::model::model_scene(
+                let model_scene = grapher::mesh::textured::model::model_scene(
                     &self.device,
+                    &self.queue,
                     &self.surface_config,
-                    &self.grapher_state,
+                    &mut self.grapher_state,
                 );
 
                 GrapherScene::Model(model::ModelSceneData::new(model_scene))

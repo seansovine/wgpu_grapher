@@ -1,6 +1,8 @@
 // Structures and functions for building textured mesh scenes.
 
 pub mod image_viewer;
+#[allow(dead_code)]
+pub mod model;
 pub mod pde;
 
 use super::{Scene, Vertex};

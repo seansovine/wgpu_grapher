@@ -1,4 +1,4 @@
-use crate::grapher::mesh::solid::model::ModelScene;
+use crate::grapher::mesh::textured::model::ModelScene;
 
 use egui::Ui;
 
