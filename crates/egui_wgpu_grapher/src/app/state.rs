@@ -25,7 +25,7 @@ pub struct AppState {
 
 impl AppState {
     // grapher scene to be loaded on app start
-    const DEFAULT_SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Graph;
+    const DEFAULT_SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Model;
 
     pub(super) async fn new(
         instance: &wgpu::Instance,

@@ -20,6 +20,10 @@ pub struct Camera {
     // rotation euler angles
     pub alpha: f32,
     pub gamma: f32,
+
+    // translations
+    pub translation_x: f32,
+    pub translation_y: f32,
 }
 
 #[rustfmt::skip]
@@ -35,9 +39,14 @@ impl Camera {
         let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
         let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
         let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
+        let translation = cgmath::Matrix4::from_translation(cgmath::Vector3 {
+            x: self.translation_x,
+            y: self.translation_y,
+            z: 0.0,
+        });
         let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
 
-        OPENGL_TO_WGPU_MATRIX * proj * view * gamma_rot * alpha_rot
+        OPENGL_TO_WGPU_MATRIX * proj * view * gamma_rot * alpha_rot * translation
     }
 }
 
@@ -64,6 +73,9 @@ impl CameraState {
 
             alpha: PI / 15.0,
             gamma: PI / 4.75,
+
+            translation_x: 0.0,
+            translation_y: 100.0,
         };
 
         let mut uniform = MatrixUniform::identity();

@@ -20,6 +20,10 @@ use gltf::{
 const TEST_FILE_1: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_sphere/scene.gltf";
 #[allow(unused)]
 const TEST_FILE_2: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_head/scene.gltf";
+#[allow(unused)]
+const TEST_FILE_3: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/the_mimic/scene.gltf";
+#[allow(unused)]
+const TEST_FILE_4: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/beast/scene.gltf";
 
 const TEST_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
@@ -119,7 +123,7 @@ pub fn model_scene(
     state: &mut RenderState,
 ) -> ModelScene {
     let mut mesh_data = vec![];
-    let model_meshes = load_model(device, queue, TEST_FILE_2);
+    let model_meshes = load_model(device, queue, TEST_FILE_4);
 
     // Chosen for particular test examples; need to implement camera movement.
     let matrix = matrix::MatrixUniform::x_rotation(-135.0);
