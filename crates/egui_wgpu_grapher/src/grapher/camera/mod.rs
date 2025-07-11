@@ -75,7 +75,7 @@ impl CameraState {
             gamma: PI / 4.75,
 
             translation_x: 0.0,
-            translation_y: 100.0,
+            translation_y: 0.0,
         };
 
         let mut uniform = MatrixUniform::identity();
@@ -97,6 +97,8 @@ impl CameraState {
         self.camera.eye = (0.0, 0.0, distance).into();
         self.camera.alpha = 0.0;
         self.camera.gamma = 0.0;
+        self.camera.translation_x = 0.0;
+        self.camera.translation_y = 0.0;
     }
 
     pub fn update_uniform(&mut self, queue: &Queue) {

@@ -25,7 +25,9 @@ use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, Textu
 // For use with user input.
 
 #[allow(dead_code)]
+#[derive(clap::ValueEnum, Debug, Default, Clone, Copy)]
 pub enum GrapherSceneMode {
+    #[default]
     Graph,
     Model,
     ImageViewer,
@@ -226,7 +228,7 @@ impl RenderUiState {
 pub fn render_parameter_ui(
     render_state: &mut RenderState,
     render_ui_state: &mut RenderUiState,
-    grapher_scene: &mut GrapherScene,
+    grapher_scene: Option<&mut GrapherScene>,
     ui: &mut Ui,
 ) {
     ui.horizontal(|ui| {
@@ -241,7 +243,7 @@ pub fn render_parameter_ui(
             render_ui_state.needs_update = true;
         }
 
-        if matches!(grapher_scene, GrapherScene::Graph(_)) {
+        if matches!(grapher_scene, Some(GrapherScene::Graph(_))) {
             let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
 
             if response.changed() {
@@ -250,7 +252,7 @@ pub fn render_parameter_ui(
                     .set_wireframe(render_ui_state.use_wireframe);
 
                 // requires changing polygon mode, and so recreating pipeline
-                grapher_scene.set_needs_update(true);
+                grapher_scene.unwrap().set_needs_update(true);
             }
         }
     });

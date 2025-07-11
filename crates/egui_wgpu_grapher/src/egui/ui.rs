@@ -12,7 +12,7 @@ pub fn render_window(
     pixels_per_point: f32,
     ui: &mut Ui,
     editing: &mut bool,
-    grapher_scene: &mut GrapherScene,
+    mut grapher_scene: Option<&mut GrapherScene>,
     render_state: &mut RenderState,
     ui_state: &mut UiState,
     selected_scene: &mut GrapherSceneMode,
@@ -28,11 +28,13 @@ pub fn render_window(
 
     // parameters for the grapher scene
 
-    ui.separator();
-    ui.label(RichText::new("Grapher parameters").strong());
-    ui.add_space(AFTER_LABEL_SPACE);
+    if let Some(grapher_scene) = grapher_scene.as_mut() {
+        ui.separator();
+        ui.label(RichText::new("Grapher parameters").strong());
+        ui.add_space(AFTER_LABEL_SPACE);
 
-    grapher_scene.parameter_ui(editing, ui);
+        grapher_scene.parameter_ui(editing, ui);
+    }
 
     // general rendere parameters
 

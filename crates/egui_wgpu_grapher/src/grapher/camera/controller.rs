@@ -10,20 +10,24 @@ use std::f32::consts::PI;
 pub struct CameraController {
     pub speed: f32,
 
+    // rotation keys
     pub is_up_pressed: bool,
     pub is_down_pressed: bool,
     pub is_left_pressed: bool,
     pub is_right_pressed: bool,
 
+    // zoom keys
     pub is_z_pressed: bool,
     pub is_x_pressed: bool,
 
+    // translation keys
     pub is_t_pressed: bool,
     pub is_f_pressed: bool,
     pub is_g_pressed: bool,
     pub is_h_pressed: bool,
 
-    pub shift_pressed: bool,
+    // modifier
+    pub is_shift_pressed: bool,
 }
 
 impl CameraController {
@@ -44,7 +48,7 @@ impl CameraController {
             is_h_pressed: false,
             is_t_pressed: false,
 
-            shift_pressed: false,
+            is_shift_pressed: false,
         }
     }
 
@@ -54,7 +58,7 @@ impl CameraController {
         let forward_norm = forward.normalize();
         let forward_mag = forward.magnitude();
 
-        let multipler: f32 = if self.shift_pressed { 120.0 } else { 1.2 };
+        let multipler: f32 = if self.is_shift_pressed { 120.0 } else { 1.2 };
 
         // use of look-at from Learn WGPU
         if self.is_z_pressed && forward_mag > self.speed {
@@ -79,7 +83,11 @@ impl CameraController {
             camera.gamma -= angle_incr;
         }
 
-        let trans_incr = self.speed * 100.0;
+        let trans_incr = if self.is_shift_pressed {
+            self.speed * 25.0
+        } else {
+            self.speed * 2.5
+        };
 
         if self.is_t_pressed {
             camera.translation_y += trans_incr;
@@ -149,7 +157,7 @@ impl CameraController {
                         true
                     }
                     KeyCode::ShiftRight => {
-                        self.shift_pressed = is_pressed;
+                        self.is_shift_pressed = is_pressed;
                         true
                     }
                     _ => false,

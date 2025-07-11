@@ -4,4 +4,4 @@
 export RUST_LOG=wgpu_grapher=info
 
 # run w/ e.g. --bin egui_wgpu_grapher
-cargo run --release --quiet "$@"
+cargo run --release --quiet $*

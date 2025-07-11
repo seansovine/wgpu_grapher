@@ -17,22 +17,20 @@ pub struct AppState {
     // state for grapher render objects
     pub selected_scene: GrapherSceneMode,
     pub grapher_state: grapher::render::RenderState,
-    pub grapher_scene: GrapherScene,
+    pub grapher_scene: Option<GrapherScene>,
 
     // ui state needed persisted across renders
     pub ui_state: UiState,
 }
 
 impl AppState {
-    // grapher scene to be loaded on app start
-    const DEFAULT_SCENE_CHOICE: GrapherSceneMode = GrapherSceneMode::Model;
-
     pub(super) async fn new(
         instance: &wgpu::Instance,
         surface: wgpu::Surface<'static>,
         window: &Window,
         width: u32,
         height: u32,
+        initial_scene: GrapherSceneMode,
     ) -> Self {
         let power_pref = wgpu::PowerPreference::default();
         let adapter = instance
@@ -86,15 +84,12 @@ impl AppState {
         let scale_factor = 1.0;
 
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
-        let graph_scene =
-            grapher::mesh::solid::graph::graph_scene(&device, &surface_config, &grapher_state);
-        let grapher_scene = GrapherScene::Graph(graph::GraphSceneData::new(graph_scene));
 
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);
         let ui_state = UiState {
             render_ui_state,
-            selected_scene_index: Self::DEFAULT_SCENE_CHOICE.into(),
+            selected_scene_index: initial_scene.into(),
             scale_factor,
         };
 
@@ -105,9 +100,9 @@ impl AppState {
             surface_config,
             egui_renderer,
 
-            selected_scene: Self::DEFAULT_SCENE_CHOICE,
+            selected_scene: initial_scene,
             grapher_state,
-            grapher_scene,
+            grapher_scene: None,
 
             ui_state,
         }
@@ -128,9 +123,9 @@ impl AppState {
     }
 
     pub(super) fn update_grapher_scene(&mut self) {
-        let grapher_scene = match self.selected_scene {
+        match self.selected_scene {
             GrapherSceneMode::Graph => {
-                if matches!(self.grapher_scene, GrapherScene::Graph(_)) {
+                if matches!(self.grapher_scene, Some(GrapherScene::Graph(_))) {
                     return;
                 }
 
@@ -146,10 +141,12 @@ impl AppState {
                     &self.grapher_state,
                 );
 
-                GrapherScene::Graph(graph::GraphSceneData::new(graph_scene))
+                let grapher_scene = GrapherScene::Graph(graph::GraphSceneData::new(graph_scene));
+
+                self.grapher_scene = Some(grapher_scene);
             }
             GrapherSceneMode::Model => {
-                if matches!(self.grapher_scene, GrapherScene::Model(_)) {
+                if matches!(self.grapher_scene, Some(GrapherScene::Model(_))) {
                     return;
                 }
 
@@ -166,10 +163,15 @@ impl AppState {
                     &mut self.grapher_state,
                 );
 
-                GrapherScene::Model(model::ModelSceneData::new(model_scene))
+                if let Some(scene) = model_scene {
+                    self.grapher_scene =
+                        Some(GrapherScene::Model(model::ModelSceneData::new(scene)));
+                } else {
+                    self.grapher_scene = None;
+                }
             }
             GrapherSceneMode::ImageViewer => {
-                if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
+                if matches!(self.grapher_scene, Some(GrapherScene::ImageViewer(_))) {
                     return;
                 }
 
@@ -188,10 +190,14 @@ impl AppState {
                     TEST_IMAGE,
                 );
 
-                GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(image_scene))
+                if let Some(scene) = image_scene {
+                    self.grapher_scene = Some(GrapherScene::ImageViewer(
+                        image_viewer::ImageViewerSceneData::new(scene),
+                    ));
+                } else {
+                    self.grapher_scene = None;
+                }
             }
         };
-
-        self.grapher_scene = grapher_scene;
     }
 }

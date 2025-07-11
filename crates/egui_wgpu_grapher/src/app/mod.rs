@@ -1,7 +1,7 @@
 mod state;
 use state::*;
 
-use crate::egui::ui::render_window;
+use crate::{egui::ui::render_window, grapher_egui::GrapherSceneMode};
 use egui_wgpu::{
     wgpu::{self, SurfaceError},
     ScreenDescriptor,
@@ -37,6 +37,9 @@ pub struct App {
     scene_updates_paused: bool,
     // indicates a ui component is focused, to block other input
     editing: bool,
+
+    // initial_scene
+    initial_scene: GrapherSceneMode,
 }
 
 impl App {
@@ -47,7 +50,7 @@ impl App {
     // after how many frame renders to update the framerate estimate
     const REPORT_FRAMES_INTERVAL: usize = 100;
 
-    pub fn new() -> Self {
+    pub fn new(initial_scene: Option<GrapherSceneMode>) -> Self {
         let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
         let window_attributes = Window::default_attributes().with_title("WGPU Grapher");
 
@@ -74,6 +77,8 @@ impl App {
 
             scene_updates_paused,
             editing,
+
+            initial_scene: initial_scene.unwrap_or_default(),
         }
     }
 
@@ -94,7 +99,8 @@ impl App {
             surface,
             &window,
             initial_width,
-            initial_width,
+            initial_height,
+            self.initial_scene,
         )
         .await;
 
@@ -154,9 +160,9 @@ impl App {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        state
-            .grapher_scene
-            .render(&surface_view, &mut encoder, &state.grapher_state);
+        if let Some(grapher_scene) = state.grapher_scene.as_mut() {
+            grapher_scene.render(&surface_view, &mut encoder, &state.grapher_state);
+        }
 
         let window = self.window.as_ref().unwrap();
 
@@ -176,7 +182,7 @@ impl App {
                         context.pixels_per_point(),
                         ui,
                         editing,
-                        &mut state.grapher_scene,
+                        state.grapher_scene.as_mut(),
                         &mut state.grapher_state,
                         &mut state.ui_state,
                         &mut state.selected_scene,
@@ -225,8 +231,11 @@ impl ApplicationHandler for App {
         }
 
         match event {
-            WindowEvent::CloseRequested
-            | WindowEvent::KeyboardInput {
+            WindowEvent::CloseRequested => {
+                event_loop.exit();
+            }
+
+            WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
                         state: ElementState::Pressed,
@@ -247,8 +256,8 @@ impl ApplicationHandler for App {
 
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
-                if !self.scene_updates_paused {
-                    state.grapher_scene.update(
+                if !self.scene_updates_paused && state.grapher_scene.is_some() {
+                    state.grapher_scene.as_mut().unwrap().update(
                         &state.device,
                         &state.surface_config,
                         &state.queue,

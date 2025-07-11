@@ -17,7 +17,7 @@ pub fn image_viewer_scene(
     surface_config: &SurfaceConfiguration,
     state: &mut RenderState,
     image_path: &str,
-) -> ImageViewerScene {
+) -> Option<ImageViewerScene> {
     let image = Image::from_file(image_path);
 
     // update light position
@@ -64,9 +64,11 @@ pub fn image_viewer_scene(
         ),
     ];
 
-    ImageViewerScene {
+    let scene = ImageViewerScene {
         scene: build_scene(device, surface_config, state, meshes),
-    }
+    };
+
+    Some(scene)
 }
 
 pub struct ImageViewerScene {
