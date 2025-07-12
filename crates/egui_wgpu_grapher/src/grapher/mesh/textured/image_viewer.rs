@@ -39,21 +39,23 @@ pub fn image_viewer_scene(
 
     let texture_data_front = TextureData::from_image(&image, device, queue);
 
-    let mesh_data_front = TexturedMeshData {
+    let mut mesh_data_front = TexturedMeshData {
         vertices: SQUARE_VERTICES_VERTICAL.clone(),
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data_front,
     };
+    update_canvas_aspect_ratio(&mut mesh_data_front, image.dimensions.1, image.dimensions.0);
 
     // second image behind first, to test depth buffer
 
     let texture_data_back = TextureData::from_image(&image, device, queue);
 
-    let mesh_data_back = TexturedMeshData {
+    let mut mesh_data_back = TexturedMeshData {
         vertices: SQUARE_VERTICES_VERTICAL.clone(),
         indices: Vec::from(SQUARE_INDICES),
         texture: texture_data_back,
     };
+    update_canvas_aspect_ratio(&mut mesh_data_back, image.dimensions.1, image.dimensions.0);
 
     let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![
         (
@@ -71,6 +73,20 @@ pub fn image_viewer_scene(
     };
 
     Some(scene)
+}
+
+fn update_canvas_aspect_ratio(mesh_data: &mut TexturedMeshData, height: u32, width: u32) {
+    if width < height {
+        let mult = width as f32 / height as f32;
+        for vertex in mesh_data.vertices.iter_mut() {
+            vertex.position[0] *= mult;
+        }
+    } else if width > height {
+        let mult = height as f32 / width as f32;
+        for vertex in mesh_data.vertices.iter_mut() {
+            vertex.position[1] *= mult;
+        }
+    }
 }
 
 pub struct ImageViewerScene {

@@ -30,7 +30,7 @@ pub fn render_window(
 
     if let Some(grapher_scene) = grapher_scene.as_mut() {
         ui.separator();
-        ui.label(RichText::new("Grapher parameters").strong());
+        ui.label(RichText::new("Scene parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);
 
         grapher_scene.parameter_ui(editing, ui, ui_state);
