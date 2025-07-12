@@ -17,6 +17,11 @@ pub struct AppState {
     pub surface: wgpu::Surface<'static>,
     pub egui_renderer: EguiRenderer,
 
+    // whether to update scene state on each redraw event
+    pub scene_updates_paused: bool,
+    // indicates a ui component is focused, to block other input
+    pub editing: bool,
+
     // state for grapher render objects
     pub selected_scene: GrapherSceneMode,
     pub grapher_state: grapher::render::RenderState,
@@ -104,6 +109,9 @@ impl AppState {
             surface_config,
             egui_renderer,
 
+            scene_updates_paused: false,
+            editing: false,
+
             selected_scene: initial_scene,
             grapher_state,
             grapher_scene: None,
@@ -126,9 +134,11 @@ impl AppState {
         self.grapher_state.update(&mut self.queue);
     }
 
-    pub(super) fn update_grapher_scene(&mut self, editing: &mut bool) {
+    pub(super) fn update_grapher_scene(&mut self) {
         match self.selected_scene {
             GrapherSceneMode::Graph => {
+                self.ui_state.file_window_state = FileInputState::Hidden;
+
                 if matches!(self.grapher_scene, Some(GrapherScene::Graph(_))) {
                     return;
                 }
@@ -159,6 +169,8 @@ impl AppState {
                         return;
                     }
                 } else {
+                    // Scene doesn't match selection, so need to reload scene.
+                    // First check if current filename points to valid glTF.
                     self.ui_state.file_window_state = FileInputState::NeedsChecked;
                 }
                 if self.ui_state.filename.is_empty() {
@@ -191,7 +203,7 @@ impl AppState {
                     self.grapher_scene =
                         Some(GrapherScene::Model(model::ModelSceneData::new(scene)));
                     self.ui_state.file_window_state = FileInputState::Hidden;
-                    *editing = false;
+                    self.editing = false;
                 } else {
                     self.grapher_scene = None;
                     self.ui_state.file_window_state = FileInputState::InvalidFile;
@@ -200,30 +212,50 @@ impl AppState {
 
             GrapherSceneMode::ImageViewer => {
                 if matches!(self.grapher_scene, Some(GrapherScene::ImageViewer(_))) {
+                    if !matches!(
+                        self.ui_state.file_window_state,
+                        FileInputState::NeedsChecked
+                    ) {
+                        return;
+                    }
+                } else {
+                    // Scene doesn't match selection, so need to reload scene.
+                    // First check if current filename points to valid glTF.
+                    self.ui_state.file_window_state = FileInputState::NeedsChecked;
+                }
+                if self.ui_state.filename.is_empty() {
+                    self.grapher_scene = None;
+                    self.ui_state.file_window_state = FileInputState::NeedsInput;
+                }
+                if !matches!(
+                    self.ui_state.file_window_state,
+                    FileInputState::NeedsChecked
+                ) {
                     return;
                 }
+                // TODO: maybe clean up the logic here
 
                 // save old camera and lightstate
                 self.grapher_state.camera_state.save_camera();
                 self.grapher_state.light_state.save_light();
-
-                // TODO: hard-coded path for testing
-                const TEST_IMAGE: &str = "assets/pexels-arjay-neyra-2152024526-32225792.jpg";
 
                 let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
                     &self.device,
                     &self.queue,
                     &self.surface_config,
                     &mut self.grapher_state,
-                    TEST_IMAGE,
+                    &self.ui_state.filename,
                 );
 
                 if let Some(scene) = image_scene {
                     self.grapher_scene = Some(GrapherScene::ImageViewer(
                         image_viewer::ImageViewerSceneData::new(scene),
                     ));
+                    self.ui_state.file_window_state = FileInputState::Hidden;
+                    self.editing = false;
                 } else {
                     self.grapher_scene = None;
+                    self.ui_state.file_window_state = FileInputState::InvalidFile;
                 }
             }
         };

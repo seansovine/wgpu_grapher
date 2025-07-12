@@ -1,4 +1,7 @@
-use crate::grapher::mesh::textured::image_viewer::ImageViewerScene;
+use crate::{
+    egui::ui::{FileInputState, UiState},
+    grapher::mesh::textured::image_viewer::ImageViewerScene,
+};
 
 use egui::Ui;
 
@@ -22,7 +25,10 @@ impl ImageViewerSceneData {
 pub fn parameter_ui_image_viewer(
     _data: &mut ImageViewerSceneData,
     _editing: &mut bool,
-    _ui: &mut Ui,
+    ui: &mut Ui,
+    ui_state: &mut UiState,
 ) {
-    // no-op for now
+    if ui.add(egui::Button::new("Change file")).clicked() {
+        ui_state.file_window_state = FileInputState::NeedsInput;
+    }
 }

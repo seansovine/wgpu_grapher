@@ -151,7 +151,7 @@ impl GrapherScene {
                 parameter_ui_model(data, editing, ui, ui_state);
             }
             GrapherScene::ImageViewer(data) => {
-                parameter_ui_image_viewer(data, editing, ui);
+                parameter_ui_image_viewer(data, editing, ui, ui_state);
             }
             _ => unimplemented!(),
         }

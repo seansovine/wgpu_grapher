@@ -7,14 +7,17 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn from_file(filepath: &str) -> Self {
-        // TODO: pass error up call stack vs panicking
-        let image_bytes = std::fs::read(filepath)
-            .unwrap_or_else(|_| panic!("Unable to read image at path: {}", filepath));
-        let image = image::load_from_memory(&image_bytes).unwrap().to_rgba8();
+    pub fn from_file(filepath: &str) -> Result<Self, ()> {
+        let Ok(image_bytes) = std::fs::read(filepath) else {
+            return Err(());
+        };
+        let Ok(image) = image::load_from_memory(&image_bytes) else {
+            return Err(());
+        };
+        let image = image.to_rgba8();
         let dimensions = image.dimensions();
 
-        Self { image, dimensions }
+        Ok(Self { image, dimensions })
     }
 }
 

@@ -18,7 +18,9 @@ pub fn image_viewer_scene(
     state: &mut RenderState,
     image_path: &str,
 ) -> Option<ImageViewerScene> {
-    let image = Image::from_file(image_path);
+    let Ok(image) = Image::from_file(image_path) else {
+        return None;
+    };
 
     // update light position
     state.light_state.set_position([0.0, 0.0, 3.0]);

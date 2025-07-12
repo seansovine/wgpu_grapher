@@ -36,11 +36,6 @@ pub struct App {
     render_count: usize,
     avg_framerate: f32,
 
-    // whether to update scene state on each redraw event
-    scene_updates_paused: bool,
-    // indicates a ui component is focused, to block other input
-    editing: bool,
-
     // initial_scene
     initial_scene: GrapherSceneMode,
 }
@@ -63,9 +58,6 @@ impl App {
         let render_count = 0_usize;
         let avg_framerate = 60.0f32;
 
-        let scene_updates_paused = false;
-        let editing = false;
-
         Self {
             instance,
             state: None,
@@ -77,9 +69,6 @@ impl App {
             accumulated_secs,
             render_count,
             avg_framerate,
-
-            scene_updates_paused,
-            editing,
 
             initial_scene: initial_scene.unwrap_or_default(),
         }
@@ -172,7 +161,7 @@ impl App {
         {
             state.egui_renderer.begin_frame(window);
 
-            let editing = &mut self.editing;
+            let editing = &mut state.editing;
             let context = &state.egui_renderer.context();
 
             egui::Window::new("Settings")
@@ -192,6 +181,7 @@ impl App {
                     );
                 });
 
+            // maybe show file input window
             if !matches!(state.ui_state.file_window_state, FileInputState::Hidden) {
                 *editing = true;
                 let is_valid = !matches!(
@@ -249,7 +239,7 @@ impl ApplicationHandler for App {
         state.egui_renderer.handle_input(window, &event);
 
         // short-circuits if editing
-        if !self.editing && state.grapher_state.handle_user_input(&event) {
+        if !state.editing && state.grapher_state.handle_user_input(&event) {
             return;
         }
 
@@ -279,7 +269,7 @@ impl ApplicationHandler for App {
 
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
-                if !self.scene_updates_paused && state.grapher_scene.is_some() {
+                if !state.scene_updates_paused && state.grapher_scene.is_some() {
                     state.grapher_scene.as_mut().unwrap().update(
                         &state.device,
                         &state.surface_config,
@@ -307,10 +297,7 @@ impl ApplicationHandler for App {
                     self.render_count += 1;
 
                     // check if scene needs changed; reborrow to satisfy checker
-                    self.state
-                        .as_mut()
-                        .unwrap()
-                        .update_grapher_scene(&mut self.editing);
+                    self.state.as_mut().unwrap().update_grapher_scene();
 
                     // update framerate estimate
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {

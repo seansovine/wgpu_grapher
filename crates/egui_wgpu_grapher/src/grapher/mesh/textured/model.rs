@@ -20,12 +20,6 @@ use gltf::{
 const TEST_FILE_1: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_sphere/scene.gltf";
 #[allow(unused)]
 const TEST_FILE_2: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_head/scene.gltf";
-#[allow(unused)]
-const TEST_FILE_3: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/the_mimic/scene.gltf";
-#[allow(unused)]
-const TEST_FILE_4: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/beast/scene.gltf";
-#[allow(unused)]
-const TEST_FILE_5: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/ferrari_monza/scene.gltf";
 
 const TEST_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
@@ -74,7 +68,7 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
 
             let model_path = Path::new(file).parent().unwrap();
             let texture = read_texture(device, queue, &primitive, model_path);
-            if let Some(texture) = texture {
+            if let Ok(texture) = texture {
                 meshes.push(TexturedMeshData {
                     vertices,
                     indices,
@@ -100,7 +94,7 @@ fn read_texture(
     queue: &Queue,
     primitive: &Primitive<'_>,
     model_dir: &Path,
-) -> Option<TextureData> {
+) -> Result<TextureData, ()> {
     let pbr_metallic = primitive.material().pbr_metallic_roughness();
 
     if let Some(info) = pbr_metallic.base_color_texture() {
@@ -108,16 +102,18 @@ fn read_texture(
         match image_source {
             Source::Uri { uri, .. } => {
                 let img_path = model_dir.join(Path::new(uri));
-                let image = Image::from_file(img_path.to_str().unwrap());
+                let Ok(image) = Image::from_file(img_path.to_str().unwrap()) else {
+                    return Err(());
+                };
                 let texture = TextureData::from_image(&image, device, queue);
 
-                return Some(texture);
+                return Ok(texture);
             }
             Source::View { .. } => {}
         }
     }
 
-    None
+    Err(())
 }
 
 pub fn model_scene(
