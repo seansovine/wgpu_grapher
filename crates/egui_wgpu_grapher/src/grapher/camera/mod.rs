@@ -4,6 +4,13 @@ use super::matrix::{self, MatrixState, MatrixUniform, X_AXIS, Y_AXIS};
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 use std::f32::consts::PI;
 
+#[derive(Default, Clone)]
+pub enum ProjectionType {
+    Orthographic,
+    #[default]
+    Perspective,
+}
+
 #[derive(Clone)]
 pub struct Camera {
     // for look-at matrix
@@ -11,11 +18,21 @@ pub struct Camera {
     pub target: cgmath::Point3<f32>,
     pub up: cgmath::Vector3<f32>,
 
+    // orthographic or perspective
+    pub projection_type: ProjectionType,
+
     // for perspective matrix
     pub aspect: f32,
     pub fovy: f32,
     pub znear: f32,
     pub zfar: f32,
+
+    // for orthographic matrix
+    pub left: f32,
+    pub right: f32,
+    pub top: f32,
+    pub bottom: f32,
+    pub ortho_scale: f32,
 
     // rotation euler angles
     pub alpha: f32,
@@ -44,7 +61,19 @@ impl Camera {
             y: self.translation_y,
             z: 0.0,
         });
-        let proj = cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar);
+        let proj = match self.projection_type {
+            ProjectionType::Perspective => {
+                cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar)
+            }
+            ProjectionType::Orthographic => cgmath::ortho(
+                self.left * self.aspect / self.ortho_scale,
+                self.right * self.aspect / self.ortho_scale,
+                self.bottom / self.ortho_scale,
+                self.top / self.ortho_scale,
+                2.0, // znear
+                self.zfar,
+            ),
+        };
 
         OPENGL_TO_WGPU_MATRIX * proj * view * gamma_rot * alpha_rot * translation
     }
@@ -66,10 +95,18 @@ impl CameraState {
             target: (0.0, 0.0, 0.0).into(),
             up: Y_AXIS,
 
+            projection_type: ProjectionType::Perspective,
+
             aspect: config.width as f32 / config.height as f32,
             fovy: 45.0,
             znear: 0.1,
             zfar: 100.0,
+
+            left: -0.5,
+            right: 0.5,
+            top: 0.5,
+            bottom: -0.5,
+            ortho_scale: 1.0,
 
             alpha: PI / 15.0,
             gamma: PI / 4.75,

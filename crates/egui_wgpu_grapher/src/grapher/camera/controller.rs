@@ -1,4 +1,4 @@
-use crate::grapher::camera;
+use crate::grapher::camera::{self, ProjectionType};
 
 use winit::{
     event::{ElementState, KeyEvent, WindowEvent},
@@ -53,53 +53,69 @@ impl CameraController {
     }
 
     pub fn update_camera(&mut self, camera: &mut camera::Camera) {
-        use cgmath::InnerSpace;
-        let forward = camera.target - camera.eye;
-        let forward_norm = forward.normalize();
-        let forward_mag = forward.magnitude();
+        let zoom_incr: f32 = if self.is_shift_pressed { 120.0 } else { 1.2 };
+        let zoom_incr = zoom_incr * self.speed;
 
-        let multipler: f32 = if self.is_shift_pressed { 120.0 } else { 1.2 };
+        match camera.projection_type {
+            ProjectionType::Perspective => {
+                use cgmath::InnerSpace;
+                let forward = camera.target - camera.eye;
+                let forward_norm = forward.normalize();
+                let forward_mag = forward.magnitude();
 
-        // use of look-at from Learn WGPU
-        if self.is_z_pressed && forward_mag > self.speed {
-            camera.eye += forward_norm * self.speed * multipler;
-        }
-        if self.is_x_pressed {
-            camera.eye -= forward_norm * self.speed * multipler;
+                // use of look-at from Learn WGPU
+                if self.is_z_pressed && forward_mag > self.speed {
+                    camera.eye += forward_norm * zoom_incr;
+                }
+                if self.is_x_pressed {
+                    camera.eye -= forward_norm * zoom_incr;
+                }
+            }
+            ProjectionType::Orthographic => {
+                const INCR_ADJUSTMENT: f32 = 50.0;
+                if self.is_z_pressed {
+                    camera.ortho_scale *= 1.0 + zoom_incr / INCR_ADJUSTMENT;
+                }
+                if self.is_x_pressed {
+                    camera.ortho_scale *= 1.0 - zoom_incr / INCR_ADJUSTMENT;
+                }
+            }
         }
 
-        let angle_incr = self.speed * PI / 4.0;
+        if matches!(camera.projection_type, ProjectionType::Perspective) {
+            let angle_incr = self.speed * PI / 4.0;
 
-        if self.is_right_pressed {
-            camera.alpha += angle_incr;
-        }
-        if self.is_left_pressed {
-            camera.alpha -= angle_incr;
-        }
-        if self.is_up_pressed {
-            camera.gamma += angle_incr;
-        }
-        if self.is_down_pressed {
-            camera.gamma -= angle_incr;
+            if self.is_right_pressed {
+                camera.alpha += angle_incr;
+            }
+            if self.is_left_pressed {
+                camera.alpha -= angle_incr;
+            }
+            if self.is_up_pressed {
+                camera.gamma += angle_incr;
+            }
+            if self.is_down_pressed {
+                camera.gamma -= angle_incr;
+            }
         }
 
         let trans_incr = if self.is_shift_pressed {
             self.speed * 25.0
         } else {
-            self.speed * 2.5
+            self.speed * 0.5
         };
 
         if self.is_t_pressed {
-            camera.translation_y += trans_incr;
+            camera.translation_y += trans_incr / camera.ortho_scale;
         }
         if self.is_g_pressed {
-            camera.translation_y -= trans_incr;
+            camera.translation_y -= trans_incr / camera.ortho_scale;
         }
         if self.is_f_pressed {
-            camera.translation_x -= trans_incr;
+            camera.translation_x -= trans_incr / camera.ortho_scale;
         }
         if self.is_h_pressed {
-            camera.translation_x += trans_incr;
+            camera.translation_x += trans_incr / camera.ortho_scale;
         }
     }
 

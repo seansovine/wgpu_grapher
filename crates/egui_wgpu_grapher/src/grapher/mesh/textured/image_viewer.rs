@@ -2,6 +2,7 @@
 
 use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_VERTICAL};
 use crate::grapher::{
+    camera::ProjectionType,
     matrix::MatrixUniform,
     mesh::{RenderScene, Scene},
     pipeline::texture::{Image, TextureData},
@@ -30,13 +31,12 @@ pub fn image_viewer_scene(
     state.render_preferences.set_use_texture(true);
     state.render_preferences.update_uniform(queue);
 
-    // update camera position and distance for this
-    state.camera_state.set_from_z(1.5);
+    // update camera settings
+    state.camera_state.set_from_z(52.0);
+    state.camera_state.camera.projection_type = ProjectionType::Orthographic;
     state.camera_state.update_uniform(queue);
-    // TODO: add orthographic projection camera matrix for this scene
 
-    // main image being displayed
-
+    // create textured canvas
     let texture_data_front = TextureData::from_image(&image, device, queue);
 
     let mut mesh_data_front = TexturedMeshData {
@@ -46,27 +46,10 @@ pub fn image_viewer_scene(
     };
     update_canvas_aspect_ratio(&mut mesh_data_front, image.dimensions.1, image.dimensions.0);
 
-    // second image behind first, to test depth buffer
-
-    let texture_data_back = TextureData::from_image(&image, device, queue);
-
-    let mut mesh_data_back = TexturedMeshData {
-        vertices: SQUARE_VERTICES_VERTICAL.clone(),
-        indices: Vec::from(SQUARE_INDICES),
-        texture: texture_data_back,
-    };
-    update_canvas_aspect_ratio(&mut mesh_data_back, image.dimensions.1, image.dimensions.0);
-
-    let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![
-        (
-            mesh_data_front,
-            MatrixUniform::translation(&[0.0, 0.0, 0.5]),
-        ),
-        (
-            mesh_data_back,
-            MatrixUniform::translation(&[0.0, 0.0, -0.5]),
-        ),
-    ];
+    let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![(
+        mesh_data_front,
+        MatrixUniform::translation(&[0.0, 0.0, 0.5]),
+    )];
 
     let scene = ImageViewerScene {
         scene: build_scene(device, surface_config, state, meshes),
