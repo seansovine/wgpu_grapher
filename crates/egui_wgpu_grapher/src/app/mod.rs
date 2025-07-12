@@ -1,7 +1,10 @@
 mod state;
 use state::*;
 
-use crate::{egui::ui::render_window, grapher_egui::GrapherSceneMode};
+use crate::{
+    egui::ui::{render_file_window, render_window, FileInputState},
+    grapher_egui::{validate_path, GrapherSceneMode},
+};
 use egui_wgpu::{
     wgpu::{self, SurfaceError},
     ScreenDescriptor,
@@ -189,6 +192,26 @@ impl App {
                     );
                 });
 
+            if !matches!(state.ui_state.file_window_state, FileInputState::Hidden) {
+                *editing = true;
+                let is_valid = !matches!(
+                    state.ui_state.file_window_state,
+                    FileInputState::BadPath | FileInputState::InvalidFile,
+                );
+                render_file_window(
+                    context,
+                    &mut state.ui_state.filename,
+                    |filename| {
+                        if !validate_path(filename) {
+                            state.ui_state.file_window_state = FileInputState::BadPath;
+                        } else {
+                            state.ui_state.file_window_state = FileInputState::NeedsChecked;
+                        }
+                    },
+                    is_valid,
+                );
+            }
+
             state.egui_renderer.end_frame_and_draw(
                 &state.device,
                 &state.queue,
@@ -284,7 +307,10 @@ impl ApplicationHandler for App {
                     self.render_count += 1;
 
                     // check if scene needs changed; reborrow to satisfy checker
-                    self.state.as_mut().unwrap().update_grapher_scene();
+                    self.state
+                        .as_mut()
+                        .unwrap()
+                        .update_grapher_scene(&mut self.editing);
 
                     // update framerate estimate
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {

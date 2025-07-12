@@ -7,6 +7,8 @@ pub mod image_viewer;
 #[allow(dead_code)]
 pub mod model;
 
+use std::path::Path;
+
 use crate::{
     egui::ui::UiState,
     grapher::{
@@ -140,13 +142,13 @@ impl GrapherScene {
 }
 
 impl GrapherScene {
-    pub fn parameter_ui(&mut self, editing: &mut bool, ui: &mut Ui) {
+    pub fn parameter_ui(&mut self, editing: &mut bool, ui: &mut Ui, ui_state: &mut UiState) {
         match self {
             GrapherScene::Graph(data) => {
                 parameter_ui_graph(data, editing, ui);
             }
             GrapherScene::Model(data) => {
-                parameter_ui_model(data, editing, ui);
+                parameter_ui_model(data, editing, ui, ui_state);
             }
             GrapherScene::ImageViewer(data) => {
                 parameter_ui_image_viewer(data, editing, ui);
@@ -204,8 +206,13 @@ fn float_edit_line(
     changed
 }
 
+pub fn validate_path(path: &str) -> bool {
+    Path::new(path).exists()
+}
+
 // Code for building the grapher renderer parameter ui.
 
+#[derive(Default)]
 pub struct RenderUiState {
     // state for ui rendering
     pub lighting_enabled: bool,

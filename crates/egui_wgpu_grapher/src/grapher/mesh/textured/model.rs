@@ -29,8 +29,10 @@ const TEST_FILE_5: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/ferrari
 
 const TEST_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
-pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Vec<TexturedMeshData> {
-    let (gltf, buffers, _) = gltf::import(file).unwrap();
+pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<TexturedMeshData>, ()> {
+    let Ok((gltf, buffers, _)) = gltf::import(file) else {
+        return Err(());
+    };
 
     let mut meshes = vec![];
 
@@ -90,7 +92,7 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Vec<TexturedMes
         }
     }
 
-    meshes
+    Ok(meshes)
 }
 
 fn read_texture(
@@ -123,9 +125,12 @@ pub fn model_scene(
     queue: &Queue,
     surface_config: &SurfaceConfiguration,
     state: &mut RenderState,
+    path: &str,
 ) -> Option<ModelScene> {
     let mut mesh_data = vec![];
-    let model_meshes = load_model(device, queue, TEST_FILE_3);
+    let Ok(model_meshes) = load_model(device, queue, path) else {
+        return None;
+    };
 
     // Chosen for particular test examples; need to implement camera movement.
     let matrix = matrix::MatrixUniform::x_rotation(0.0);

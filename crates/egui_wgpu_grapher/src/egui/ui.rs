@@ -1,4 +1,4 @@
-use egui::{RichText, Ui};
+use egui::{Color32, Context, RichText, Ui};
 
 use crate::{
     grapher::render::RenderState,
@@ -33,7 +33,7 @@ pub fn render_window(
         ui.label(RichText::new("Grapher parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);
 
-        grapher_scene.parameter_ui(editing, ui);
+        grapher_scene.parameter_ui(editing, ui, ui_state);
     }
 
     // general rendere parameters
@@ -68,10 +68,48 @@ pub fn render_window(
     });
 }
 
+pub fn render_file_window(
+    context: &Context,
+    filename: &mut String,
+    mut f: impl FnMut(&String),
+    is_valid: bool,
+) {
+    egui::Window::new("File")
+        .resizable(true)
+        .default_size([800.0, 600.0])
+        .collapsible(false)
+        .show(context, |ui| {
+            let response = ui.add(egui::TextEdit::singleline(filename).text_color({
+                if !is_valid {
+                    Color32::from_rgb(176, 44, 44)
+                } else {
+                    Color32::from_gray(208)
+                }
+            }));
+
+            if response.changed() {
+                f(filename);
+            }
+        });
+}
+
 // Place to put persistent ui state that doesn't fit elsewhere.
 
+#[derive(Default)]
+pub enum FileInputState {
+    #[default]
+    Hidden,
+    NeedsInput,
+    BadPath,
+    InvalidFile,
+    NeedsChecked,
+}
+
+#[derive(Default)]
 pub struct UiState {
     pub render_ui_state: RenderUiState,
     pub selected_scene_index: usize,
     pub scale_factor: f32,
+    pub file_window_state: FileInputState,
+    pub filename: String,
 }

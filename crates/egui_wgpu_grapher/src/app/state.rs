@@ -1,5 +1,8 @@
 use crate::{
-    egui::{egui_tools::EguiRenderer, ui::UiState},
+    egui::{
+        egui_tools::EguiRenderer,
+        ui::{FileInputState, UiState},
+    },
     grapher,
     grapher_egui::{graph, image_viewer, model, GrapherScene, GrapherSceneMode, RenderUiState},
 };
@@ -91,6 +94,7 @@ impl AppState {
             render_ui_state,
             selected_scene_index: initial_scene.into(),
             scale_factor,
+            ..Default::default()
         };
 
         Self {
@@ -122,7 +126,7 @@ impl AppState {
         self.grapher_state.update(&mut self.queue);
     }
 
-    pub(super) fn update_grapher_scene(&mut self) {
+    pub(super) fn update_grapher_scene(&mut self, editing: &mut bool) {
         match self.selected_scene {
             GrapherSceneMode::Graph => {
                 if matches!(self.grapher_scene, Some(GrapherScene::Graph(_))) {
@@ -145,10 +149,29 @@ impl AppState {
 
                 self.grapher_scene = Some(grapher_scene);
             }
+
             GrapherSceneMode::Model => {
                 if matches!(self.grapher_scene, Some(GrapherScene::Model(_))) {
+                    if !matches!(
+                        self.ui_state.file_window_state,
+                        FileInputState::NeedsChecked
+                    ) {
+                        return;
+                    }
+                } else {
+                    self.ui_state.file_window_state = FileInputState::NeedsChecked;
+                }
+                if self.ui_state.filename.is_empty() {
+                    self.grapher_scene = None;
+                    self.ui_state.file_window_state = FileInputState::NeedsInput;
+                }
+                if !matches!(
+                    self.ui_state.file_window_state,
+                    FileInputState::NeedsChecked
+                ) {
                     return;
                 }
+                // TODO: maybe clean up the logic here
 
                 // restore previous camera and light if they were saved
                 self.grapher_state.camera_state.maybe_restore_camera();
@@ -161,15 +184,20 @@ impl AppState {
                     &self.queue,
                     &self.surface_config,
                     &mut self.grapher_state,
+                    &self.ui_state.filename,
                 );
 
                 if let Some(scene) = model_scene {
                     self.grapher_scene =
                         Some(GrapherScene::Model(model::ModelSceneData::new(scene)));
+                    self.ui_state.file_window_state = FileInputState::Hidden;
+                    *editing = false;
                 } else {
                     self.grapher_scene = None;
+                    self.ui_state.file_window_state = FileInputState::InvalidFile;
                 }
             }
+
             GrapherSceneMode::ImageViewer => {
                 if matches!(self.grapher_scene, Some(GrapherScene::ImageViewer(_))) {
                     return;

@@ -1,4 +1,7 @@
-use crate::grapher::mesh::textured::model::ModelScene;
+use crate::{
+    egui::ui::{FileInputState, UiState},
+    grapher::mesh::textured::model::ModelScene,
+};
 
 use egui::Ui;
 
@@ -19,6 +22,13 @@ impl ModelSceneData {
 }
 
 // model-specific parameter ui
-pub fn parameter_ui_model(_data: &mut ModelSceneData, _editing: &mut bool, _ui: &mut Ui) {
-    // no-op for now
+pub fn parameter_ui_model(
+    _data: &mut ModelSceneData,
+    _editing: &mut bool,
+    ui: &mut Ui,
+    ui_state: &mut UiState,
+) {
+    if ui.add(egui::Button::new("Change file")).clicked() {
+        ui_state.file_window_state = FileInputState::NeedsInput;
+    }
 }
