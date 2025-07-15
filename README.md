@@ -50,7 +50,7 @@ may incorporate some image processing features into this part.
 | `up`    | rotate up    | `f` | translate left |
 | `down`  | rotate down  | `h` | translate right |
 | `z`     | zoom in      | `esc` | exit |
-| `x`     | zoom out     | | |
+| `x`     | zoom out     | `shift` + \_\_ | increase speed |
 
 ## License and credit
 
