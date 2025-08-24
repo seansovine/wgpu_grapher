@@ -142,6 +142,7 @@ impl AppState {
                 if matches!(self.grapher_scene, Some(GrapherScene::Graph(_))) {
                     return;
                 }
+                self.editing = false;
 
                 // restore previous camera and light if they were saved
                 self.grapher_state.camera_state.maybe_restore_camera();
