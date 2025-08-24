@@ -4,9 +4,9 @@ use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_VERTI
 use crate::grapher::{
     camera::ProjectionType,
     matrix::MatrixUniform,
-    mesh::{RenderScene, Scene},
     pipeline::texture::{Image, TextureData},
     render::RenderState,
+    scene::{RenderScene, Scene},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};

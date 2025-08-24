@@ -4,8 +4,8 @@ use super::build_scene;
 use crate::grapher::{
     math::graph,
     matrix::MatrixUniform,
-    mesh::{RenderScene, Scene},
     render::RenderState,
+    scene::{RenderScene, Scene},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};

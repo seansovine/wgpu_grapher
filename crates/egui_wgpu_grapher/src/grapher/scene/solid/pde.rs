@@ -2,8 +2,8 @@ use super::{build_scene, MeshData};
 use crate::grapher::{
     math::{graph::SquareTesselation, pde},
     matrix::MatrixUniform,
-    mesh::{RenderScene, Scene},
     render::RenderState,
+    scene::{RenderScene, Scene},
 };
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 

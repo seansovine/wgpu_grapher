@@ -5,9 +5,9 @@ use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_FLAT}
 use crate::grapher::{
     math::pde,
     matrix::MatrixUniform,
-    mesh::{RenderScene, Scene},
     pipeline::texture::{TextureData, TextureMatrix},
     render::RenderState,
+    scene::{RenderScene, Scene},
 };
 
 use egui_wgpu::wgpu::{self, Device, Queue, SurfaceConfiguration};

@@ -1,6 +1,6 @@
 use crate::{
     egui::ui::{FileInputState, UiState},
-    grapher::mesh::textured::model::ModelScene,
+    grapher::scene::textured::model::ModelScene,
 };
 
 use egui::Ui;

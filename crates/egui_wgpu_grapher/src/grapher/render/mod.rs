@@ -3,7 +3,7 @@ mod state;
 // re-export state
 pub use state::*;
 
-use super::mesh::Scene;
+use super::scene::Scene;
 
 use egui_wgpu::wgpu::{self, BindGroup, BufferSlice, CommandEncoder, RenderPipeline, TextureView};
 

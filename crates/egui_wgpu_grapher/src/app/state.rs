@@ -150,7 +150,7 @@ impl AppState {
                     .light_state
                     .maybe_restore_light(&self.queue);
 
-                let graph_scene = grapher::mesh::solid::graph::graph_scene(
+                let graph_scene = grapher::scene::solid::graph::graph_scene(
                     &self.device,
                     &self.surface_config,
                     &self.grapher_state,
@@ -192,7 +192,7 @@ impl AppState {
                     .light_state
                     .maybe_restore_light(&self.queue);
 
-                let model_scene = grapher::mesh::textured::model::model_scene(
+                let model_scene = grapher::scene::textured::model::model_scene(
                     &self.device,
                     &self.queue,
                     &self.surface_config,
@@ -240,7 +240,7 @@ impl AppState {
                 self.grapher_state.camera_state.save_camera();
                 self.grapher_state.light_state.save_light();
 
-                let image_scene = grapher::mesh::textured::image_viewer::image_viewer_scene(
+                let image_scene = grapher::scene::textured::image_viewer::image_viewer_scene(
                     &self.device,
                     &self.queue,
                     &self.surface_config,

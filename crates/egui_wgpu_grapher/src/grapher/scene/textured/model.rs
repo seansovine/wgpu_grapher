@@ -5,9 +5,9 @@ use std::path::Path;
 use super::{build_scene, TexturedMeshData, Vertex};
 use crate::grapher::{
     matrix,
-    mesh::{RenderScene, Scene},
     pipeline::texture::{Image, TextureData},
     render::RenderState,
+    scene::{RenderScene, Scene},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};

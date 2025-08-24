@@ -1,6 +1,6 @@
 use crate::{
     egui::ui::{FileInputState, UiState},
-    grapher::mesh::textured::image_viewer::ImageViewerScene,
+    grapher::scene::textured::image_viewer::ImageViewerScene,
 };
 
 use egui::Ui;

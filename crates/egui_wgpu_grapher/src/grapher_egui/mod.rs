@@ -12,9 +12,9 @@ use std::path::Path;
 use crate::{
     egui::ui::UiState,
     grapher::{
-        mesh::{solid::graph::GraphScene, RenderScene},
         pipeline::render_preferences::RenderPreferences,
         render::RenderState,
+        scene::{solid::graph::GraphScene, RenderScene},
     },
     grapher_egui::image_viewer::{parameter_ui_image_viewer, ImageViewerSceneData},
 };

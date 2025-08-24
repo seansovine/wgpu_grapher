@@ -4,7 +4,7 @@ pub mod render_preferences;
 #[allow(dead_code)]
 pub mod texture;
 
-use super::mesh::Bufferable;
+use super::scene::Bufferable;
 use texture::DepthBuffer;
 
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
