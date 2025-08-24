@@ -58,7 +58,7 @@ pub fn render_window(
     let scale_factor = &mut ui_state.scale_factor;
 
     ui.horizontal(|ui| {
-        ui.label(format!("Pixels per point: {}", pixels_per_point));
+        ui.label(format!("Pixels per point: {pixels_per_point}"));
         if ui.button("-").clicked() {
             *scale_factor = (*scale_factor - 0.1).max(0.3);
         }
