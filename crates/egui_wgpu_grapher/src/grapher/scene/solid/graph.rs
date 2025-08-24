@@ -2,7 +2,7 @@
 
 use super::build_scene;
 use crate::grapher::{
-    math::graph,
+    math::graph::{self, GraphableFunc},
     matrix::MatrixUniform,
     render::RenderState,
     scene::{RenderScene, Scene},
@@ -37,7 +37,7 @@ fn build_scene_for_graph(
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
     width: f32,
-    f: impl Fn(f32, f32) -> f32,
+    f: impl GraphableFunc,
 ) -> Scene {
     const SUBDIVISIONS: u32 = 750;
 
@@ -57,16 +57,24 @@ fn build_scene_for_graph(
     )
 }
 
-// placeholder for now until we find a better solution
-pub fn get_graph_func(parameters: &GraphParameters) -> impl Fn(f32, f32) -> f32 {
-    // other example functions (uncomment one)
+pub struct ClosureHolder {
+    f: Box<dyn Fn(f32, f32) -> f32>,
+}
 
+impl GraphableFunc for ClosureHolder {
+    fn eval(&self, x: f32, y: f32) -> f32 {
+        (self.f)(x, y)
+    }
+}
+
+// This is a placeholder providing a default function,
+// until we implement a math expression parser in the UI.
+pub fn get_graph_func(parameters: &GraphParameters) -> ClosureHolder {
+    // Other good example functions:
     // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-
     // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
 
     let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
-
     let f = graph::shift_scale_input(
         f,
         parameters.shift_x,
@@ -74,7 +82,9 @@ pub fn get_graph_func(parameters: &GraphParameters) -> impl Fn(f32, f32) -> f32 
         parameters.shift_z,
         parameters.scale_z,
     );
-    graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y)
+    let f = graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y);
+
+    ClosureHolder { f: Box::from(f) }
 }
 
 #[allow(dead_code)]

@@ -86,6 +86,12 @@ impl Square {
     }
 }
 
+// Graphable function trait.
+
+pub trait GraphableFunc {
+    fn eval(&self, x: f32, y: f32) -> f32;
+}
+
 // square tesselation
 
 pub struct SquareTesselation {
@@ -155,12 +161,12 @@ impl SquareTesselation {
         }
     }
 
-    pub fn apply_function<F>(&mut self, f: F) -> &mut Self
+    pub fn apply_function<F: GraphableFunc>(&mut self, f: F) -> &mut Self
     where
-        F: Fn(f32, f32) -> f32,
+        F:,
     {
         for vertex in &mut self.vertices {
-            vertex[1] = f(vertex[0], vertex[2])
+            vertex[1] = f.eval(vertex[0], vertex[2])
         }
 
         self
