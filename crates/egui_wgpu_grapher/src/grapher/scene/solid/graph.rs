@@ -23,6 +23,8 @@ pub struct GraphParameters {
 pub struct GraphScene {
     // all the data for rendering
     pub scene: Scene,
+
+    // size of rectangular domain of graph
     pub width: f32,
 
     // TODO: generalize this and move it to RenderScene
