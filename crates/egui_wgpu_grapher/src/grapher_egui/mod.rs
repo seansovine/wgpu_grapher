@@ -124,7 +124,7 @@ impl GrapherScene {
                 // rebuild scene if parameters changed
                 if data.graph_scene.needs_update {
                     data.graph_scene
-                        .rebuild_scene(device, surface_config, state);
+                        .try_rebuild_scene(device, surface_config, state);
                     data.graph_scene.needs_update = false;
                 }
                 // currently a no-op; would perform state update

@@ -50,6 +50,9 @@ pub struct GraphScene {
 
     // publicly adjustable parameters
     pub parameters: GraphParameters,
+
+    // function to graph, if any
+    pub function: Option<FunctionHolder>,
 }
 
 impl Default for GraphScene {
@@ -59,7 +62,40 @@ impl Default for GraphScene {
             width: 6.0_f32,
             needs_update: false,
             parameters: Default::default(),
+            function: None,
         }
+    }
+}
+
+impl GraphScene {
+    pub fn try_rebuild_scene(
+        &mut self,
+        device: &Device,
+        surface_config: &SurfaceConfiguration,
+        state: &RenderState,
+    ) {
+        if self.function.is_none() {
+            self.scene = None;
+        }
+        let f = self.function.take().unwrap().f;
+        let f = graph::shift_scale_input(
+            f,
+            self.parameters.shift_x,
+            self.parameters.scale_x,
+            self.parameters.shift_z,
+            self.parameters.scale_z,
+        );
+        let f = graph::shift_scale_output(f, self.parameters.shift_y, self.parameters.scale_y);
+        let f = FunctionHolder::from(f);
+
+        self.scene = Some(build_scene_for_graph(
+            device,
+            surface_config,
+            state,
+            self.width,
+            &f,
+        ));
+        self.function = Some(f);
     }
 }
 
@@ -156,25 +192,7 @@ pub fn demo_graph_scene(
         width: WIDTH,
         needs_update,
         parameters,
-    }
-}
-
-impl GraphScene {
-    // will be called when gui updates graph parameters, etc.
-    pub fn rebuild_scene(
-        &mut self,
-        device: &Device,
-        surface_config: &SurfaceConfiguration,
-        state: &RenderState,
-    ) {
-        let f = get_graph_func(&self.parameters);
-        self.scene = Some(build_scene_for_graph(
-            device,
-            surface_config,
-            state,
-            self.width,
-            &f,
-        ));
+        function,
     }
 }
 

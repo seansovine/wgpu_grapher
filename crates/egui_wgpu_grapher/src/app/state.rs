@@ -137,15 +137,12 @@ impl AppState {
 
     pub fn update_graph(&mut self, function: FunctionHolder) {
         if let Some(GrapherScene::Graph(graph_scene_data)) = self.grapher_scene.as_mut() {
-            graph_scene_data.graph_scene.scene =
-                grapher::scene::solid::graph::build_scene_for_graph(
-                    &self.device,
-                    &self.surface_config,
-                    &self.grapher_state,
-                    graph_scene_data.graph_scene.width,
-                    &function,
-                )
-                .into();
+            graph_scene_data.graph_scene.function = Some(function);
+            graph_scene_data.graph_scene.try_rebuild_scene(
+                &self.device,
+                &self.surface_config,
+                &self.grapher_state,
+            );
         }
     }
 

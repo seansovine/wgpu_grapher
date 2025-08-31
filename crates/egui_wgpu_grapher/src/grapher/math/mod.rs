@@ -10,6 +10,17 @@ pub struct FunctionHolder {
     pub f: Box<dyn Fn(f32, f32) -> f32>,
 }
 
+impl<F> From<F> for FunctionHolder
+where
+    F: Fn(f32, f32) -> f32 + 'static,
+{
+    fn from(value: F) -> Self {
+        Self {
+            f: Box::from(value),
+        }
+    }
+}
+
 impl GraphableFunc for FunctionHolder {
     fn eval(&self, x: f32, y: f32) -> f32 {
         (self.f)(x, y)
