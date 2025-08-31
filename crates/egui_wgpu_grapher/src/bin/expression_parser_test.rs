@@ -9,8 +9,7 @@ fn main() {
         io::stdin()
             .read_line(&mut str_expr)
             .expect("Failed to read input.");
-        // e.g., String::from("sin(x^2 + z^2)");
-        str_expr += " + 0*x + 0*z";
+
         let Ok(expr) = str_expr.parse::<Expr>() else {
             println!("Failed to parse str_expr as mathematical expression.");
             continue;

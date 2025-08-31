@@ -50,15 +50,6 @@ pub struct GraphScene {
 
     // publicly adjustable parameters
     pub parameters: GraphParameters,
-
-    // string representation of function to graph
-    pub function_string: String,
-
-    // does the string represent a valid function def
-    pub function_valid: bool,
-
-    // possible function to graph
-    pub function: Option<FunctionHolder>,
 }
 
 impl Default for GraphScene {
@@ -68,9 +59,6 @@ impl Default for GraphScene {
             width: 6.0_f32,
             needs_update: false,
             parameters: Default::default(),
-            function_string: Default::default(),
-            function_valid: false,
-            function: None,
         }
     }
 }
@@ -121,7 +109,7 @@ pub fn get_graph_func(parameters: &GraphParameters) -> FunctionHolder {
 }
 
 #[allow(dead_code)]
-pub fn graph_scene(
+pub fn demo_graph_scene(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
@@ -140,18 +128,15 @@ pub fn graph_scene(
 
     let function_string = "2.0^(-sin(x^2 + z^2))".to_string();
     let mut function = None;
-    let mut function_valid = false;
     if let Ok(expr) = function_string.parse::<Expr>() {
         if let Ok(func) = expr.bind2("x", "z") {
             let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
             function = Some(FunctionHolder {
                 f: Box::from(closure),
             });
-            function_valid = true;
         }
     }
-
-    // let f = get_graph_func(&parameters);
+    // let function = Some(get_graph_func(&parameters));
 
     let mut scene = None;
     if let Some(f) = function.as_ref() {
@@ -171,9 +156,6 @@ pub fn graph_scene(
         width: WIDTH,
         needs_update,
         parameters,
-        function_string,
-        function_valid,
-        function,
     }
 }
 
