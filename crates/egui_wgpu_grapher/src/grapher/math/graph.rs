@@ -161,7 +161,7 @@ impl SquareTesselation {
         }
     }
 
-    pub fn apply_function<F: GraphableFunc>(&mut self, f: F) -> &mut Self
+    pub fn apply_function<F: GraphableFunc>(&mut self, f: &F) -> &mut Self
     where
         F:,
     {

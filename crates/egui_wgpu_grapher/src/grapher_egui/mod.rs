@@ -80,7 +80,7 @@ pub fn scene_selection_ui(
 
 #[allow(dead_code)]
 pub enum GrapherScene {
-    Graph(GraphSceneData),
+    Graph(Box<GraphSceneData>),
     Model(ModelSceneData),
     ImageViewer(ImageViewerSceneData),
 }
@@ -94,8 +94,10 @@ impl GrapherScene {
     ) {
         match self {
             GrapherScene::Graph(data) => {
-                // pass scene in to state render function
-                render_state.render(view, encoder, data.graph_scene.scene());
+                if data.graph_scene.scene.is_some() {
+                    // pass scene in to state render function
+                    render_state.render(view, encoder, data.graph_scene.scene());
+                }
             }
             GrapherScene::Model(data) => {
                 // pass scene in to state render function
@@ -219,7 +221,7 @@ pub struct RenderUiState {
     pub use_wireframe: bool,
 
     // was there and update that needs processed
-    pub needs_update: bool,
+    pub needs_prefs_update: bool,
 }
 
 impl RenderUiState {
@@ -227,7 +229,7 @@ impl RenderUiState {
         Self {
             lighting_enabled: render_prefs.lighting_enabled(),
             use_wireframe: render_prefs.wireframe_enabled(),
-            needs_update: false,
+            needs_prefs_update: false,
         }
     }
 }
@@ -247,7 +249,7 @@ pub fn render_parameter_ui(
                 .set_lighting_enabled(render_ui_state.lighting_enabled);
 
             // only requires updating a uniform with write_buffer
-            render_ui_state.needs_update = true;
+            render_ui_state.needs_prefs_update = true;
         }
 
         if matches!(grapher_scene, Some(GrapherScene::Graph(_))) {

@@ -2,7 +2,10 @@ mod state;
 use state::*;
 
 use crate::{
-    egui::ui::{render_file_window, render_window, FileInputState},
+    egui::{
+        components::{self, HasFocus},
+        ui::{render_window, FileInputState},
+    },
     grapher_egui::{validate_path, GrapherSceneMode},
 };
 use egui_wgpu::{
@@ -188,8 +191,9 @@ impl App {
                     state.ui_state.file_window_state,
                     FileInputState::BadPath | FileInputState::InvalidFile,
                 );
-                render_file_window(
+                components::validated_text_input_window(
                     context,
+                    "File",
                     &mut state.ui_state.filename,
                     |filename| {
                         if !validate_path(filename) {
@@ -200,6 +204,23 @@ impl App {
                     },
                     is_valid,
                 );
+            } else {
+                *editing = false;
+            }
+            // show function input in graph mode
+            if matches!(state.selected_scene, GrapherSceneMode::Graph) {
+                // TODO: store in state
+                let is_valid = true;
+                let HasFocus(has_focus) = components::validated_text_input_window(
+                    context,
+                    "Function",
+                    &mut state.ui_state.function_string,
+                    |_func_str| {
+                        // TODO: try parsing equation string and update accordingly
+                    },
+                    is_valid,
+                );
+                *editing = has_focus;
             }
 
             state.egui_renderer.end_frame_and_draw(
@@ -279,12 +300,12 @@ impl ApplicationHandler for App {
                     );
                 }
 
-                if state.ui_state.render_ui_state.needs_update {
+                if state.ui_state.render_ui_state.needs_prefs_update {
                     state
                         .grapher_state
                         .render_preferences
                         .update_uniform(&state.queue);
-                    state.ui_state.render_ui_state.needs_update = false;
+                    state.ui_state.render_ui_state.needs_prefs_update = false;
                 }
 
                 if do_render {

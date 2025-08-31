@@ -9,6 +9,7 @@ use crate::grapher::{
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
+use meval::Expr;
 
 pub struct GraphParameters {
     pub scale_x: f32,
@@ -20,9 +21,23 @@ pub struct GraphParameters {
     pub shift_y: f32,
 }
 
+impl Default for GraphParameters {
+    fn default() -> Self {
+        Self {
+            scale_x: 1.0,
+            scale_z: 1.0,
+            scale_y: 1.0,
+
+            shift_x: 0.0,
+            shift_y: 0.0,
+            shift_z: 0.0,
+        }
+    }
+}
+
 pub struct GraphScene {
     // all the data for rendering
-    pub scene: Scene,
+    pub scene: Option<Scene>,
 
     // size of rectangular domain of graph
     pub width: f32,
@@ -32,6 +47,29 @@ pub struct GraphScene {
 
     // publicly adjustable parameters
     pub parameters: GraphParameters,
+
+    // string representation of function to graph
+    pub function_string: String,
+
+    // does the string represent a valid function def
+    pub function_valid: bool,
+
+    // possible function to graph
+    pub function: Option<FunctionHolder>,
+}
+
+impl Default for GraphScene {
+    fn default() -> Self {
+        Self {
+            scene: None,
+            width: 6.0_f32,
+            needs_update: false,
+            parameters: Default::default(),
+            function_string: Default::default(),
+            function_valid: false,
+            function: None,
+        }
+    }
 }
 
 fn build_scene_for_graph(
@@ -39,7 +77,7 @@ fn build_scene_for_graph(
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
     width: f32,
-    f: impl GraphableFunc,
+    f: &impl GraphableFunc,
 ) -> Scene {
     const SUBDIVISIONS: u32 = 750;
 
@@ -59,11 +97,11 @@ fn build_scene_for_graph(
     )
 }
 
-pub struct ClosureHolder {
+pub struct FunctionHolder {
     f: Box<dyn Fn(f32, f32) -> f32>,
 }
 
-impl GraphableFunc for ClosureHolder {
+impl GraphableFunc for FunctionHolder {
     fn eval(&self, x: f32, y: f32) -> f32 {
         (self.f)(x, y)
     }
@@ -71,7 +109,7 @@ impl GraphableFunc for ClosureHolder {
 
 // This is a placeholder providing a default function,
 // until we implement a math expression parser in the UI.
-pub fn get_graph_func(parameters: &GraphParameters) -> ClosureHolder {
+pub fn get_graph_func(parameters: &GraphParameters) -> FunctionHolder {
     // Other good example functions:
     // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
     // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
@@ -86,7 +124,7 @@ pub fn get_graph_func(parameters: &GraphParameters) -> ClosureHolder {
     );
     let f = graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y);
 
-    ClosureHolder { f: Box::from(f) }
+    FunctionHolder { f: Box::from(f) }
 }
 
 #[allow(dead_code)]
@@ -107,9 +145,31 @@ pub fn graph_scene(
         shift_y: 0.25,
     };
 
-    let f = get_graph_func(&parameters);
+    let function_string = "2.0^(-sin(x^2 + z^2))".to_string();
+    let mut function = None;
+    let mut function_valid = false;
+    if let Ok(expr) = function_string.parse::<Expr>() {
+        if let Ok(func) = expr.bind2("x", "z") {
+            let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
+            function = Some(FunctionHolder {
+                f: Box::from(closure),
+            });
+            function_valid = true;
+        }
+    }
 
-    let scene = build_scene_for_graph(device, surface_config, state, WIDTH, f);
+    // let f = get_graph_func(&parameters);
+
+    let mut scene = None;
+    if let Some(f) = function.as_ref() {
+        scene = Some(build_scene_for_graph(
+            device,
+            surface_config,
+            state,
+            WIDTH,
+            f,
+        ));
+    }
 
     let needs_update = false;
 
@@ -118,6 +178,9 @@ pub fn graph_scene(
         width: WIDTH,
         needs_update,
         parameters,
+        function_string,
+        function_valid,
+        function,
     }
 }
 
@@ -130,13 +193,19 @@ impl GraphScene {
         state: &RenderState,
     ) {
         let f = get_graph_func(&self.parameters);
-        self.scene = build_scene_for_graph(device, surface_config, state, self.width, f);
+        self.scene = Some(build_scene_for_graph(
+            device,
+            surface_config,
+            state,
+            self.width,
+            &f,
+        ));
     }
 }
 
 impl RenderScene for GraphScene {
     fn scene(&self) -> &Scene {
-        &self.scene
+        self.scene.as_ref().unwrap()
     }
 
     fn update(&mut self, _queue: &Queue, _state: &RenderState, _pre_render: bool) {

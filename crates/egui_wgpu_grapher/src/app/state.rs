@@ -99,6 +99,7 @@ impl AppState {
             render_ui_state,
             selected_scene_index: initial_scene.into(),
             scale_factor,
+            function_valid: true,
             ..Default::default()
         };
 
@@ -156,7 +157,8 @@ impl AppState {
                     &self.grapher_state,
                 );
 
-                let grapher_scene = GrapherScene::Graph(graph::GraphSceneData::new(graph_scene));
+                let grapher_scene =
+                    GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
 
                 self.grapher_scene = Some(grapher_scene);
             }

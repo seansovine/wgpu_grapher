@@ -1,32 +1,38 @@
+use std::io;
+
 use meval::Expr;
 
 fn main() {
-    let str_expr = String::from("sin(x^2 + z^2)");
-    let Ok(expr) = str_expr.parse::<Expr>() else {
-        println!("Failed to parse str_expr as mathematical expression.");
-        return;
-    };
-    println!("Successfully parsed expression.");
+    loop {
+        println!("Enter a function of x and z to evaluate: ");
+        let mut str_expr = String::new();
+        io::stdin()
+            .read_line(&mut str_expr)
+            .expect("Failed to read input.");
+        // e.g., String::from("sin(x^2 + z^2)");
+        str_expr += " + 0*x + 0*z";
+        let Ok(expr) = str_expr.parse::<Expr>() else {
+            println!("Failed to parse str_expr as mathematical expression.");
+            continue;
+        };
+        println!("Successfully parsed expression.");
 
-    let Ok(func) = expr.bind2("x", "z") else {
-        // Note: We may need to handle singl-variable cases separately.
-        println!("Expression does not contain 'x' and 'z' as variables.");
-        return;
-    };
-    println!("Successfully defined Func(x, z) = {str_expr}");
-    println!();
+        let Ok(func) = expr.bind2("x", "z") else {
+            println!("Expression does not contain 'x' and 'z' as its only variables.");
+            continue;
+        };
+        println!("Successfully defined Func(x, z) = {str_expr}");
+        println!();
 
-    for x in 0..5 {
-        for z in 0..5 {
-            let x = (x as f64) / 2.0_f64;
-            let z = (z as f64) / 2.0_f64;
-            let y = func(x, z);
+        for x in 0..5 {
+            for z in 0..5 {
+                let x = (x as f64) / 2.0_f64;
+                let z = (z as f64) / 2.0_f64;
+                let y = func(x, z);
 
-            println!("Func({x}, {z}) = {y}");
-
-            let expected = (x.powi(2) + z.powi(2)).sin();
-
-            println!("Expected: {expected}");
+                println!("Func({x}, {z}) = {y}");
+            }
         }
+        println!();
     }
 }

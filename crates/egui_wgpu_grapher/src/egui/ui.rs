@@ -1,4 +1,4 @@
-use egui::{Color32, Context, RichText, Ui};
+use egui::{RichText, Ui};
 
 use crate::{
     grapher::render::RenderState,
@@ -68,31 +68,6 @@ pub fn render_window(
     });
 }
 
-pub fn render_file_window(
-    context: &Context,
-    filename: &mut String,
-    mut f: impl FnMut(&String),
-    is_valid: bool,
-) {
-    egui::Window::new("File")
-        .resizable(true)
-        .default_size([800.0, 600.0])
-        .collapsible(false)
-        .show(context, |ui| {
-            let response = ui.add(egui::TextEdit::singleline(filename).text_color({
-                if !is_valid {
-                    Color32::from_rgb(176, 44, 44)
-                } else {
-                    Color32::from_gray(208)
-                }
-            }));
-
-            if response.changed() {
-                f(filename);
-            }
-        });
-}
-
 // Place to put persistent ui state that doesn't fit elsewhere.
 
 #[derive(Default)]
@@ -112,4 +87,6 @@ pub struct UiState {
     pub scale_factor: f32,
     pub file_window_state: FileInputState,
     pub filename: String,
+    pub function_string: String,
+    pub function_valid: bool,
 }
