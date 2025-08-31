@@ -4,8 +4,9 @@ use state::*;
 use crate::{
     egui::{
         components::{self, HasFocus},
-        ui::{render_window, FileInputState},
+        ui::{create_gui, FileInputState},
     },
+    grapher,
     grapher_egui::{validate_path, GrapherSceneMode},
 };
 use egui_wgpu::{
@@ -99,7 +100,7 @@ impl App {
         )
         .await;
 
-        // Docs: gracefully handle redundant... Resumed events
+        // egui docs: gracefully handle redundant... Resumed events
         if self.window.is_none() {
             self.window.replace(window);
             self.state.replace(state);
@@ -173,7 +174,7 @@ impl App {
                 .vscroll(true)
                 .default_open(true)
                 .show(context, |ui| {
-                    render_window(
+                    create_gui(
                         context.pixels_per_point(),
                         ui,
                         editing,
@@ -209,18 +210,26 @@ impl App {
             }
             // show function input in graph mode
             if matches!(state.selected_scene, GrapherSceneMode::Graph) {
-                // TODO: store in state
-                let is_valid = true;
-                let HasFocus(has_focus) = components::validated_text_input_window(
-                    context,
-                    "Function",
-                    &mut state.ui_state.function_string,
-                    |_func_str| {
-                        // TODO: try parsing equation string and update accordingly
-                    },
-                    is_valid,
-                );
-                *editing = has_focus;
+                let mut is_valid = state.ui_state.function_valid;
+                let mut function = None;
+                {
+                    let is_valid_ref = &mut is_valid;
+                    let HasFocus(has_focus) = components::validated_text_input_window(
+                        context,
+                        "Function",
+                        &mut state.ui_state.function_string,
+                        |func_str| {
+                            function = grapher::math::try_parse_function_string(func_str);
+                            *is_valid_ref = function.is_some();
+                        },
+                        state.ui_state.function_valid,
+                    );
+                    *editing = has_focus;
+                }
+                if let Some(func) = function {
+                    state.update_graph(func);
+                }
+                state.ui_state.function_valid = is_valid;
             }
 
             state.egui_renderer.end_frame_and_draw(

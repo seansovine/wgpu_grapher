@@ -3,7 +3,10 @@
 This started out as an application to graph functions of the form `y = f(x,z)` in 3D using the
 Rust `wgpu` crate, but is growing into a multi-purpose image and graphics application.
 
-It now has a GUI built using `egui`. It is coming along, but is still a work in progress.
+It has a GUI built using `egui`. In graph mode the user can enter a mathematical expression
+in the "Function" window, and if the entered text defines a valid function of variables `x` and `z`,
+that function will be graphed. The mathematical expression parsing and evaluation is handled by the
+[meval](https://docs.rs/meval/latest/meval/) crate.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/graph.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
@@ -12,9 +15,6 @@ It now has a GUI built using `egui`. It is coming along, but is still a work in 
 The `wgpu_grapher` crate in this repository has an older version of the app with
 some features that haven't been ported to the GUI version. Some of those are discussed
 [here](./GrapherCaps.md).
-
-In the future I plan to add an expression parsing library so a function to graph can be
-entered in the UI, and I plan to expand the UI for adjusting and interacting with the graph.
 
 ## glTF model viewer
 

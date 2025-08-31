@@ -8,7 +8,7 @@ use crate::{
 };
 
 #[allow(clippy::too_many_arguments)]
-pub fn render_window(
+pub fn create_gui(
     pixels_per_point: f32,
     ui: &mut Ui,
     editing: &mut bool,

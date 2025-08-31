@@ -3,7 +3,7 @@ use crate::{
         egui_tools::EguiRenderer,
         ui::{FileInputState, UiState},
     },
-    grapher,
+    grapher::{self, math::FunctionHolder, scene::solid::graph::GraphScene},
     grapher_egui::{graph, image_viewer, model, GrapherScene, GrapherSceneMode, RenderUiState},
 };
 use egui_wgpu::wgpu::{self, Limits};
@@ -135,6 +135,20 @@ impl AppState {
         self.grapher_state.update(&mut self.queue);
     }
 
+    pub fn update_graph(&mut self, function: FunctionHolder) {
+        if let Some(GrapherScene::Graph(graph_scene_data)) = self.grapher_scene.as_mut() {
+            graph_scene_data.graph_scene.scene =
+                grapher::scene::solid::graph::build_scene_for_graph(
+                    &self.device,
+                    &self.surface_config,
+                    &self.grapher_state,
+                    graph_scene_data.graph_scene.width,
+                    &function,
+                )
+                .into();
+        }
+    }
+
     pub(super) fn update_grapher_scene(&mut self) {
         match self.selected_scene {
             GrapherSceneMode::Graph => {
@@ -151,11 +165,13 @@ impl AppState {
                     .light_state
                     .maybe_restore_light(&self.queue);
 
-                let graph_scene = grapher::scene::solid::graph::graph_scene(
-                    &self.device,
-                    &self.surface_config,
-                    &self.grapher_state,
-                );
+                let graph_scene = GraphScene::default();
+
+                // grapher::scene::solid::graph::graph_scene(
+                //     &self.device,
+                //     &self.surface_config,
+                //     &self.grapher_state,
+                // );
 
                 let grapher_scene =
                     GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));

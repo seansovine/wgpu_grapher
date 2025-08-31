@@ -1,7 +1,7 @@
 mod camera;
-mod math;
 mod matrix;
 
+pub mod math;
 pub mod pipeline;
 pub mod render;
 pub mod scene;

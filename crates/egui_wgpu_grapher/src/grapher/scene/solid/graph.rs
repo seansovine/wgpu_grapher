@@ -2,7 +2,10 @@
 
 use super::build_scene;
 use crate::grapher::{
-    math::graph::{self, GraphableFunc},
+    math::{
+        graph::{self, GraphableFunc},
+        FunctionHolder,
+    },
     matrix::MatrixUniform,
     render::RenderState,
     scene::{RenderScene, Scene},
@@ -72,7 +75,7 @@ impl Default for GraphScene {
     }
 }
 
-fn build_scene_for_graph(
+pub fn build_scene_for_graph(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
@@ -95,16 +98,6 @@ fn build_scene_for_graph(
         state,
         vec![(floor_mesh, matrix), (func_mesh, matrix)],
     )
-}
-
-pub struct FunctionHolder {
-    f: Box<dyn Fn(f32, f32) -> f32>,
-}
-
-impl GraphableFunc for FunctionHolder {
-    fn eval(&self, x: f32, y: f32) -> f32 {
-        (self.f)(x, y)
-    }
 }
 
 // This is a placeholder providing a default function,
