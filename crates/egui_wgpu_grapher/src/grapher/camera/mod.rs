@@ -75,7 +75,7 @@ impl Camera {
             ),
         };
 
-        OPENGL_TO_WGPU_MATRIX * proj * view * gamma_rot * alpha_rot * translation
+        OPENGL_TO_WGPU_MATRIX * proj * view * translation * gamma_rot * alpha_rot
     }
 }
 

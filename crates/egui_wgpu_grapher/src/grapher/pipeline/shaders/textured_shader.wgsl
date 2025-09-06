@@ -1,4 +1,5 @@
-// uniforms
+// Shader to render meshes with a texture sampler. Vertex color is
+// obtained by sampling from the texture using its texture coordinates.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,
@@ -75,8 +76,8 @@ var diffuse_samp: sampler;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & 1) > 0;
-    let use_texture = (preferences.flags & 2) > 0;
+    let use_light = (preferences.flags & 1u) > 0u;
+    let use_texture = (preferences.flags & 2u) > 0u;
 
     var color: vec3<f32>;
     if use_texture {

@@ -1,4 +1,5 @@
-// uniforms
+// Shader to render meshes without using a texture sampler.
+// Vertex color is obtained from its color coordinates.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,
@@ -39,6 +40,7 @@ struct VertexOutput {
     @location(0) color: vec3<f32>,
     @location(1) light_direction: vec3<f32>,
     @location(2) normal: vec3<f32>,
+    @location(3) reflected_light: vec3<f32>,
 }
 
 // vertex shader
@@ -49,30 +51,42 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
 
-    out.color = vertex.color;
+    // position modified by camera position, for display
     out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
+    out.color = vertex.color;
 
     // rotate normal with body and pass through
-    out.normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
+    var normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
+    out.normal = normalize(normal);
     // fragment shader gets direction from point to light in world space
     var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
     out.light_direction = normalize(light.position - world_position);
+    // light reflected across normal for specular lighting
+    out.reflected_light = reflect(-out.light_direction, normal);
+
 
     return out;
 }
 
 // fragment shader
 
+const SHININESS: f32 = 64.0;
+const AMBIENT_CONTRIB: f32 = 0.025;
+const DIFFUSE_CONTRIB: f32 = 0.4;
+const SPECULAR_CONTRIB: f32 = 0.6;
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & 1) == 1;
+    let use_light = (preferences.flags & 1u) == 1u;
 
     if use_light {
         let out_color = light.color * in.color;
-        let ambient_strength = 0.025;
-        let diffuse_strength = 0.4 * max(0.0, dot(in.light_direction, in.normal));
 
-        return vec4<f32>((ambient_strength + diffuse_strength) * out_color, 1.0);
+        let ambient_strength = AMBIENT_CONTRIB;
+        let diffuse_strength = DIFFUSE_CONTRIB * max(0.0, dot(in.light_direction, in.normal));
+        let specular_strength = SPECULAR_CONTRIB * pow(max(0.0, dot(in.reflected_light, in.normal)), SHININESS);
+
+        return vec4<f32>((ambient_strength + diffuse_strength + specular_strength) * out_color, 1.0);
     } else {
         return vec4<f32>(in.color, 1.0);
     }

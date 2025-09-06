@@ -1,3 +1,5 @@
+//! Top-level code for tracking render state and executing render passes.
+
 mod state;
 
 // re-export state
