@@ -4,7 +4,10 @@ use egui_wgpu::wgpu::{
     BindGroupLayoutDescriptor, Buffer, Device, Queue, util::DeviceExt,
 };
 
-use crate::grapher::matrix::{self, MatrixState, MatrixUniform};
+use crate::grapher::{
+    camera,
+    matrix::{self, MatrixState, MatrixUniform},
+};
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -45,7 +48,7 @@ impl LightState {
 impl LightState {
     pub fn create(device: &Device) -> Self {
         let uniform = LightUniform {
-            position: [0.0, 7.0, 0.0],
+            position: [-2.0, 4.0, -2.0],
             _padding_1: 0_u32,
             color: [1.0, 1.0, 1.0],
             _padding_2: 0_u32,
@@ -82,18 +85,18 @@ impl LightState {
         // create shadow mapping matrix state
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = MatrixUniform::from(matrix);
-        let camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
+        let _camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
 
         let camera_matrix_bind_group_layout =
             device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                entries: &[camera_matrix.bind_group_layout_entry],
+                entries: &[_camera_matrix.bind_group_layout_entry],
                 label: Some("solid mesh matrix bind group layout"),
             });
         let camera_matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
             layout: &camera_matrix_bind_group_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
-                resource: camera_matrix.buffer.as_entire_binding(),
+                resource: _camera_matrix.buffer.as_entire_binding(),
             }],
             label: Some("solid mesh matrix bind group"),
         });
@@ -107,7 +110,7 @@ impl LightState {
             bind_group_layout,
             bind_group,
 
-            _camera_matrix: camera_matrix,
+            _camera_matrix,
             camera_matrix_bind_group_layout,
             camera_matrix_bind_group,
 
@@ -116,14 +119,16 @@ impl LightState {
     }
 
     fn build_shadow_matrix(position: &[f32; 3]) -> Matrix4<f32> {
-        let proj = cgmath::ortho(-10.0_f32, 10.0_f32, -10.0_f32, 10.0_f32, 1.0, 7.0);
-
-        let view_up = cgmath::Vector3::<f32>::from([0.0, 1.0, 0.0]);
-        let view_target = cgmath::Point3::<f32>::from([0.0, 1.0, 0.0]);
+        // NOTE: We can't use this if light is directly overhead.
+        let view_target = cgmath::Point3::<f32>::from([0.0, 0.0, 0.0]);
         let view_origin = cgmath::Point3::<f32>::from(*position);
+        let view_up = cgmath::Vector3::<f32>::from([0.0, 1.0, 0.0]);
         let view = cgmath::Matrix4::look_at_rh(view_origin, view_target, view_up);
 
-        proj * view
+        // TODO: This is almost surely not the matrix we want.
+        let projection = cgmath::ortho(-6.0_f32, 6.0_f32, -6.0_f32, 6.0_f32, 0.1, 6.0);
+
+        camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }
 
     pub fn save_light(&mut self) {

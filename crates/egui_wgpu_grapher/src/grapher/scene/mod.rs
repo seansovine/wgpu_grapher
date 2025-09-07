@@ -20,7 +20,7 @@ pub struct Scene {
     // light
     pub light: LightState,
     // shadow
-    pub shadow_state: Option<ShadowState>,
+    pub shadow: Option<ShadowState>,
 }
 
 // trait to abstract scene behavior in render loop

@@ -123,7 +123,7 @@ pub fn build_scene(
         textured_meshes,
 
         light,
-        shadow_state: None,
+        shadow: None,
     }
 }
 

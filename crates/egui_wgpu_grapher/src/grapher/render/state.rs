@@ -8,10 +8,12 @@ use crate::grapher::{
 
 use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-    BindGroupLayoutDescriptor, Device, Queue, RenderPipeline, SurfaceConfiguration,
+    BindGroupLayoutDescriptor, Device, Queue, RenderPipeline, Sampler, SurfaceConfiguration,
     TextureDescriptor, TextureDimension, TextureUsages, TextureView,
 };
 use winit::event::WindowEvent;
+
+// State for global rendering environment.
 
 pub struct RenderState {
     // camera
@@ -92,18 +94,23 @@ impl RenderState {
     }
 }
 
+// State for shadow map.
+
 pub struct ShadowState {
     pub pipeline: RenderPipeline,
-    _texture: wgpu::Texture,
+    pub _texture: wgpu::Texture,
     pub view: TextureView,
+    pub _sampler: Sampler,
+    pub bind_group_layout: BindGroupLayout,
+    pub bind_group: BindGroup,
 }
 
 impl ShadowState {
     const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
     const SHADOW_SIZE: wgpu::Extent3d = wgpu::Extent3d {
-        width: 512,
-        height: 512,
-        // NOTE: Because we're using 1 light for now.
+        width: 4000,
+        height: 4000,
+        // 1 layer because we're using 1 light (for now).
         depth_or_array_layers: 1,
     };
 
@@ -112,7 +119,15 @@ impl ShadowState {
         light: &LightState,
         mesh: &MeshRenderData,
     ) -> Self {
-        let shadow_texture = device.create_texture(&TextureDescriptor {
+        let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
+            device,
+            &[
+                &light.camera_matrix_bind_group_layout,
+                &mesh.bind_group_layout,
+            ],
+        );
+
+        let _texture = device.create_texture(&TextureDescriptor {
             size: Self::SHADOW_SIZE,
             mip_level_count: 1,
             sample_count: 1,
@@ -122,20 +137,62 @@ impl ShadowState {
             label: None,
             view_formats: &[],
         });
-        let shadow_view = shadow_texture.create_view(&wgpu::TextureViewDescriptor::default());
-        let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
-            device,
-            &[
-                &light.camera_matrix_bind_group_layout,
-                &mesh.bind_group_layout,
-            ],
-        );
+        let view = _texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let _sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("shadow"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            compare: Some(wgpu::CompareFunction::LessEqual),
+            ..Default::default()
+        });
 
-        // TODO: Shortly we'll also need a sampler for the shaders to read this.
+        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[
+                wgpu::BindGroupLayoutEntry {
+                    binding: 0,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        multisampled: false,
+                        sample_type: wgpu::TextureSampleType::Depth,
+                        view_dimension: wgpu::TextureViewDimension::D2,
+                    },
+                    count: None,
+                },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 1,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                    count: None,
+                },
+            ],
+            label: None,
+        });
+        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(&view),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(&_sampler),
+                },
+            ],
+            label: None,
+        });
+
         Self {
             pipeline,
-            _texture: shadow_texture,
-            view: shadow_view,
+            _texture,
+            view,
+            _sampler,
+            bind_group_layout,
+            bind_group,
         }
     }
 }

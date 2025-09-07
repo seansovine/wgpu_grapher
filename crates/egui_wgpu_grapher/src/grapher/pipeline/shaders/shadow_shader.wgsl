@@ -21,5 +21,5 @@ struct VertexInput {
 fn vs_main(
     vertex: VertexInput,
 ) -> @builtin(position) vec4<f32> {
-    return light_view.matrix * vec4<f32>(vertex.position, 1.0);
+    return light_view.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
 }

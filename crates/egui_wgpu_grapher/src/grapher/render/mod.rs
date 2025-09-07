@@ -10,7 +10,7 @@ use egui_wgpu::wgpu::{self, BindGroup, BufferSlice, CommandEncoder, RenderPipeli
 
 impl RenderState {
     pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene) {
-        if let Some(shadow_state) = &scene.shadow_state
+        if let Some(shadow_state) = &scene.shadow
             && scene.pipeline.is_some()
         {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -42,8 +42,11 @@ impl RenderState {
         // want to clear depth buffer on first render only
         let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
 
-        // render solid meshes if configured
-        if let Some(pipeline) = &scene.pipeline {
+        // Render solid meshes if configured. Shadow always comes
+        // with solid pipeline: these could be put in one struct.
+        if let Some(pipeline) = &scene.pipeline
+            && let Some(shadow) = &scene.shadow
+        {
             for mesh in &scene.meshes {
                 render_detail(
                     encoder,
@@ -54,9 +57,11 @@ impl RenderState {
                     mesh.index_buffer.slice(..),
                     mesh.num_indices,
                     &[
-                        &self.bind_group, //
-                        &mesh.bind_group, //
+                        &self.bind_group,
+                        &mesh.bind_group,
                         &scene.light.bind_group,
+                        &shadow.bind_group,
+                        &scene.light.camera_matrix_bind_group,
                     ],
                     depth_load_op,
                 );

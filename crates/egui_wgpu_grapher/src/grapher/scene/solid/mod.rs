@@ -91,7 +91,6 @@ pub fn build_scene(
     mesh_data: Vec<(MeshData, MatrixUniform)>,
 ) -> Scene {
     let mut meshes = vec![];
-
     for (mesh, matrix) in mesh_data {
         let mesh_render_data = MeshRenderData::from_mesh_data(device, mesh, matrix);
         meshes.push(mesh_render_data);
@@ -99,7 +98,8 @@ pub fn build_scene(
     let last_mesh = meshes.last().unwrap();
 
     let light = light::LightState::create(device);
-    // use this pipeline for all solid meshes
+    let shadow = ShadowState::create::<GpuVertex>(device, &light, last_mesh);
+
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
         surface_config,
@@ -108,11 +108,11 @@ pub fn build_scene(
             &state.bind_group_layout,
             &last_mesh.bind_group_layout,
             &light.bind_group_layout,
+            &shadow.bind_group_layout,
+            &light.camera_matrix_bind_group_layout,
         ],
         state.render_preferences.polygon_mode,
     );
-
-    let shadow_state = ShadowState::create::<GpuVertex>(device, &light, last_mesh);
 
     Scene {
         pipeline: Some(pipeline),
@@ -122,7 +122,7 @@ pub fn build_scene(
         textured_meshes: vec![],
 
         light,
-        shadow_state: Some(shadow_state),
+        shadow: Some(shadow),
     }
 }
 

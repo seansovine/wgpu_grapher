@@ -62,9 +62,7 @@ impl Camera {
             z: 0.0,
         });
         let proj = match self.projection_type {
-            ProjectionType::Perspective => {
-                cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar)
-            }
+            ProjectionType::Perspective => self.get_perspective_proj(),
             ProjectionType::Orthographic => cgmath::ortho(
                 self.left * self.aspect / self.ortho_scale,
                 self.right * self.aspect / self.ortho_scale,
@@ -76,6 +74,10 @@ impl Camera {
         };
 
         OPENGL_TO_WGPU_MATRIX * proj * view * translation * gamma_rot * alpha_rot
+    }
+
+    pub fn get_perspective_proj(&self) -> cgmath::Matrix4<f32> {
+        cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar)
     }
 }
 
