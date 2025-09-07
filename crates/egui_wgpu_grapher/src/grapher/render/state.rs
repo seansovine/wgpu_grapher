@@ -3,41 +3,69 @@ use crate::grapher::{
     pipeline::{
         self, light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer,
     },
-    scene::Vertex,
+    scene::{Bufferable, solid::MeshRenderData},
 };
 
 use egui_wgpu::wgpu::{
-    self, BindGroupLayout, Device, Queue, RenderPipeline, SurfaceConfiguration, TextureDescriptor,
-    TextureDimension, TextureUsages, TextureView,
+    self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+    BindGroupLayoutDescriptor, Device, Queue, RenderPipeline, SurfaceConfiguration,
+    TextureDescriptor, TextureDimension, TextureUsages, TextureView,
 };
 use winit::event::WindowEvent;
 
 pub struct RenderState {
     // camera
     pub camera_state: CameraState,
-    // light
-    pub light_state: LightState,
     // shader preferences
     pub render_preferences: RenderPreferences,
-    // running framerate
-    pub framerate: f32,
+    // bind group for things global to the render
+    pub bind_group_layout: BindGroupLayout,
+    // includes preferences and camera
+    pub bind_group: BindGroup,
     // depth buffer
     pub depth_buffer: DepthBuffer,
+    // running framerate
+    pub framerate: f32,
 }
 
 impl RenderState {
     pub async fn new(device: &Device, surface_config: &SurfaceConfiguration) -> Self {
         let camera_state = CameraState::init(device, surface_config);
-        let light_state = LightState::create(device);
-        let shader_preferences_state = RenderPreferences::create(device);
+        let mut shader_preferences = RenderPreferences::create(device);
+        shader_preferences.set_binding_index(1);
+
+        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            entries: &[
+                camera_state.matrix.bind_group_layout_entry,
+                shader_preferences.bind_group_layout_entry,
+            ],
+            label: Some("shared resources bind group layout"),
+        });
+        let bind_group = device.create_bind_group(&BindGroupDescriptor {
+            layout: &bind_group_layout,
+            entries: &[
+                BindGroupEntry {
+                    binding: 0,
+                    resource: camera_state.matrix.buffer.as_entire_binding(),
+                },
+                BindGroupEntry {
+                    binding: 1,
+                    resource: shader_preferences.buffer.as_entire_binding(),
+                },
+            ],
+            label: Some("shared resources bind group"),
+        });
+
         let depth_buffer = DepthBuffer::create(surface_config, device);
 
         Self {
             camera_state,
-            light_state,
-            render_preferences: shader_preferences_state,
-            framerate: 60_f32, // we target 60 fps
+            render_preferences: shader_preferences,
+            bind_group_layout,
+            bind_group,
             depth_buffer,
+            // we target 60fps
+            framerate: 60_f32,
         }
     }
 }
@@ -79,7 +107,11 @@ impl ShadowState {
         depth_or_array_layers: 1,
     };
 
-    pub fn create(device: &Device, bind_group_layouts: &[&BindGroupLayout]) -> Self {
+    pub fn create<Vertex: Bufferable>(
+        device: &Device,
+        light: &LightState,
+        mesh: &MeshRenderData,
+    ) -> Self {
         let shadow_texture = device.create_texture(&TextureDescriptor {
             size: Self::SHADOW_SIZE,
             mip_level_count: 1,
@@ -91,9 +123,13 @@ impl ShadowState {
             view_formats: &[],
         });
         let shadow_view = shadow_texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        // TODO: Later make generic over texture.
-        let pipeline = pipeline::create_shadow_pipeline::<Vertex>(device, bind_group_layouts);
+        let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
+            device,
+            &[
+                &light.camera_matrix_bind_group_layout,
+                &mesh.bind_group_layout,
+            ],
+        );
 
         // TODO: Shortly we'll also need a sampler for the shaders to read this.
         Self {

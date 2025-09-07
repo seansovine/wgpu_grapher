@@ -1,10 +1,9 @@
 // General code for creating matrix uniforms and associated buffers.
 
 use egui_wgpu::wgpu::{
-    util::{BufferInitDescriptor, DeviceExt},
-    BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout, BindGroupLayoutDescriptor,
     BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
     ShaderStages,
+    util::{BufferInitDescriptor, DeviceExt},
 };
 
 pub const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
@@ -17,6 +16,7 @@ pub struct MatrixUniform {
 }
 
 impl MatrixUniform {
+    #[allow(unused)]
     pub fn identity() -> Self {
         use cgmath::SquareMatrix;
         Self {
@@ -55,8 +55,14 @@ impl MatrixUniform {
 pub struct MatrixState {
     pub uniform: MatrixUniform,
     pub buffer: Buffer,
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
+    pub bind_group_layout_entry: BindGroupLayoutEntry,
+}
+
+impl MatrixState {
+    #[allow(unused)]
+    pub fn set_binding_index(&mut self, binding_index: u32) {
+        self.bind_group_layout_entry.binding = binding_index;
+    }
 }
 
 pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) -> MatrixState {
@@ -66,33 +72,20 @@ pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) 
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
     });
 
-    let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-        entries: &[BindGroupLayoutEntry {
-            binding: 0,
-            visibility: ShaderStages::VERTEX,
-            ty: BindingType::Buffer {
-                ty: BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-        label: Some("a matrix bind group layout"),
-    });
-
-    let bind_group = device.create_bind_group(&BindGroupDescriptor {
-        layout: &bind_group_layout,
-        entries: &[BindGroupEntry {
-            binding: 0,
-            resource: buffer.as_entire_binding(),
-        }],
-        label: Some("a matrix bind group"),
-    });
+    let bind_group_layout_entry = BindGroupLayoutEntry {
+        binding: 0,
+        visibility: ShaderStages::VERTEX,
+        ty: BindingType::Buffer {
+            ty: BufferBindingType::Uniform,
+            has_dynamic_offset: false,
+            min_binding_size: None,
+        },
+        count: None,
+    };
 
     MatrixState {
         uniform: matrix_uniform,
         buffer,
-        bind_group_layout,
-        bind_group,
+        bind_group_layout_entry,
     }
 }

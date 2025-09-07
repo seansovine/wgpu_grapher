@@ -3,7 +3,7 @@ use egui::{RichText, Ui};
 use crate::{
     grapher::render::RenderState,
     grapher_egui::{
-        render_parameter_ui, scene_selection_ui, GrapherScene, GrapherSceneMode, RenderUiState,
+        GrapherScene, GrapherSceneMode, RenderUiState, render_parameter_ui, scene_selection_ui,
     },
 };
 
@@ -12,7 +12,7 @@ pub fn create_gui(
     pixels_per_point: f32,
     ui: &mut Ui,
     editing: &mut bool,
-    mut grapher_scene: Option<&mut GrapherScene>,
+    grapher_scene: &mut GrapherScene,
     render_state: &mut RenderState,
     ui_state: &mut UiState,
     selected_scene: &mut GrapherSceneMode,
@@ -28,7 +28,7 @@ pub fn create_gui(
 
     // parameters for the grapher scene
 
-    if let Some(grapher_scene) = grapher_scene.as_mut() {
+    if grapher_scene.is_some() {
         ui.separator();
         ui.label(RichText::new("Scene parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);

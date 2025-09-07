@@ -29,13 +29,13 @@ impl GraphableFunc for FunctionHolder {
 
 pub fn try_parse_function_string(function_string: &str) -> Option<FunctionHolder> {
     let mut function = None;
-    if let Ok(expr) = function_string.parse::<Expr>() {
-        if let Ok(func) = expr.bind2("x", "z") {
-            let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
-            function = Some(FunctionHolder {
-                f: Box::from(closure),
-            });
-        }
+    if let Ok(expr) = function_string.parse::<Expr>()
+        && let Ok(func) = expr.bind2("x", "z")
+    {
+        let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
+        function = Some(FunctionHolder {
+            f: Box::from(closure),
+        });
     }
 
     function

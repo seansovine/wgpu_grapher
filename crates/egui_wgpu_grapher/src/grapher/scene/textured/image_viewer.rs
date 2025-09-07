@@ -1,6 +1,6 @@
 // Code to build a scene that renders an image as a texture on a square canvas.
 
-use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_VERTICAL};
+use super::{SQUARE_INDICES, SQUARE_VERTICES_VERTICAL, TexturedMeshData, build_scene};
 use crate::grapher::{
     camera::ProjectionType,
     matrix::MatrixUniform,
@@ -22,10 +22,6 @@ pub fn image_viewer_scene(
     let Ok(image) = Image::from_file(image_path) else {
         return None;
     };
-
-    // update light position
-    state.light_state.set_position([0.0, 0.0, 3.0]);
-    state.light_state.update_uniform(queue);
 
     // tell shader to use texture for color
     state.render_preferences.set_use_texture(true);
@@ -51,11 +47,14 @@ pub fn image_viewer_scene(
         MatrixUniform::translation(&[0.0, 0.0, 0.5]),
     )];
 
-    let scene = ImageViewerScene {
+    let mut image_scene = ImageViewerScene {
         scene: build_scene(device, surface_config, state, meshes),
     };
+    // update light position
+    image_scene.scene.light.set_position([0.0, 0.0, 3.0]);
+    image_scene.scene.light.update_uniform(queue);
 
-    Some(scene)
+    Some(image_scene)
 }
 
 fn update_canvas_aspect_ratio(mesh_data: &mut TexturedMeshData, height: u32, width: u32) {
@@ -73,7 +72,7 @@ fn update_canvas_aspect_ratio(mesh_data: &mut TexturedMeshData, height: u32, wid
 }
 
 pub struct ImageViewerScene {
-    scene: Scene,
+    pub scene: Scene,
 }
 
 impl RenderScene for ImageViewerScene {

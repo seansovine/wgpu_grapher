@@ -3,9 +3,8 @@
 
 use egui::Context;
 use egui_wgpu::{
-    wgpu,
+    Renderer, ScreenDescriptor, wgpu,
     wgpu::{CommandEncoder, Device, Queue, StoreOp, TextureFormat, TextureView},
-    Renderer, ScreenDescriptor,
 };
 use egui_winit::State;
 use winit::{event::WindowEvent, window::Window};

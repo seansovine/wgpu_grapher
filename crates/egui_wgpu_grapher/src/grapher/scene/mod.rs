@@ -3,17 +3,23 @@ pub mod solid;
 #[allow(dead_code)]
 pub mod textured;
 
-use crate::grapher::render::ShadowState;
-
 use super::render::RenderState;
+use crate::grapher::{pipeline::light::LightState, render::ShadowState};
 
 use egui_wgpu::wgpu::{self, Queue, RenderPipeline};
 
 pub struct Scene {
-    pub meshes: Vec<solid::MeshRenderData>,
-    pub textured_meshes: Vec<textured::TexturedMeshRenderData>,
+    // solid and textured render pipelines
     pub pipeline: Option<RenderPipeline>,
     pub textured_pipeline: Option<RenderPipeline>,
+
+    // meshes
+    pub meshes: Vec<solid::MeshRenderData>,
+    pub textured_meshes: Vec<textured::TexturedMeshRenderData>,
+
+    // light
+    pub light: LightState,
+    // shadow
     pub shadow_state: Option<ShadowState>,
 }
 
@@ -47,17 +53,17 @@ pub(crate) trait Bufferable {
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct Vertex {
+pub struct GpuVertex {
     pub position: [f32; 3],
     pub color: [f32; 3],
     pub normal: [f32; 3],
     pub tex_coords: [f32; 2],
 }
 
-impl Bufferable for Vertex {
+impl Bufferable for GpuVertex {
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static> {
         wgpu::VertexBufferLayout {
-            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
+            array_stride: std::mem::size_of::<GpuVertex>() as wgpu::BufferAddress,
             step_mode: wgpu::VertexStepMode::Vertex,
             attributes: &[
                 wgpu::VertexAttribute {
@@ -85,7 +91,7 @@ impl Bufferable for Vertex {
     }
 }
 
-impl Default for Vertex {
+impl Default for GpuVertex {
     fn default() -> Self {
         Self {
             position: [0.0, 0.0, 0.0],

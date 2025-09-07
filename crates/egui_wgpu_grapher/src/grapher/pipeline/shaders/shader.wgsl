@@ -8,6 +8,13 @@ struct MatrixUniform {
 @group(0) @binding(0)
 var<uniform> camera: MatrixUniform;
 
+struct PreferencesUniform {
+    flags: u32,
+}
+
+@group(0) @binding(1)
+var<uniform> preferences: PreferencesUniform;
+
 @group(1) @binding(0)
 var<uniform> model_matrix: MatrixUniform;
 
@@ -18,13 +25,6 @@ struct LightUniform {
 
 @group(2) @binding(0)
 var<uniform> light: LightUniform;
-
-struct PreferencesUniform {
-    flags: u32,
-}
-
-@group(3) @binding(0)
-var<uniform> preferences: PreferencesUniform;
 
 // buffer structs
 

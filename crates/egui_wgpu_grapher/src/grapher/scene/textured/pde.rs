@@ -1,6 +1,6 @@
 // wave equation rendered into texture
 
-use super::{build_scene, TexturedMeshData, SQUARE_INDICES, SQUARE_VERTICES_FLAT};
+use super::{SQUARE_INDICES, SQUARE_VERTICES_FLAT, TexturedMeshData, build_scene};
 
 use crate::grapher::{
     math::pde,

@@ -4,7 +4,7 @@ use crate::{
         ui::{FileInputState, UiState},
     },
     grapher::{self, math::FunctionHolder, scene::solid::graph::GraphScene},
-    grapher_egui::{graph, image_viewer, model, GrapherScene, GrapherSceneMode, RenderUiState},
+    grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph, image_viewer, model},
 };
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
@@ -25,7 +25,7 @@ pub struct AppState {
     // state for grapher render objects
     pub selected_scene: GrapherSceneMode,
     pub grapher_state: grapher::render::RenderState,
-    pub grapher_scene: Option<GrapherScene>,
+    pub grapher_scene: GrapherScene,
 
     // ui state needed persisted across renders
     pub ui_state: UiState,
@@ -115,7 +115,7 @@ impl AppState {
 
             selected_scene: initial_scene,
             grapher_state,
-            grapher_scene: None,
+            grapher_scene: GrapherScene::None,
 
             ui_state,
         }
@@ -136,7 +136,7 @@ impl AppState {
     }
 
     pub fn update_graph(&mut self, function: FunctionHolder) {
-        if let Some(GrapherScene::Graph(graph_scene_data)) = self.grapher_scene.as_mut() {
+        if let GrapherScene::Graph(graph_scene_data) = &mut self.grapher_scene {
             graph_scene_data.graph_scene.function = Some(function);
             graph_scene_data.graph_scene.try_rebuild_scene(
                 &self.device,
@@ -151,16 +151,14 @@ impl AppState {
             GrapherSceneMode::Graph => {
                 self.ui_state.file_window_state = FileInputState::Hidden;
 
-                if matches!(self.grapher_scene, Some(GrapherScene::Graph(_))) {
+                if matches!(self.grapher_scene, GrapherScene::Graph(_)) {
                     return;
                 }
                 self.editing = false;
 
                 // restore previous camera and light if they were saved
                 self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_state
-                    .light_state
-                    .maybe_restore_light(&self.queue);
+                self.grapher_scene.try_restore_light(&self.queue);
 
                 let graph_scene = GraphScene::default();
 
@@ -173,11 +171,11 @@ impl AppState {
                 let grapher_scene =
                     GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
 
-                self.grapher_scene = Some(grapher_scene);
+                self.grapher_scene = grapher_scene;
             }
 
             GrapherSceneMode::Model => {
-                if matches!(self.grapher_scene, Some(GrapherScene::Model(_))) {
+                if matches!(self.grapher_scene, GrapherScene::Model(_)) {
                     if !matches!(
                         self.ui_state.file_window_state,
                         FileInputState::NeedsChecked
@@ -190,7 +188,7 @@ impl AppState {
                     self.ui_state.file_window_state = FileInputState::NeedsChecked;
                 }
                 if self.ui_state.filename.is_empty() {
-                    self.grapher_scene = None;
+                    self.grapher_scene = GrapherScene::None;
                     self.ui_state.file_window_state = FileInputState::NeedsInput;
                 }
                 if !matches!(
@@ -203,9 +201,7 @@ impl AppState {
 
                 // restore previous camera and light if they were saved
                 self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_state
-                    .light_state
-                    .maybe_restore_light(&self.queue);
+                self.grapher_scene.try_restore_light(&self.queue);
 
                 let model_scene = grapher::scene::textured::model::model_scene(
                     &self.device,
@@ -216,18 +212,17 @@ impl AppState {
                 );
 
                 if let Some(scene) = model_scene {
-                    self.grapher_scene =
-                        Some(GrapherScene::Model(model::ModelSceneData::new(scene)));
+                    self.grapher_scene = GrapherScene::Model(model::ModelSceneData::new(scene));
                     self.ui_state.file_window_state = FileInputState::Hidden;
                     self.editing = false;
                 } else {
-                    self.grapher_scene = None;
+                    self.grapher_scene = GrapherScene::None;
                     self.ui_state.file_window_state = FileInputState::InvalidFile;
                 }
             }
 
             GrapherSceneMode::ImageViewer => {
-                if matches!(self.grapher_scene, Some(GrapherScene::ImageViewer(_))) {
+                if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
                     if !matches!(
                         self.ui_state.file_window_state,
                         FileInputState::NeedsChecked
@@ -240,7 +235,7 @@ impl AppState {
                     self.ui_state.file_window_state = FileInputState::NeedsChecked;
                 }
                 if self.ui_state.filename.is_empty() {
-                    self.grapher_scene = None;
+                    self.grapher_scene = GrapherScene::None;
                     self.ui_state.file_window_state = FileInputState::NeedsInput;
                 }
                 if !matches!(
@@ -253,7 +248,7 @@ impl AppState {
 
                 // save old camera and lightstate
                 self.grapher_state.camera_state.save_camera();
-                self.grapher_state.light_state.save_light();
+                self.grapher_scene.try_save_light();
 
                 let image_scene = grapher::scene::textured::image_viewer::image_viewer_scene(
                     &self.device,
@@ -264,13 +259,12 @@ impl AppState {
                 );
 
                 if let Some(scene) = image_scene {
-                    self.grapher_scene = Some(GrapherScene::ImageViewer(
-                        image_viewer::ImageViewerSceneData::new(scene),
-                    ));
+                    self.grapher_scene =
+                        GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(scene));
                     self.ui_state.file_window_state = FileInputState::Hidden;
                     self.editing = false;
                 } else {
-                    self.grapher_scene = None;
+                    self.grapher_scene = GrapherScene::None;
                     self.ui_state.file_window_state = FileInputState::InvalidFile;
                 }
             }

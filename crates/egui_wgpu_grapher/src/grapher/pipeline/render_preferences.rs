@@ -1,7 +1,7 @@
 // Preferences passed to shaders as a uniform.
 
 use egui_wgpu::wgpu::{
-    self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, PolygonMode, Queue,
+    self, BindGroupLayoutEntry, Buffer, Device, PolygonMode, Queue, util::DeviceExt,
 };
 
 #[repr(C)]
@@ -17,9 +17,7 @@ pub struct RenderPreferences {
     // data for uniform passed to shader
     pub uniform: ShaderPreferencesUniform,
     pub buffer: Buffer,
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
-
+    pub bind_group_layout_entry: BindGroupLayoutEntry,
     // render pipeline preferences
     pub polygon_mode: PolygonMode,
 }
@@ -66,13 +64,12 @@ impl RenderPreferences {
 impl RenderPreferences {
     pub fn create(device: &Device) -> Self {
         // pipeline preferences
-
         let polygon_mode = PolygonMode::Fill;
 
         // shader preferences
-
         let uniform = ShaderPreferencesUniform {
-            flags: 1_u32, // lighting enabled by default
+            // lighting enabled by default
+            flags: 1_u32,
         };
 
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -81,36 +78,26 @@ impl RenderPreferences {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: None,
-        });
-
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: buffer.as_entire_binding(),
-            }],
-            label: None,
-        });
+        let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        };
 
         Self {
             uniform,
             buffer,
-            bind_group_layout,
-            bind_group,
-            //
+            bind_group_layout_entry,
             polygon_mode,
         }
+    }
+
+    pub fn set_binding_index(&mut self, binding_index: u32) {
+        self.bind_group_layout_entry.binding = binding_index;
     }
 }

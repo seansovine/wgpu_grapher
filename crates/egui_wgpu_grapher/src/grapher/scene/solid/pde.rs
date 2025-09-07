@@ -1,4 +1,4 @@
-use super::{build_scene, MeshData};
+use super::{MeshData, build_scene};
 use crate::grapher::{
     math::{graph::SquareTesselation, pde},
     matrix::MatrixUniform,

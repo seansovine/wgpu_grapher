@@ -3,8 +3,8 @@
 use super::build_scene;
 use crate::grapher::{
     math::{
-        graph::{self, GraphableFunc},
         FunctionHolder,
+        graph::{self, GraphableFunc},
     },
     matrix::MatrixUniform,
     render::RenderState,
@@ -164,13 +164,13 @@ pub fn demo_graph_scene(
 
     let function_string = "2.0^(-sin(x^2 + z^2))".to_string();
     let mut function = None;
-    if let Ok(expr) = function_string.parse::<Expr>() {
-        if let Ok(func) = expr.bind2("x", "z") {
-            let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
-            function = Some(FunctionHolder {
-                f: Box::from(closure),
-            });
-        }
+    if let Ok(expr) = function_string.parse::<Expr>()
+        && let Ok(func) = expr.bind2("x", "z")
+    {
+        let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
+        function = Some(FunctionHolder {
+            f: Box::from(closure),
+        });
     }
     // let function = Some(get_graph_func(&parameters));
 

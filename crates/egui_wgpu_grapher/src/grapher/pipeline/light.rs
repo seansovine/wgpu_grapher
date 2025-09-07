@@ -1,5 +1,8 @@
 use cgmath::Matrix4;
-use egui_wgpu::wgpu::{self, util::DeviceExt, BindGroup, BindGroupLayout, Buffer, Device, Queue};
+use egui_wgpu::wgpu::{
+    self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+    BindGroupLayoutDescriptor, Buffer, Device, Queue, util::DeviceExt,
+};
 
 use crate::grapher::matrix::{self, MatrixState, MatrixUniform};
 
@@ -13,12 +16,16 @@ pub struct LightUniform {
 }
 
 pub struct LightState {
+    // pass light data to shader via uniform
     pub uniform: LightUniform,
     pub buffer: Buffer,
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 
-    pub shadow_view_matrix: MatrixState,
+    // matrix for viewing scene from light's perspective
+    pub _camera_matrix: MatrixState,
+    pub camera_matrix_bind_group_layout: BindGroupLayout,
+    pub camera_matrix_bind_group: BindGroup,
 
     // provides a basic restore for light
     pub previous_uniform: Option<LightUniform>,
@@ -49,32 +56,47 @@ impl LightState {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
-                ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-            label: None,
+        let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
+            ty: wgpu::BindingType::Buffer {
+                ty: wgpu::BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        };
+        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            entries: &[bind_group_layout_entry],
+            label: Some("light bind group layout"),
         });
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        let bind_group = device.create_bind_group(&BindGroupDescriptor {
             layout: &bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
+            entries: &[BindGroupEntry {
                 binding: 0,
                 resource: buffer.as_entire_binding(),
             }],
-            label: None,
+            label: Some("light bind group"),
         });
 
         // create shadow mapping matrix state
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = MatrixUniform::from(matrix);
-        let shadow_view_matrix = matrix::make_matrix_state(device, matrix_uniform);
+        let camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
+
+        let camera_matrix_bind_group_layout =
+            device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                entries: &[camera_matrix.bind_group_layout_entry],
+                label: Some("solid mesh matrix bind group layout"),
+            });
+        let camera_matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            layout: &camera_matrix_bind_group_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: camera_matrix.buffer.as_entire_binding(),
+            }],
+            label: Some("solid mesh matrix bind group"),
+        });
 
         // TODO: Later we'll want to be able to update the light
         // during runtime, which will require updating this matrix.
@@ -84,7 +106,11 @@ impl LightState {
             buffer,
             bind_group_layout,
             bind_group,
-            shadow_view_matrix,
+
+            _camera_matrix: camera_matrix,
+            camera_matrix_bind_group_layout,
+            camera_matrix_bind_group,
+
             previous_uniform: None,
         }
     }

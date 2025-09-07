@@ -1,4 +1,4 @@
-use super::{float_edit_line, GraphScene};
+use super::{GraphScene, float_edit_line};
 
 use egui::{Grid, Ui};
 

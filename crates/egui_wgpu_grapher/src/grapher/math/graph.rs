@@ -175,7 +175,7 @@ impl SquareTesselation {
     pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
         let mut indices: Vec<u32> = vec![];
         let mut normals: Vec<Option<[f32; 3]>> = vec![None; self.vertices.len()];
-        let mut vertices: Vec<scene::Vertex> = vec![];
+        let mut vertices: Vec<scene::GpuVertex> = vec![];
 
         for square in &self.squares {
             for t in square.triangles() {
@@ -189,7 +189,7 @@ impl SquareTesselation {
         }
 
         for (i, vertex) in self.vertices.iter().enumerate() {
-            vertices.push(scene::Vertex {
+            vertices.push(scene::GpuVertex {
                 position: *vertex,
                 color,
                 normal: normals[i].take().unwrap(),

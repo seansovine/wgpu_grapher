@@ -4,14 +4,14 @@ use state::*;
 use crate::{
     egui::{
         components::{self, HasFocus},
-        ui::{create_gui, FileInputState},
+        ui::{FileInputState, create_gui},
     },
     grapher,
-    grapher_egui::{validate_path, GrapherSceneMode},
+    grapher_egui::{GrapherSceneMode, validate_path},
 };
 use egui_wgpu::{
-    wgpu::{self, SurfaceError},
     ScreenDescriptor,
+    wgpu::{self, SurfaceError},
 };
 use std::{
     sync::Arc,
@@ -115,12 +115,11 @@ impl App {
 
     fn handle_redraw(&mut self) {
         // if minimized don't redraw
-        if let Some(window) = self.window.as_ref() {
-            if let Some(min) = window.is_minimized() {
-                if min {
-                    return;
-                }
-            }
+        if let Some(window) = self.window.as_ref()
+            && let Some(min) = window.is_minimized()
+            && min
+        {
+            return;
         }
 
         let state = self.state.as_mut().unwrap();
@@ -156,8 +155,10 @@ impl App {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        if let Some(grapher_scene) = state.grapher_scene.as_mut() {
-            grapher_scene.render(&surface_view, &mut encoder, &state.grapher_state);
+        if state.grapher_scene.is_some() {
+            state
+                .grapher_scene
+                .render(&surface_view, &mut encoder, &state.grapher_state);
         }
 
         let window = self.window.as_ref().unwrap();
@@ -178,7 +179,7 @@ impl App {
                         context.pixels_per_point(),
                         ui,
                         editing,
-                        state.grapher_scene.as_mut(),
+                        &mut state.grapher_scene,
                         &mut state.grapher_state,
                         &mut state.ui_state,
                         &mut state.selected_scene,
@@ -300,7 +301,7 @@ impl ApplicationHandler for App {
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
                 if !state.scene_updates_paused && state.grapher_scene.is_some() {
-                    state.grapher_scene.as_mut().unwrap().update(
+                    state.grapher_scene.update(
                         &state.device,
                         &state.surface_config,
                         &state.queue,

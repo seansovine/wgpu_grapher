@@ -5,7 +5,10 @@ struct MatrixUniform {
 }
 
 @group(0) @binding(0)
-var<uniform> camera_view: MatrixUniform;
+var<uniform> light_view: MatrixUniform;
+
+@group(1) @binding(0)
+var<uniform> model_matrix: MatrixUniform;
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -18,5 +21,5 @@ struct VertexInput {
 fn vs_main(
     vertex: VertexInput,
 ) -> @builtin(position) vec4<f32> {
-    return camera_view.matrix * vec4<f32>(vertex.position, 1.0);
+    return light_view.matrix * vec4<f32>(vertex.position, 1.0);
 }

@@ -5,19 +5,22 @@ pub mod graph;
 #[allow(dead_code)]
 pub mod pde;
 
-use super::{Scene, Vertex};
+use super::{GpuVertex, Scene};
 use crate::grapher::{
     matrix::{self, MatrixState, MatrixUniform},
-    pipeline,
+    pipeline::{self, light},
     render::{RenderState, ShadowState},
 };
 
-use egui_wgpu::wgpu::{self, util::DeviceExt, Buffer, Device, SurfaceConfiguration};
+use egui_wgpu::wgpu::{
+    self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
+    BindGroupLayoutDescriptor, Buffer, Device, SurfaceConfiguration, util::DeviceExt,
+};
 use std::sync::LazyLock;
 
 #[derive(Clone)]
 pub struct MeshData {
-    pub vertices: Vec<Vertex>,
+    pub vertices: Vec<GpuVertex>,
     pub indices: Vec<u32>,
 }
 
@@ -33,7 +36,9 @@ pub struct MeshRenderData {
     pub vertex_buffer: Buffer,
     pub index_buffer: Buffer,
     pub num_indices: u32,
-    pub matrix: MatrixState,
+    pub _matrix: MatrixState,
+    pub bind_group_layout: BindGroupLayout,
+    pub bind_group: BindGroup,
 }
 
 impl MeshRenderData {
@@ -53,11 +58,26 @@ impl MeshRenderData {
 
         let matrix = matrix::make_matrix_state(device, matrix_uniform);
 
+        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+            entries: &[matrix.bind_group_layout_entry],
+            label: Some("solid mesh matrix bind group layout"),
+        });
+        let bind_group = device.create_bind_group(&BindGroupDescriptor {
+            layout: &bind_group_layout,
+            entries: &[BindGroupEntry {
+                binding: 0,
+                resource: matrix.buffer.as_entire_binding(),
+            }],
+            label: Some("solid mesh matrix bind group"),
+        });
+
         MeshRenderData {
             vertex_buffer,
             index_buffer,
             num_indices,
-            matrix,
+            _matrix: matrix,
+            bind_group_layout,
+            bind_group,
         }
     }
 }
@@ -78,29 +98,30 @@ pub fn build_scene(
     }
     let last_mesh = meshes.last().unwrap();
 
+    let light = light::LightState::create(device);
     // use this pipeline for all solid meshes
-    let pipeline = pipeline::create_render_pipeline::<Vertex>(
+    let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
         surface_config,
         pipeline::get_shader(),
         &[
-            &state.camera_state.matrix.bind_group_layout,
-            &last_mesh.matrix.bind_group_layout,
-            &state.light_state.bind_group_layout,
-            &state.render_preferences.bind_group_layout,
+            &state.bind_group_layout,
+            &last_mesh.bind_group_layout,
+            &light.bind_group_layout,
         ],
         state.render_preferences.polygon_mode,
     );
-    let shadow_state = ShadowState::create(
-        device,
-        &[&state.light_state.shadow_view_matrix.bind_group_layout],
-    );
+
+    let shadow_state = ShadowState::create::<GpuVertex>(device, &light, last_mesh);
 
     Scene {
-        meshes,
-        textured_meshes: vec![],
         pipeline: Some(pipeline),
         textured_pipeline: None,
+
+        meshes,
+        textured_meshes: vec![],
+
+        light,
         shadow_state: Some(shadow_state),
     }
 }
@@ -109,19 +130,19 @@ pub fn build_scene(
 
 static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
     vertices: Vec::from([
-        Vertex {
+        GpuVertex {
             position: [0.0, 1.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
-        Vertex {
+        GpuVertex {
             position: [-0.5, 0.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],
             ..Default::default()
         },
-        Vertex {
+        GpuVertex {
             position: [0.5, 0.0, 0.0],
             color: [1.0, 0.0, 0.0],
             normal: [0.0, 0.0, 1.0],

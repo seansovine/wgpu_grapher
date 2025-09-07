@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use super::{build_scene, TexturedMeshData, Vertex};
+use super::{GpuVertex, TexturedMeshData, build_scene};
 use crate::grapher::{
     matrix,
     pipeline::texture::{Image, TextureData},
@@ -45,10 +45,10 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
                 .unwrap()
                 .zip(reader.read_normals().unwrap());
 
-            let mut vertices: Vec<Vertex> = vec![];
+            let mut vertices: Vec<GpuVertex> = vec![];
 
             for (position, normal) in iter {
-                vertices.push(Vertex {
+                vertices.push(GpuVertex {
                     position,
                     color: TEST_COLOR,
                     normal,
@@ -145,7 +145,7 @@ pub fn model_scene(
 }
 
 pub struct ModelScene {
-    scene: Scene,
+    pub scene: Scene,
 }
 
 impl RenderScene for ModelScene {

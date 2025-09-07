@@ -1,7 +1,6 @@
 //! Top-level code for tracking render state and executing render passes.
 
 mod state;
-
 // re-export state
 pub use state::*;
 
@@ -11,11 +10,9 @@ use egui_wgpu::wgpu::{self, BindGroup, BufferSlice, CommandEncoder, RenderPipeli
 
 impl RenderState {
     pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene) {
-        let camera_bind_group = &self.camera_state.matrix.bind_group;
-        let light_bind_group = &self.light_state.bind_group;
-        let preferences_bind_group = &self.render_preferences.bind_group;
-
-        if let Some(shadow_state) = &scene.shadow_state {
+        if let Some(shadow_state) = &scene.shadow_state
+            && scene.pipeline.is_some()
+        {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("shadow pass"),
                 color_attachments: &[],
@@ -31,7 +28,15 @@ impl RenderState {
                 occlusion_query_set: None,
             });
             pass.set_pipeline(&shadow_state.pipeline);
-            pass.set_bind_group(0, &self.light_state.shadow_view_matrix.bind_group, &[]);
+            pass.set_bind_group(0, &scene.light.camera_matrix_bind_group, &[]);
+
+            // Shadows are currently drawn for solid scene objects only.
+            for mesh in &scene.meshes {
+                pass.set_bind_group(1, &mesh.bind_group, &[]);
+                pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+                pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..mesh.num_indices, 0, 0..1);
+            }
         }
 
         // want to clear depth buffer on first render only
@@ -49,10 +54,9 @@ impl RenderState {
                     mesh.index_buffer.slice(..),
                     mesh.num_indices,
                     &[
-                        camera_bind_group,
-                        &mesh.matrix.bind_group,
-                        light_bind_group,
-                        preferences_bind_group,
+                        &self.bind_group, //
+                        &mesh.bind_group, //
+                        &scene.light.bind_group,
                     ],
                     depth_load_op,
                 );
@@ -72,10 +76,9 @@ impl RenderState {
                     mesh.index_buffer.slice(..),
                     mesh.num_indices,
                     &[
-                        camera_bind_group,
-                        &mesh.matrix.bind_group,
-                        light_bind_group,
-                        preferences_bind_group,
+                        &self.bind_group,
+                        &mesh.bind_group,
+                        &scene.light.bind_group,
                         &mesh.texture.bind_group,
                     ],
                     depth_load_op,

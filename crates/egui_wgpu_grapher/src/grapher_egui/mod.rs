@@ -14,12 +14,12 @@ use crate::{
     grapher::{
         pipeline::render_preferences::RenderPreferences,
         render::RenderState,
-        scene::{solid::graph::GraphScene, RenderScene},
+        scene::{RenderScene, solid::graph::GraphScene},
     },
-    grapher_egui::image_viewer::{parameter_ui_image_viewer, ImageViewerSceneData},
+    grapher_egui::image_viewer::{ImageViewerSceneData, parameter_ui_image_viewer},
 };
-use graph::{parameter_ui_graph, GraphSceneData};
-use model::{parameter_ui_model, ModelSceneData};
+use graph::{GraphSceneData, parameter_ui_graph};
+use model::{ModelSceneData, parameter_ui_model};
 
 use egui::Ui;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, TextureView};
@@ -80,12 +80,17 @@ pub fn scene_selection_ui(
 
 #[allow(dead_code)]
 pub enum GrapherScene {
+    None,
     Graph(Box<GraphSceneData>),
     Model(ModelSceneData),
     ImageViewer(ImageViewerSceneData),
 }
 
 impl GrapherScene {
+    pub fn is_some(&self) -> bool {
+        !matches!(self, GrapherScene::None)
+    }
+
     pub fn render(
         &self,
         view: &TextureView,
@@ -139,6 +144,42 @@ impl GrapherScene {
                 data.image_viewer_scene.update(queue, state, pre_render);
             }
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn try_save_light(&mut self) {
+        match self {
+            GrapherScene::Graph(data) => {
+                if let Some(scene) = data.graph_scene.scene.as_mut() {
+                    scene.light.save_light();
+                }
+            }
+            GrapherScene::Model(data) => {
+                data.model_scene.scene.light.save_light();
+            }
+            GrapherScene::ImageViewer(data) => {
+                data.image_viewer_scene.scene.light.save_light();
+            }
+            _ => {} // no-op
+        }
+    }
+    pub fn try_restore_light(&mut self, queue: &Queue) {
+        match self {
+            GrapherScene::Graph(data) => {
+                if let Some(scene) = data.graph_scene.scene.as_mut() {
+                    scene.light.maybe_restore_light(queue);
+                }
+            }
+            GrapherScene::Model(data) => {
+                data.model_scene.scene.light.maybe_restore_light(queue);
+            }
+            GrapherScene::ImageViewer(data) => {
+                data.image_viewer_scene
+                    .scene
+                    .light
+                    .maybe_restore_light(queue);
+            }
+            _ => {} // no-op
         }
     }
 }
@@ -237,7 +278,7 @@ impl RenderUiState {
 pub fn render_parameter_ui(
     render_state: &mut RenderState,
     render_ui_state: &mut RenderUiState,
-    grapher_scene: Option<&mut GrapherScene>,
+    grapher_scene: &mut GrapherScene,
     ui: &mut Ui,
 ) {
     ui.horizontal(|ui| {
@@ -252,7 +293,7 @@ pub fn render_parameter_ui(
             render_ui_state.needs_prefs_update = true;
         }
 
-        if matches!(grapher_scene, Some(GrapherScene::Graph(_))) {
+        if matches!(grapher_scene, GrapherScene::Graph(_)) {
             let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
 
             if response.changed() {
@@ -261,7 +302,7 @@ pub fn render_parameter_ui(
                     .set_wireframe(render_ui_state.use_wireframe);
 
                 // requires changing polygon mode, and so recreating pipeline
-                grapher_scene.unwrap().set_needs_update(true);
+                grapher_scene.set_needs_update(true);
             }
         }
     });

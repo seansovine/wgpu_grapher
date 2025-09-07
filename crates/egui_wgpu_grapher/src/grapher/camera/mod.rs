@@ -115,9 +115,7 @@ impl CameraState {
             translation_y: 0.0,
         };
 
-        let mut uniform = MatrixUniform::identity();
-        uniform.update(camera.get_matrix());
-
+        let uniform = MatrixUniform::from(camera.get_matrix());
         let matrix = matrix::make_matrix_state(device, uniform);
         let controller = controller::CameraController::new(0.00125);
 
