@@ -15,6 +15,25 @@ impl RenderState {
         let light_bind_group = &self.light_state.bind_group;
         let preferences_bind_group = &self.render_preferences.bind_group;
 
+        if let Some(shadow_state) = &scene.shadow_state {
+            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("shadow pass"),
+                color_attachments: &[],
+                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                    view: &shadow_state.view,
+                    depth_ops: Some(wgpu::Operations {
+                        load: wgpu::LoadOp::Clear(1.0),
+                        store: wgpu::StoreOp::Store,
+                    }),
+                    stencil_ops: None,
+                }),
+                timestamp_writes: None,
+                occlusion_query_set: None,
+            });
+            pass.set_pipeline(&shadow_state.pipeline);
+            pass.set_bind_group(0, &self.light_state.shadow_view_matrix.bind_group, &[]);
+        }
+
         // want to clear depth buffer on first render only
         let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
 
@@ -103,7 +122,6 @@ fn render_detail(
     });
 
     render_pass.set_pipeline(pipeline);
-
     for (index, bind_group) in bind_groups.iter().enumerate() {
         render_pass.set_bind_group(index as u32, *bind_group, &[]);
     }

@@ -99,6 +99,7 @@ pub fn build_scene(
         textured_meshes,
         pipeline: None,
         textured_pipeline: Some(pipeline),
+        shadow_state: None,
     }
 }
 

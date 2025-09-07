@@ -24,6 +24,12 @@ impl MatrixUniform {
         }
     }
 
+    pub fn from(matrix: cgmath::Matrix4<f32>) -> Self {
+        Self {
+            matrix: matrix.into(),
+        }
+    }
+
     pub fn translation(coords: &[f32]) -> Self {
         Self {
             matrix: cgmath::Matrix4::from_translation(cgmath::Vector3 {

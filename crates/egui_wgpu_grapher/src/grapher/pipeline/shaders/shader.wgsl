@@ -56,21 +56,21 @@ fn vs_main(
     out.color = vertex.color;
 
     // rotate normal with body and pass through
-    var normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
-    out.normal = normalize(normal);
+    out.normal = normalize((model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz);
     // fragment shader gets direction from point to light in world space
-    var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
+    var world_position = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
+
+    // from point to light in world coordinates
     out.light_direction = normalize(light.position - world_position);
     // light reflected across normal for specular lighting
-    out.reflected_light = reflect(-out.light_direction, normal);
-
+    out.reflected_light = reflect(-out.light_direction, out.normal);
 
     return out;
 }
 
 // fragment shader
 
-const SHININESS: f32 = 64.0;
+const SHININESS: f32 = 32.0;
 const AMBIENT_CONTRIB: f32 = 0.025;
 const DIFFUSE_CONTRIB: f32 = 0.4;
 const SPECULAR_CONTRIB: f32 = 0.6;
@@ -80,14 +80,12 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let use_light = (preferences.flags & 1u) == 1u;
 
     if use_light {
-        let out_color = light.color * in.color;
-
-        let ambient_strength = AMBIENT_CONTRIB;
         let diffuse_strength = DIFFUSE_CONTRIB * max(0.0, dot(in.light_direction, in.normal));
         let specular_strength = SPECULAR_CONTRIB * pow(max(0.0, dot(in.reflected_light, in.normal)), SHININESS);
+        let out_color = light.color * in.color;
 
-        return vec4<f32>((ambient_strength + diffuse_strength + specular_strength) * out_color, 1.0);
+        return vec4<f32>((AMBIENT_CONTRIB + diffuse_strength + specular_strength) * out_color, 1.0);
     } else {
-        return vec4<f32>(in.color, 1.0);
+        return vec4<f32>(in.color, 0.8);
     }
 }

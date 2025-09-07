@@ -3,6 +3,8 @@ pub mod solid;
 #[allow(dead_code)]
 pub mod textured;
 
+use crate::grapher::render::ShadowState;
+
 use super::render::RenderState;
 
 use egui_wgpu::wgpu::{self, Queue, RenderPipeline};
@@ -12,6 +14,7 @@ pub struct Scene {
     pub textured_meshes: Vec<textured::TexturedMeshRenderData>,
     pub pipeline: Option<RenderPipeline>,
     pub textured_pipeline: Option<RenderPipeline>,
+    pub shadow_state: Option<ShadowState>,
 }
 
 // trait to abstract scene behavior in render loop

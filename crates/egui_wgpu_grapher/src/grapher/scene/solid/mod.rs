@@ -9,7 +9,7 @@ use super::{Scene, Vertex};
 use crate::grapher::{
     matrix::{self, MatrixState, MatrixUniform},
     pipeline,
-    render::RenderState,
+    render::{RenderState, ShadowState},
 };
 
 use egui_wgpu::wgpu::{self, util::DeviceExt, Buffer, Device, SurfaceConfiguration};
@@ -62,7 +62,7 @@ impl MeshRenderData {
     }
 }
 
-// build scene from (mesh, matrix) vector
+// build scene from (mesh, matrix) vector.
 
 pub fn build_scene(
     device: &Device,
@@ -76,7 +76,6 @@ pub fn build_scene(
         let mesh_render_data = MeshRenderData::from_mesh_data(device, mesh, matrix);
         meshes.push(mesh_render_data);
     }
-
     let last_mesh = meshes.last().unwrap();
 
     // use this pipeline for all solid meshes
@@ -92,16 +91,21 @@ pub fn build_scene(
         ],
         state.render_preferences.polygon_mode,
     );
+    let shadow_state = ShadowState::create(
+        device,
+        &[&state.light_state.shadow_view_matrix.bind_group_layout],
+    );
 
     Scene {
         meshes,
         textured_meshes: vec![],
         pipeline: Some(pipeline),
         textured_pipeline: None,
+        shadow_state: Some(shadow_state),
     }
 }
 
-// test data
+// Simple test scene for development use.
 
 static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {
     vertices: Vec::from([
