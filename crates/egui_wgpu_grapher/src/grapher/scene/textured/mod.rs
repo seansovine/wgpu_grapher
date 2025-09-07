@@ -109,8 +109,8 @@ pub fn build_scene(
         &[
             &state.bind_group_layout,
             &last_mesh.bind_group_layout,
-            &last_mesh.texture.bind_group_layout,
             &light.bind_group_layout,
+            &last_mesh.texture.bind_group_layout,
         ],
         wgpu::PolygonMode::Fill,
     );
