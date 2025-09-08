@@ -20,9 +20,9 @@ pub struct RenderState {
     pub camera_state: CameraState,
     // shader preferences
     pub render_preferences: RenderPreferences,
-    // bind group for things global to the render
+    // bind group for things global to the renderer
     pub bind_group_layout: BindGroupLayout,
-    // includes preferences and camera
+    // includes camera and render preferences
     pub bind_group: BindGroup,
     // depth buffer
     pub depth_buffer: DepthBuffer,
@@ -98,9 +98,11 @@ impl RenderState {
 
 pub struct ShadowState {
     pub pipeline: RenderPipeline,
+
     pub _texture: wgpu::Texture,
     pub view: TextureView,
     pub _sampler: Sampler,
+
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 }
@@ -110,6 +112,7 @@ impl ShadowState {
     const SHADOW_SIZE: wgpu::Extent3d = wgpu::Extent3d {
         width: 4000,
         height: 4000,
+
         // 1 layer because we're using 1 light (for now).
         depth_or_array_layers: 1,
     };

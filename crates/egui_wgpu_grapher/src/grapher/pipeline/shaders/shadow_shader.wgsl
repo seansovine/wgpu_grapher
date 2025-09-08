@@ -1,4 +1,4 @@
-// Shader for efficiently computing shadow map.
+// A simple shader for filling the shadow map depth buffer.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,

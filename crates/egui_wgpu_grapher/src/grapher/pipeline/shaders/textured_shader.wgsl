@@ -1,5 +1,6 @@
-// Shader to render meshes with a texture sampler. Vertex color is
-// obtained by sampling from the texture using its texture coordinates.
+// Shader to render meshes with a texture sampler. Vertex color is obtained
+// from the bound texture by sampling from the texture using vertex texture
+// coordinates.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,
@@ -50,18 +51,18 @@ fn vs_main(
     vertex: VertexInput,
 ) -> VertexOutput {
     var out: VertexOutput;
-
     out.color = vertex.color;
+
+    // Position modified by camera transformation, for display.
     out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
 
-    // rotate normal with body and pass through
-    out.normal = (model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz;
-    // fragment shader gets direction from point to light in world space
-    var world_position: vec3<f32> = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0)).xyz;
-    out.light_direction = normalize(light.position - world_position);
+    // Rotate normal with body without translating.
+    out.normal = normalize((model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz);
+    // World coordinates of vertex, after applying model transformation.
+    let world_position = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0));
 
-    // pass on tex_coords
-    out.tex_coords = vertex.tex_coords;
+    // Direction from point to light in world space.
+    out.light_direction = normalize(light.position - world_position.xyz);
 
     return out;
 }
@@ -87,12 +88,14 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
 
     if use_light {
-        let out_color = light.color * color;
         let ambient_strength = 0.05;
         let diffuse_strength = 0.95 * max(0.0, dot(in.light_direction, in.normal));
+        let out_color = light.color * color;
 
+        // Only ambient and diffuse lighting here for now.
         return vec4<f32>((ambient_strength + diffuse_strength) * out_color, 1.0);
     } else {
+
         return vec4<f32>(color, 1.0);
     }
 }

@@ -150,7 +150,7 @@ impl CameraState {
         self.previous_camera = Some(self.camera.clone());
     }
 
-    // restores camera from previous if previous was saved
+    // Restores camera state from previous if one was saved.
     pub fn maybe_restore_camera(&mut self) {
         if let Some(camera) = self.previous_camera.take() {
             self.camera = camera;

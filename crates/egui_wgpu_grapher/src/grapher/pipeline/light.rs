@@ -19,18 +19,18 @@ pub struct LightUniform {
 }
 
 pub struct LightState {
-    // pass light data to shader via uniform
+    // to pass light data to shader as uniform
     pub uniform: LightUniform,
     pub buffer: Buffer,
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 
-    // matrix for viewing scene from light's perspective
+    // light view matrix used for shadow mapping
     pub _camera_matrix: MatrixState,
     pub camera_matrix_bind_group_layout: BindGroupLayout,
     pub camera_matrix_bind_group: BindGroup,
 
-    // provides a basic restore for light
+    // one-step light state save and restore
     pub previous_uniform: Option<LightUniform>,
 }
 
@@ -40,7 +40,6 @@ impl LightState {
     }
 
     pub fn update_uniform(&mut self, queue: &Queue) {
-        // update uniform buffer
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }
@@ -82,7 +81,7 @@ impl LightState {
             label: Some("light bind group"),
         });
 
-        // create shadow mapping matrix state
+        // Create view matrix for use in shadow mapping.
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = MatrixUniform::from(matrix);
         let _camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
@@ -135,7 +134,7 @@ impl LightState {
         self.previous_uniform = Some(self.uniform);
     }
 
-    // restores camera from previous if previous was saved
+    // Restores light uniform from previous state if one was saved.
     pub fn maybe_restore_light(&mut self, queue: &Queue) {
         if let Some(uniform) = self.previous_uniform.take() {
             self.uniform = uniform;

@@ -35,6 +35,7 @@ fn main() {
     //////////////////////////////////
     // Test projection transformation.
 
+    // We construct our own projection; compare with ortho() result.
     let scale = 1.0 / (look_at[3][2] + 6.0);
     let projection = cgmath::Matrix4::from_diagonal([1.0 / 6.0, 2.0 / 6.0, scale, 1.0].into());
     let translation = cgmath::Matrix4::from_translation([0.0, 0.0, -1.0].into());
