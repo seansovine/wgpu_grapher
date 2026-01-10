@@ -171,7 +171,8 @@ impl App {
 
             egui::Window::new("Settings")
                 .resizable(true)
-                .default_size([200.0, 330.00])
+                .default_size([200.0, 150.0])
+                .default_pos([15.0, 15.0])
                 .vscroll(true)
                 .default_open(true)
                 .show(context, |ui| {

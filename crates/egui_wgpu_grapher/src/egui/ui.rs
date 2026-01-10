@@ -28,7 +28,9 @@ pub fn create_gui(
 
     // parameters for the grapher scene
 
-    if grapher_scene.is_some() {
+    const CLOSED_FOR_RENOVATION: bool = true;
+
+    if !CLOSED_FOR_RENOVATION && grapher_scene.is_some() {
         ui.separator();
         ui.label(RichText::new("Scene parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);

@@ -15,6 +15,7 @@ pub fn validated_text_input_window(
     egui::Window::new(title)
         .resizable(true)
         .default_size([800.0, 600.0])
+        .default_pos([250.0, 15.0])
         .collapsible(false)
         .show(context, |ui| {
             let response = ui.add(egui::TextEdit::singleline(input).text_color({

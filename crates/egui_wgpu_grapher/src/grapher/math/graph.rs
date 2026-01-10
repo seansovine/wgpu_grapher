@@ -108,7 +108,7 @@ pub struct SquareTesselation {
 
 impl SquareTesselation {
     // color to use for (x, z) plane "floor" mesh
-    pub const FLOOR_COLOR: [f32; 3] = [
+    pub const _FLOOR_COLOR: [f32; 3] = [
         0.8 * 168.0f32 / 255.0f32,
         0.8 * 125.0f32 / 255.0f32,
         0.8 * 50.0f32 / 255.0f32,
@@ -126,7 +126,7 @@ impl SquareTesselation {
 
         // compute axis subdivision points
         for i in 0..=n {
-            ticks.push(i as f32 * (width / n as f32));
+            ticks.push(i as f32 * (width / n as f32) - width / 2.0);
         }
 
         // NOTES:

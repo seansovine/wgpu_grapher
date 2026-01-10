@@ -108,7 +108,8 @@ pub fn build_scene_for_graph(
 ) -> Scene {
     const SUBDIVISIONS: u32 = 750;
 
-    let matrix = MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
+    let matrix = MatrixUniform::identity();
+    // Previously: MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
 
     // TODO: Omitting floor mesh until we fix its interaction with shadow mapping.
     //

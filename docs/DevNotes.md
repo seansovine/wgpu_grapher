@@ -1,5 +1,16 @@
 # Developer Notes
 
+Next steps:
+
+1. Add option to render light in scene as a sphere for debugging.
+2. Rework GUI state and parameter handling.
+3. Rework shadow mapping.
+
+Things to do later:
+
+4. Enable multisampling.
+5. Port mesh format and lighting from Vulkan Grapher.
+
 ## Known issues and TODOs
 
 ### Parameter input bugs
@@ -10,34 +21,34 @@ a more sane structure.
 
 ### Shadow mapping bugs
 
-Shadow mapping for the floor mesh doesn't seem to be working correctly.
+Shadow mapping for the floor mesh doesn't seem to be working correctly, and
+there are some edge cases where strange artifacts appear.
 
 To help debug this and other 3D rendering issues we will add some code to
 optionally render scene objects for light position, coordinate axes, etc.
-
-### Lighting edge cases
-
-There seem to be some cases at creases or joints in the mesh where the
-lighting looks strange. This could possibly be an issue of needing
-a `max` or a `floor` function at certain places in the shader calculations.
 
 _Example:_
 
 + Light position: `[3.0, 4.0, 0.0]`
 + Function: `5.0*e^(5.0*(-(x-4.5)^2 - (z-3)^2))`
-+ x-shift: 0.0
-+ y-shift: 0.0
-+ z-shift: 0.0
 
-From this example there may be two issues:
+In this example we see some strange interactions between shadow mapping and
+other lighting, in the region where the shadow would be just starting to appear.
+This could be due to issues like overflow or negative values appearing in the
+shader, but I'm not sure.
 
-+ Our coordinate transformations are applied inconsistently.
+_Example 2:_
 
-There is almost surely a coordinate consistency issue here.
++ Function: `2.0*e^(5.0*(-(x)^2 - (z)^2))`
 
-+ There is a problem edge case when the light is inside the object mesh.
+This can be used to sanity check basic lighting and coordinate handling. As of now
+everything seems to be working correctly except for shadow mapping.
 
-TODO: Go through transformations and make them all consistent and add lighting debug code.
+__Plan:__
+
+Shadow mapping has been disabled until it is fixed.
+
+TODO: Rework shadow mapping and then verify its correctness.
 
 ## glTF handling improvements
 

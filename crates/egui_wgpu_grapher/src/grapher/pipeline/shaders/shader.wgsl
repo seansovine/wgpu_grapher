@@ -117,7 +117,8 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let use_light = (preferences.flags & 1u) == 1u;
 
     if use_light {
-        let shadow = get_shadow(light_view.matrix * in.world_position);
+        let shadow = 1.0; // get_shadow(light_view.matrix * in.world_position);
+        // TODO: Shadow mapping temporarily disabled for debugging.
 
         let diffuse_strength = shadow *
             LIGHT_SETTINGS.diffuse_v * max(0.0, dot(in.light_direction, in.normal));
