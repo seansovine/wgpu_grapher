@@ -96,16 +96,20 @@ const LIGHT_SETTINGS = LightSettings(
 
 // Modified from the WGPU shadow example.
 fn get_shadow(world_position: vec4<f32>) -> f32 {
-    // To convert device coords to texture coords; reverse is done automatically when rendering to depth buffer.
+    // To convert device coords to texture coords;
+    //  reverse is done automatically when rendering to depth buffer.
     let flip_correction = vec2<f32>(0.5, -0.5);
 
-    // To normalize homogenous coords so that w = 1.0; light view projection may leave them un-normalized.
+    // To normalize homogenous coords so that w = 1.0;
+    //  light view projection may leave them un-normalized.
     let proj_correction = 1.0 / world_position.w;
 
     // Coordinates in depth buffer corresponding to this point.
-    let shadow_tex_coords = world_position.xy * proj_correction * flip_correction + vec2<f32>(0.5, 0.5);
+    let shadow_tex_coords = world_position.xy *
+        proj_correction * flip_correction + vec2<f32>(0.5, 0.5);
 
-    return textureSampleCompareLevel(shadow_texture, shadow_sampler, shadow_tex_coords, world_position.z * proj_correction);
+    return textureSampleCompareLevel(shadow_texture, shadow_sampler,
+        shadow_tex_coords, world_position.z * proj_correction);
 }
 
 @fragment
@@ -115,8 +119,10 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     if use_light {
         let shadow = get_shadow(light_view.matrix * in.world_position);
 
-        let diffuse_strength = shadow * LIGHT_SETTINGS.diffuse_v * max(0.0, dot(in.light_direction, in.normal));
-        let specular_strength = shadow * LIGHT_SETTINGS.speculr_v * pow(max(0.0, dot(in.reflected_light, in.normal)), LIGHT_SETTINGS.shininess);
+        let diffuse_strength = shadow *
+            LIGHT_SETTINGS.diffuse_v * max(0.0, dot(in.light_direction, in.normal));
+        let specular_strength = shadow *
+            LIGHT_SETTINGS.speculr_v * pow(max(0.0, dot(in.reflected_light, in.normal)), LIGHT_SETTINGS.shininess);
 
         let out_color = light.color * in.color;
 
