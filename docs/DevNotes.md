@@ -19,6 +19,11 @@ The behavior of the graph relative to GUI parameter inputs is very buggy.
 Likely we need to rework the way these values are stored and used into
 a more sane structure.
 
+_Plan:_
+
+We've currently disabled the function position and scale UI until we get the bugs
+ironed out and decide how we want to handle updates to these going forward.
+
 ### Shadow mapping bugs
 
 Shadow mapping for the floor mesh doesn't seem to be working correctly, and
@@ -44,7 +49,7 @@ _Example 2:_
 This can be used to sanity check basic lighting and coordinate handling. As of now
 everything seems to be working correctly except for shadow mapping.
 
-__Plan:__
+_Plan:_
 
 Shadow mapping has been disabled until it is fixed.
 

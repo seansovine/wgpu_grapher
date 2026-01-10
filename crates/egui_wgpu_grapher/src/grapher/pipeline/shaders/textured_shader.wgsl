@@ -52,6 +52,7 @@ fn vs_main(
 ) -> VertexOutput {
     var out: VertexOutput;
     out.color = vertex.color;
+    out.tex_coords = vertex.tex_coords;
 
     // Position modified by camera transformation, for display.
     out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
@@ -78,6 +79,7 @@ var diffuse_samp: sampler;
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let use_light = (preferences.flags & 1u) > 0u;
+    // TODO: Add correct handling for this in application.
     let use_texture = (preferences.flags & 2u) > 0u;
 
     var color: vec3<f32>;

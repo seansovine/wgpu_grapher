@@ -15,16 +15,14 @@ The mathematical expression parsing and evaluation is handled by the
 
 _Lighting:_
 
-As you can see in the example image, the renderer implements Phong lighting and basic shadow mapping.
-There are a few subtle issues that need ironed out with these in certain cases; I hope to get around
-to fixing them soon.
+As you can see in the example, the renderer implements Phong lighting and basic shadow mapping.
 
 ## Project status
 
-This has definitely been a learning platform and is a work-in-progress, and I'm recently coming back to it
-after working on other things for a while. There a few known bugs (like some annoying
-UI bugs around parameter input) that need worked out, and I plan to rework some of the code architecture
-to make it easier to read and work with. I hope to get around to cleaning these things up in the near future.
+This has been a learning platform and is a work in progress. I'm recently coming back to it
+after working on other things for a while. There are a few known bugs that need worked out, and
+I plan to rework some of the code architecture now that the application has grown more complex.
+I hope to get around to cleaning these things up in the near future.
 
 See [Developer Notes](docs/DevNotes.md) for some more details on these and other known issues.
 
