@@ -45,9 +45,11 @@ impl LightState {
 }
 
 impl LightState {
+    const DEFAULT_LIGHT_POS: [f32; 3] = [3.0, 4.0, 0.0];
+
     pub fn create(device: &Device) -> Self {
         let uniform = LightUniform {
-            position: [-2.0, 4.0, -2.0],
+            position: Self::DEFAULT_LIGHT_POS, //[-2.0, 4.0, -2.0],
             _padding_1: 0_u32,
             color: [1.0, 1.0, 1.0],
             _padding_2: 0_u32,
@@ -118,9 +120,9 @@ impl LightState {
     }
 
     fn build_shadow_matrix(position: &[f32; 3]) -> Matrix4<f32> {
-        // NOTE: We can't use this if light is directly overhead.
         let view_target = cgmath::Point3::<f32>::from([0.0, 0.0, 0.0]);
         let view_origin = cgmath::Point3::<f32>::from(*position);
+        // NOTE: We can't use this if light is directly overhead.
         let view_up = cgmath::Vector3::<f32>::from([0.0, 1.0, 0.0]);
         let view = cgmath::Matrix4::look_at_rh(view_origin, view_target, view_up);
 
