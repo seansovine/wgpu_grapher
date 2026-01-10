@@ -22,24 +22,41 @@ pub struct RenderPreferences {
     pub polygon_mode: PolygonMode,
 }
 
+// Preference bit meanings.
+const LIGHTING_BIT: u32 = 1_u32;
+const TEXTURE_BIT: u32 = 2_u32;
+const SHADOW_BIT: u32 = 4_u32;
+
 impl RenderPreferences {
     pub fn lighting_enabled(&self) -> bool {
-        self.uniform.flags & 1 == 1
+        self.uniform.flags & LIGHTING_BIT > 0
     }
 
     pub fn set_lighting_enabled(&mut self, enabled: bool) {
         if enabled {
-            self.uniform.flags |= 1_u32;
+            self.uniform.flags |= LIGHTING_BIT;
         } else {
-            self.uniform.flags &= !1_u32;
+            self.uniform.flags &= !LIGHTING_BIT;
+        }
+    }
+
+    pub fn shadow_enabled(&self) -> bool {
+        self.uniform.flags & SHADOW_BIT > 0
+    }
+
+    pub fn set_shadow_enabled(&mut self, enabled: bool) {
+        if enabled {
+            self.uniform.flags |= SHADOW_BIT;
+        } else {
+            self.uniform.flags &= !SHADOW_BIT;
         }
     }
 
     pub fn set_use_texture(&mut self, enabled: bool) {
         if enabled {
-            self.uniform.flags |= 2_u32;
+            self.uniform.flags |= TEXTURE_BIT;
         } else {
-            self.uniform.flags &= !2_u32;
+            self.uniform.flags &= !TEXTURE_BIT;
         }
     }
 

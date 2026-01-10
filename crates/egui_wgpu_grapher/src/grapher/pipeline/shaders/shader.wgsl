@@ -112,14 +112,15 @@ fn get_shadow(world_position: vec4<f32>) -> f32 {
         shadow_tex_coords, world_position.z * proj_correction);
 }
 
+const LIGHT_BIT: u32 = 1u;
+const SHADOW_BIT: u32 = 4u;
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & 1u) == 1u;
+    let use_light = (preferences.flags & LIGHT_BIT) > 0;
 
     if use_light {
-        let shadow = 1.0; // get_shadow(light_view.matrix * in.world_position);
-        // TODO: Shadow mapping temporarily disabled for debugging.
-
+        let shadow = select(get_shadow(light_view.matrix * in.world_position), 1.0, (preferences.flags & SHADOW_BIT) == 0);
         let diffuse_strength = shadow *
             LIGHT_SETTINGS.diffuse_v * max(0.0, dot(in.light_direction, in.normal));
         let specular_strength = shadow *

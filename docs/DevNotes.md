@@ -51,7 +51,8 @@ everything seems to be working correctly except for shadow mapping.
 
 _Plan:_
 
-Shadow mapping has been disabled until it is fixed.
+A checkbox for shadow mapping has been added, defaulting to off until we get shadow
+mapping fixed.
 
 TODO: Rework shadow mapping and then verify its correctness.
 

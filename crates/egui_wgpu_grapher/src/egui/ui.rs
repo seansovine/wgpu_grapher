@@ -29,7 +29,7 @@ pub fn create_gui(
     // parameters for the grapher scene
 
     // TODO: Temporarily disables function scale and translation UI.
-    const CLOSED_FOR_RENOVATION: bool = true;
+    const CLOSED_FOR_RENOVATION: bool = false;
 
     if grapher_scene.is_some()
         && !(CLOSED_FOR_RENOVATION && matches!(grapher_scene, GrapherScene::Graph(_)))

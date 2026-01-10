@@ -260,6 +260,7 @@ pub struct RenderUiState {
     // state for ui rendering
     pub lighting_enabled: bool,
     pub use_wireframe: bool,
+    pub shadow_enabled: bool,
 
     // was there and update that needs processed
     pub needs_prefs_update: bool,
@@ -270,6 +271,7 @@ impl RenderUiState {
         Self {
             lighting_enabled: render_prefs.lighting_enabled(),
             use_wireframe: render_prefs.wireframe_enabled(),
+            shadow_enabled: render_prefs.shadow_enabled(),
             needs_prefs_update: false,
         }
     }
@@ -306,4 +308,16 @@ pub fn render_parameter_ui(
             }
         }
     });
+    if matches!(grapher_scene, GrapherScene::Graph(_)) {
+        let response = ui.checkbox(&mut render_ui_state.shadow_enabled, "Shadow ");
+
+        if response.changed() {
+            render_state
+                .render_preferences
+                .set_shadow_enabled(render_ui_state.shadow_enabled);
+
+            // only requires updating a uniform with write_buffer
+            render_ui_state.needs_prefs_update = true;
+        }
+    }
 }
