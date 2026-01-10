@@ -108,9 +108,12 @@ pub fn build_scene_for_graph(
 ) -> Scene {
     const SUBDIVISIONS: u32 = 750;
 
-    let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
-        .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
     let matrix = MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
+
+    // TODO: Omitting floor mesh until we fix its interaction with shadow mapping.
+    //
+    // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
+    //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
 
     let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
         .apply_function(f)
@@ -120,7 +123,7 @@ pub fn build_scene_for_graph(
         device,
         surface_config,
         state,
-        vec![(floor_mesh, matrix), (func_mesh, matrix)],
+        vec![(func_mesh, matrix)], // omitting: (floor_mesh, matrix),
     )
 }
 
