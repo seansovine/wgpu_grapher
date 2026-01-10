@@ -54,66 +54,71 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
 
     let needs_update = &mut data.graph_scene.needs_update;
 
-    Grid::new("graph parameter input").show(ui, |ui| {
-        *needs_update = float_edit_line(
-            "x scale",
-            &mut data.ui_data.scale_x_text,
-            scale_x,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
+    // TODO: Temporarily disables function scale and translation UI.
+    const CLOSED_FOR_RENOVATION: bool = true;
 
-        // scale parameter edits
+    if !CLOSED_FOR_RENOVATION {
+        Grid::new("graph parameter input").show(ui, |ui| {
+            *needs_update = float_edit_line(
+                "x scale",
+                &mut data.ui_data.scale_x_text,
+                scale_x,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
 
-        *needs_update = float_edit_line(
-            "z scale",
-            &mut data.ui_data.scale_z_text,
-            scale_z,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
+            // scale parameter edits
 
-        *needs_update = float_edit_line(
-            "y scale",
-            &mut data.ui_data.scale_y_text,
-            scale_y,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
+            *needs_update = float_edit_line(
+                "z scale",
+                &mut data.ui_data.scale_z_text,
+                scale_z,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
 
-        ui.separator();
-        ui.end_row();
+            *needs_update = float_edit_line(
+                "y scale",
+                &mut data.ui_data.scale_y_text,
+                scale_y,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
 
-        // shift parameter edits
+            ui.separator();
+            ui.end_row();
 
-        *needs_update = float_edit_line(
-            "x shift",
-            &mut data.ui_data.shift_x_text,
-            shift_x,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
+            // shift parameter edits
 
-        *needs_update = float_edit_line(
-            "z shift",
-            &mut data.ui_data.shift_z_text,
-            shift_z,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
+            *needs_update = float_edit_line(
+                "x shift",
+                &mut data.ui_data.shift_x_text,
+                shift_x,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
 
-        *needs_update = float_edit_line(
-            "y shift",
-            &mut data.ui_data.shift_y_text,
-            shift_y,
-            editing,
-            ui,
-        ) || *needs_update;
-        ui.end_row();
-    });
+            *needs_update = float_edit_line(
+                "z shift",
+                &mut data.ui_data.shift_z_text,
+                shift_z,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
+
+            *needs_update = float_edit_line(
+                "y shift",
+                &mut data.ui_data.shift_y_text,
+                shift_y,
+                editing,
+                ui,
+            ) || *needs_update;
+            ui.end_row();
+        });
+    }
 }

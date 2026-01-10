@@ -10,7 +10,7 @@ The mathematical expression parsing and evaluation is handled by the
 [meval](https://docs.rs/meval/latest/meval/) crate.
 
 <p align="center" margin="20px">
-	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/lighting_shadow_mapping_2_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
 _Lighting:_
@@ -38,7 +38,7 @@ There is a model viewer mode that loads and renders a scene in the [glTF](https:
 format. It currently only supports base color textures (no normal mapping, etc.), and importantly it doesn't
 yet handle submesh transformations, so some models will not render correctly. I plan to add support
 for those in the near future. I also plan to add support for the glTF PBR materials shading model
-and later maybe some more of the features supported by glTF.
+and later maybe some more of the other features supported by glTF.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/model.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>

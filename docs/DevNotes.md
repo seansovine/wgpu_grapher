@@ -49,6 +49,19 @@ _Example 2:_
 This can be used to sanity check basic lighting and coordinate handling. As of now
 everything seems to be working correctly except for shadow mapping.
 
+_Example 3:_
+
+This should be useful for debugging the geometry of shadow mapping.
+
++ Function: `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
++ Light position: `[3.0, 4.0, 0.0]`
+
+As the bumps move in the z-direction, we can see how the shadow varies.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
 _Plan:_
 
 A checkbox for shadow mapping has been added, defaulting to off until we get shadow
