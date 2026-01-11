@@ -1,4 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["crates/wgpu_grapher", "crates/egui_wgpu_grapher"]
-
+members = ["wgpu_grapher", "egui_wgpu_grapher"]
