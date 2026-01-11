@@ -3,7 +3,9 @@ use crate::{
         egui_tools::EguiRenderer,
         ui::{FileInputState, UiState},
     },
-    grapher::{self, math::FunctionHolder, scene::solid::graph::GraphScene},
+    grapher::{
+        self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
+    },
     grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph, image_viewer, model},
 };
 use egui_wgpu::wgpu::{self, Limits};
@@ -129,6 +131,7 @@ impl AppState {
         // resize depth buffer
         self.grapher_state.depth_buffer =
             grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
+        self.grapher_state.msaa_data = MultisampleData::create(&self.surface_config, &self.device);
 
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
