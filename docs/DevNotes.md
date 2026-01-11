@@ -18,7 +18,7 @@ To help debug lighting and other 3D rendering issues we will add some code to
 optionally render scene objects for lights. It would also be nice to have some
 coordinate axes that can be optionally displayed.
 
-### Parameter input bugs
+### Graph domain parameter updates
 
 The GUI inputs for graph shift and scale are buggy. The way they're implemented
 now also modifies the function object, so results in the graph being
@@ -30,7 +30,7 @@ We've currently disabled the function position and scale UI until we get the bug
 ironed out and decide how we want to handle updates to these. We may add a separate
 window to update them, with an "apply" button.
 
-### Shadow mapping bugs
+### Shadow mapping
 
 Shadow mapping for the floor mesh doesn't seem to be working correctly, and
 there are some edge cases where shadow artifacts appear.
@@ -75,11 +75,31 @@ of a curved surface.
 + Function: `0.5*e^(-sin(4.0*(x^2 + z^2)))`
 + Light position: `[3.0, 4.0, 0.0]`
 
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/radial_e_sin_square_2026-01-11.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
 _Plan:_
 
 A checkbox for shadow mapping has been added, currently defaulting to off.
 
 TODO: Look into ways to improve shadow mapping in the difficult cases.
+
+## Lighting artifacts
+
+_Example a:_
+
++ Functon: `max(0.0, sqrt(1.0 - x^2 + z^2))`
++ Light position: `[3.0, 4.0, 0.0]`
+
+This example shows some lighting artifacts at the boundary where the shape gets
+truncated to the `y = 0` plane. This is probably not surprising, as nearby triangles
+can have _very_ different normals in this region. I will look into techniques for
+handing things like this.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/truncated_cone_2026-01-11.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
 
 ## glTF handling improvements
 
