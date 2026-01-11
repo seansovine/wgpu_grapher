@@ -1,6 +1,8 @@
 //! Reusable egui components.
 
-use egui::{Color32, Context};
+use std::path::Path;
+
+use egui::{Color32, Context, Ui};
 
 pub struct HasFocus(pub bool);
 
@@ -33,4 +35,41 @@ pub fn validated_text_input_window(
         });
 
     HasFocus(text_has_focus)
+}
+
+pub fn float_edit_line(
+    label: &str,
+    edit_text: &mut String,
+    edit_value: &mut f32,
+    editing: &mut bool,
+    ui: &mut Ui,
+) -> bool {
+    let mut changed = false;
+
+    ui.horizontal(|ui| {
+        ui.label(format!("{label}: "));
+
+        let response = ui.add(egui::TextEdit::singleline(edit_text));
+
+        if response.gained_focus() {
+            *editing = true;
+        }
+
+        if response.lost_focus() {
+            // parse text and update value if valid
+            if let Ok(f_val) = edit_text.parse::<f32>() {
+                *edit_value = f_val;
+                changed = true;
+            } else {
+                *edit_text = edit_value.to_string();
+            }
+            *editing = false;
+        }
+    });
+
+    changed
+}
+
+pub fn validate_path(path: &str) -> bool {
+    Path::new(path).exists()
 }

@@ -7,8 +7,6 @@ pub mod image_viewer;
 #[allow(dead_code)]
 pub mod model;
 
-use std::path::Path;
-
 use crate::{
     egui::ui::UiState,
     grapher::{
@@ -214,43 +212,6 @@ impl GrapherScene {
             _ => unimplemented!(),
         }
     }
-}
-
-fn float_edit_line(
-    label: &str,
-    edit_text: &mut String,
-    edit_value: &mut f32,
-    editing: &mut bool,
-    ui: &mut Ui,
-) -> bool {
-    let mut changed = false;
-
-    ui.horizontal(|ui| {
-        ui.label(format!("{label}: "));
-
-        let response = ui.add(egui::TextEdit::singleline(edit_text));
-
-        if response.gained_focus() {
-            *editing = true;
-        }
-
-        if response.lost_focus() {
-            // parse text and update value if valid
-            if let Ok(f_val) = edit_text.parse::<f32>() {
-                *edit_value = f_val;
-                changed = true;
-            } else {
-                *edit_text = edit_value.to_string();
-            }
-            *editing = false;
-        }
-    });
-
-    changed
-}
-
-pub fn validate_path(path: &str) -> bool {
-    Path::new(path).exists()
 }
 
 // Code for building the grapher renderer parameter ui.

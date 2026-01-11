@@ -24,8 +24,10 @@ pub struct AppState {
     // indicates a ui component is focused, to block other input
     pub editing: bool,
 
-    // state for grapher render objects
-    pub selected_scene: GrapherSceneMode,
+    // GUI state machine.
+    pub scene_mode: GrapherSceneMode,
+
+    // Graphics scene state.
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 
@@ -115,7 +117,7 @@ impl AppState {
             scene_updates_paused: false,
             editing: false,
 
-            selected_scene: initial_scene,
+            scene_mode: initial_scene,
             grapher_state,
             grapher_scene: GrapherScene::None,
 
@@ -149,8 +151,10 @@ impl AppState {
         }
     }
 
-    pub(super) fn update_grapher_scene(&mut self) {
-        match self.selected_scene {
+    pub(super) fn handle_scene_changes(&mut self) {
+        // TODO: The logic is a bit brittle in here;
+        // maybe find a better way to organize it.
+        match self.scene_mode {
             GrapherSceneMode::Graph => {
                 self.ui_state.file_window_state = FileInputState::Hidden;
 
@@ -164,13 +168,6 @@ impl AppState {
                 self.grapher_scene.try_restore_light(&self.queue);
 
                 let graph_scene = GraphScene::default();
-
-                // grapher::scene::solid::graph::graph_scene(
-                //     &self.device,
-                //     &self.surface_config,
-                //     &self.grapher_state,
-                // );
-
                 let grapher_scene =
                     GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
 
@@ -200,12 +197,12 @@ impl AppState {
                 ) {
                     return;
                 }
-                // TODO: maybe clean up the logic here
 
                 // restore previous camera and light if they were saved
                 self.grapher_state.camera_state.maybe_restore_camera();
                 self.grapher_scene.try_restore_light(&self.queue);
 
+                // Try loading scene from file.
                 let model_scene = grapher::scene::textured::model::model_scene(
                     &self.device,
                     &self.queue,
@@ -247,7 +244,6 @@ impl AppState {
                 ) {
                     return;
                 }
-                // TODO: maybe clean up the logic here
 
                 // save old camera and lightstate
                 self.grapher_state.camera_state.save_camera();

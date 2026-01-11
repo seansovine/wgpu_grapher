@@ -3,11 +3,11 @@ use state::*;
 
 use crate::{
     egui::{
-        components::{self, HasFocus},
+        components::{self, HasFocus, validate_path},
         ui::{FileInputState, create_gui},
     },
     grapher,
-    grapher_egui::{GrapherSceneMode, validate_path},
+    grapher_egui::GrapherSceneMode,
 };
 use egui_wgpu::{
     ScreenDescriptor,
@@ -155,85 +155,18 @@ impl App {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
+        // Render graphics scene.
         if state.grapher_scene.is_some() {
             state
                 .grapher_scene
                 .render(&surface_view, &mut encoder, &state.grapher_state);
         }
 
-        let window = self.window.as_ref().unwrap();
-
+        // Render GUI.
         {
+            let window = self.window.as_ref().unwrap();
             state.egui_renderer.begin_frame(window);
-
-            let editing = &mut state.editing;
-            let context = &state.egui_renderer.context();
-
-            egui::Window::new("Settings")
-                .resizable(true)
-                .default_size([200.0, 210.0])
-                .default_pos([15.0, 15.0])
-                .vscroll(true)
-                .default_open(true)
-                .show(context, |ui| {
-                    create_gui(
-                        context.pixels_per_point(),
-                        ui,
-                        editing,
-                        &mut state.grapher_scene,
-                        &mut state.grapher_state,
-                        &mut state.ui_state,
-                        &mut state.selected_scene,
-                    );
-                });
-
-            // maybe show file input window
-            if !matches!(state.ui_state.file_window_state, FileInputState::Hidden) {
-                *editing = true;
-                let is_valid = !matches!(
-                    state.ui_state.file_window_state,
-                    FileInputState::BadPath | FileInputState::InvalidFile,
-                );
-                components::validated_text_input_window(
-                    context,
-                    "File",
-                    &mut state.ui_state.filename,
-                    |filename| {
-                        if !validate_path(filename) {
-                            state.ui_state.file_window_state = FileInputState::BadPath;
-                        } else {
-                            state.ui_state.file_window_state = FileInputState::NeedsChecked;
-                        }
-                    },
-                    is_valid,
-                );
-            } else {
-                *editing = false;
-            }
-            // show function input in graph mode
-            if matches!(state.selected_scene, GrapherSceneMode::Graph) {
-                let mut is_valid = state.ui_state.function_valid;
-                let mut function = None;
-                {
-                    let is_valid_ref = &mut is_valid;
-                    let HasFocus(has_focus) = components::validated_text_input_window(
-                        context,
-                        "Function",
-                        &mut state.ui_state.function_string,
-                        |func_str| {
-                            function = grapher::math::try_parse_function_string(func_str);
-                            *is_valid_ref = function.is_some();
-                        },
-                        state.ui_state.function_valid,
-                    );
-                    *editing = has_focus;
-                }
-                if let Some(func) = function {
-                    state.update_graph(func);
-                }
-                state.ui_state.function_valid = is_valid;
-            }
-
+            Self::build_gui(state);
             state.egui_renderer.end_frame_and_draw(
                 &state.device,
                 &state.queue,
@@ -246,6 +179,77 @@ impl App {
 
         state.queue.submit(Some(encoder.finish()));
         surface_texture.present();
+    }
+
+    fn build_gui(state: &mut AppState) {
+        let editing = &mut state.editing;
+        let context = &state.egui_renderer.context();
+
+        // main settings window
+        egui::Window::new("Settings")
+            .resizable(true)
+            .default_size([200.0, 210.0])
+            .default_pos([15.0, 15.0])
+            .vscroll(true)
+            .default_open(true)
+            .show(context, |ui| {
+                create_gui(
+                    context.pixels_per_point(),
+                    ui,
+                    editing,
+                    &mut state.grapher_scene,
+                    &mut state.grapher_state,
+                    &mut state.ui_state,
+                    &mut state.scene_mode,
+                );
+            });
+
+        // maybe show file input window
+        if !matches!(state.ui_state.file_window_state, FileInputState::Hidden) {
+            *editing = true;
+            let is_valid = !matches!(
+                state.ui_state.file_window_state,
+                FileInputState::BadPath | FileInputState::InvalidFile,
+            );
+            components::validated_text_input_window(
+                context,
+                "File",
+                &mut state.ui_state.filename,
+                |filename| {
+                    if !validate_path(filename) {
+                        state.ui_state.file_window_state = FileInputState::BadPath;
+                    } else {
+                        state.ui_state.file_window_state = FileInputState::NeedsChecked;
+                    }
+                },
+                is_valid,
+            );
+        } else {
+            *editing = false;
+        }
+        // show function input in graph mode
+        if matches!(state.scene_mode, GrapherSceneMode::Graph) {
+            let mut is_valid = state.ui_state.function_valid;
+            let mut function = None;
+            {
+                let is_valid_ref = &mut is_valid;
+                let HasFocus(has_focus) = components::validated_text_input_window(
+                    context,
+                    "Function",
+                    &mut state.ui_state.function_string,
+                    |func_str| {
+                        function = grapher::math::try_parse_function_string(func_str);
+                        *is_valid_ref = function.is_some();
+                    },
+                    state.ui_state.function_valid,
+                );
+                *editing = has_focus;
+            }
+            if let Some(func) = function {
+                state.update_graph(func);
+            }
+            state.ui_state.function_valid = is_valid;
+        }
     }
 }
 
@@ -329,7 +333,7 @@ impl ApplicationHandler for App {
                     self.render_count += 1;
 
                     // check if scene needs changed; reborrow to satisfy checker
-                    self.state.as_mut().unwrap().update_grapher_scene();
+                    self.state.as_mut().unwrap().handle_scene_changes();
 
                     // update framerate estimate
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {

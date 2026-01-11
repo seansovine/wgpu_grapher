@@ -1,4 +1,6 @@
-use super::{GraphScene, float_edit_line};
+use crate::egui::components::float_edit_line;
+
+use super::GraphScene;
 
 use egui::{Grid, Ui};
 
