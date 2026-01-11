@@ -4,7 +4,7 @@ use state::*;
 use crate::{
     egui::{
         components::{self, HasFocus, validate_path},
-        ui::{FileInputState, create_gui},
+        ui::create_gui,
     },
     grapher,
     grapher_egui::GrapherSceneMode,
@@ -127,7 +127,7 @@ impl App {
         let screen_descriptor = ScreenDescriptor {
             size_in_pixels: [state.surface_config.width, state.surface_config.height],
             pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
-                * state.ui_state.scale_factor,
+                * state.ui_data.scale_factor,
         };
 
         let surface_texture = state.surface.get_current_texture();
@@ -199,27 +199,27 @@ impl App {
                     editing,
                     &mut state.grapher_scene,
                     &mut state.grapher_state,
-                    &mut state.ui_state,
+                    &mut state.ui_data,
                     &mut state.scene_mode,
                 );
             });
 
         // maybe show file input window
-        if !matches!(state.ui_state.file_window_state, FileInputState::Hidden) {
+        if state.ui_data.show_file_input {
             *editing = true;
             let is_valid = !matches!(
-                state.ui_state.file_window_state,
+                state.file_input_state,
                 FileInputState::BadPath | FileInputState::InvalidFile,
             );
             components::validated_text_input_window(
                 context,
                 "File",
-                &mut state.ui_state.filename,
+                &mut state.ui_data.filename,
                 |filename| {
                     if !validate_path(filename) {
-                        state.ui_state.file_window_state = FileInputState::BadPath;
+                        state.file_input_state = FileInputState::BadPath;
                     } else {
-                        state.ui_state.file_window_state = FileInputState::NeedsChecked;
+                        state.file_input_state = FileInputState::NeedsChecked;
                     }
                 },
                 is_valid,
@@ -227,35 +227,36 @@ impl App {
         } else {
             *editing = false;
         }
+
         // show function input in graph mode
         if matches!(state.scene_mode, GrapherSceneMode::Graph) {
-            let mut is_valid = state.ui_state.function_valid;
+            let mut is_valid = state.ui_data.function_valid;
             let mut function = None;
             {
                 let is_valid_ref = &mut is_valid;
                 let HasFocus(has_focus) = components::validated_text_input_window(
                     context,
                     "Function",
-                    &mut state.ui_state.function_string,
+                    &mut state.ui_data.function_string,
                     |func_str| {
                         function = grapher::math::try_parse_function_string(func_str);
                         *is_valid_ref = function.is_some();
                     },
-                    state.ui_state.function_valid,
+                    state.ui_data.function_valid,
                 );
                 *editing = has_focus;
             }
             if let Some(func) = function {
                 state.update_graph(func);
             }
-            state.ui_state.function_valid = is_valid;
+            state.ui_data.function_valid = is_valid;
         }
     }
 }
 
 impl ApplicationHandler for App {
     /// Handles startup and resume from system suspsend. See discussion in
-    ///  [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
+    /// [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop
             .create_window(self.window_attributes.clone())
@@ -271,7 +272,7 @@ impl ApplicationHandler for App {
             return;
         };
 
-        // let egui render to process the event first
+        // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
 
         // short-circuits if editing
@@ -299,12 +300,14 @@ impl ApplicationHandler for App {
             WindowEvent::RedrawRequested => {
                 window.request_redraw();
 
-                // allow state updates and renders to have different frequencies
+                // Accumulate time for render timeout.
                 self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
                 self.last_update_time = time::Instant::now();
 
+                // Throttle rendering for efficiency.
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
+                // Let scene run any of its own internal updates.
                 if !state.scene_updates_paused && state.grapher_scene.is_some() {
                     state.grapher_scene.update(
                         &state.device,
@@ -315,27 +318,26 @@ impl ApplicationHandler for App {
                     );
                 }
 
-                if state.ui_state.render_ui_state.needs_prefs_update {
+                // Update preference uniform if needed.
+                if state.ui_data.render_ui_state.needs_prefs_update {
                     state
                         .grapher_state
                         .render_preferences
                         .update_uniform(&state.queue);
-                    state.ui_state.render_ui_state.needs_prefs_update = false;
+                    state.ui_data.render_ui_state.needs_prefs_update = false;
                 }
 
+                // Re-render the scene.
                 if do_render {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;
 
-                    // allow grapher to do things like updating the camera
+                    // Let grapher handle internal updates.
                     state.grapher_state.update(&mut state.queue);
 
                     self.handle_redraw();
                     self.render_count += 1;
-
-                    // check if scene needs changed; reborrow to satisfy checker
                     self.state.as_mut().unwrap().handle_scene_changes();
 
-                    // update framerate estimate
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {
                         self.avg_framerate = Self::REPORT_FRAMES_INTERVAL as f32
                             / self.last_render_time.elapsed().as_secs_f32();
@@ -344,7 +346,7 @@ impl ApplicationHandler for App {
                     }
                 }
 
-                // send/handle events less often for efficiency
+                // Throttle event handling often for efficiency.
                 thread::sleep(Self::RENDER_TIMEOUT);
             }
 

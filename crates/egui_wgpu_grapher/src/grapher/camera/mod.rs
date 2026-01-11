@@ -79,6 +79,33 @@ impl Camera {
     pub fn get_perspective_proj(&self) -> cgmath::Matrix4<f32> {
         cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar)
     }
+
+    pub fn default(surface_config: &SurfaceConfiguration) -> Self {
+        Self {
+            eye: (0.0, 0.0, 8.0).into(),
+            target: (0.0, 0.0, 0.0).into(),
+            up: Y_AXIS,
+            //
+            projection_type: ProjectionType::Perspective,
+            //
+            aspect: surface_config.width as f32 / surface_config.height as f32,
+            fovy: 45.0,
+            znear: 0.1,
+            zfar: 100.0,
+            //
+            left: -0.5,
+            right: 0.5,
+            top: 0.5,
+            bottom: -0.5,
+            ortho_scale: 1.0,
+            //
+            alpha: PI / 15.0,
+            gamma: PI / 4.75,
+            //
+            translation_x: 0.0,
+            translation_y: 0.0,
+        }
+    }
 }
 
 pub struct CameraState {
@@ -87,35 +114,13 @@ pub struct CameraState {
     pub controller: controller::CameraController,
 
     // provides a basic undo for camera changes
+    #[allow(unused)]
     pub previous_camera: Option<Camera>,
 }
 
 impl CameraState {
-    pub fn init(device: &Device, config: &SurfaceConfiguration) -> CameraState {
-        let camera = Camera {
-            eye: (0.0, 0.0, 8.0).into(),
-            target: (0.0, 0.0, 0.0).into(),
-            up: Y_AXIS,
-
-            projection_type: ProjectionType::Perspective,
-
-            aspect: config.width as f32 / config.height as f32,
-            fovy: 45.0,
-            znear: 0.1,
-            zfar: 100.0,
-
-            left: -0.5,
-            right: 0.5,
-            top: 0.5,
-            bottom: -0.5,
-            ortho_scale: 1.0,
-
-            alpha: PI / 15.0,
-            gamma: PI / 4.75,
-
-            translation_x: 0.0,
-            translation_y: 0.0,
-        };
+    pub fn init(device: &Device, surface_config: &SurfaceConfiguration) -> CameraState {
+        let camera = Camera::default(surface_config);
 
         let uniform = MatrixUniform::from(camera.get_matrix());
         let matrix = matrix::make_matrix_state(device, uniform);
@@ -127,6 +132,11 @@ impl CameraState {
             controller,
             previous_camera: None,
         }
+    }
+
+    pub fn reset_camera(&mut self, queue: &Queue, surface_config: &SurfaceConfiguration) {
+        self.camera = Camera::default(surface_config);
+        self.update_uniform(queue);
     }
 
     /// Set camera at positive z-direction, looking forward.
@@ -146,10 +156,12 @@ impl CameraState {
         );
     }
 
+    #[allow(unused)]
     pub fn save_camera(&mut self) {
         self.previous_camera = Some(self.camera.clone());
     }
 
+    #[allow(unused)]
     // Restores camera state from previous if one was saved.
     pub fn maybe_restore_camera(&mut self) {
         if let Some(camera) = self.previous_camera.take() {

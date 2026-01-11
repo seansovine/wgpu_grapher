@@ -54,30 +54,41 @@ impl From<usize> for GrapherSceneMode {
     }
 }
 
+pub struct Changed(bool);
+
+impl Changed {
+    pub fn changed(&self) -> bool {
+        self.0
+    }
+}
+
 pub fn scene_selection_ui(
     selected_scene: &mut GrapherSceneMode,
     ui_state: &mut UiState,
     ui: &mut Ui,
-) {
+) -> Changed {
     let alternatives = ["graph", "model", "image"];
     let selected_scene_index = &mut ui_state.selected_scene_index;
-
-    egui::ComboBox::from_id_salt("select scene").show_index(
+    let response = egui::ComboBox::from_id_salt("select scene").show_index(
         ui,
         selected_scene_index,
         alternatives.len(),
         |i| alternatives[i],
     );
-
-    *selected_scene = (*selected_scene_index).into();
+    if response.changed() {
+        *selected_scene = (*selected_scene_index).into();
+        Changed(true)
+    } else {
+        Changed(false)
+    }
 }
 
 // The following enum replaces dynamic dispatch and allows the
 // GUI to display different data and perform different actions
 // depending on the particular grapher scene that is selected.
 
-#[allow(dead_code)]
 pub enum GrapherScene {
+    Changed,
     None,
     Graph(Box<GraphSceneData>),
     Model(ModelSceneData),
@@ -145,6 +156,7 @@ impl GrapherScene {
         }
     }
 
+    #[allow(unused)]
     pub fn try_save_light(&mut self) {
         match self {
             GrapherScene::Graph(data) => {
@@ -161,6 +173,8 @@ impl GrapherScene {
             _ => {} // no-op
         }
     }
+
+    #[allow(unused)]
     pub fn try_restore_light(&mut self, queue: &Queue) {
         match self {
             GrapherScene::Graph(data) => {
@@ -194,7 +208,7 @@ impl GrapherScene {
             GrapherScene::ImageViewer(data) => {
                 parameter_ui_image_viewer(data, editing, ui, ui_state);
             }
-            _ => unimplemented!(),
+            _ => {}
         }
     }
 

@@ -31,6 +31,7 @@ pub struct LightState {
     pub camera_matrix_bind_group: BindGroup,
 
     // one-step light state save and restore
+    #[allow(unused)]
     pub previous_uniform: Option<LightUniform>,
 }
 
@@ -132,11 +133,13 @@ impl LightState {
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }
 
+    #[allow(unused)]
     pub fn save_light(&mut self) {
         self.previous_uniform = Some(self.uniform);
     }
 
     // Restores light uniform from previous state if one was saved.
+    #[allow(unused)]
     pub fn maybe_restore_light(&mut self, queue: &Queue) {
         if let Some(uniform) = self.previous_uniform.take() {
             self.uniform = uniform;

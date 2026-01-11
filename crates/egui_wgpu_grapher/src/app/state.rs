@@ -1,8 +1,5 @@
 use crate::{
-    egui::{
-        egui_tools::EguiRenderer,
-        ui::{FileInputState, UiState},
-    },
+    egui::{egui_tools::EguiRenderer, ui::UiState},
     grapher::{
         self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
     },
@@ -10,6 +7,22 @@ use crate::{
 };
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
+
+#[derive(Default)]
+pub enum FileInputState {
+    #[default]
+    Hidden,
+    NeedsInput,
+    BadPath,
+    InvalidFile,
+    NeedsChecked,
+}
+
+pub enum SceneLoadingState {
+    NoData,
+    NeedsLoaded,
+    Loaded,
+}
 
 pub struct AppState {
     // wgpu and egui state
@@ -26,13 +39,15 @@ pub struct AppState {
 
     // GUI state machine.
     pub scene_mode: GrapherSceneMode,
+    pub file_input_state: FileInputState,
+    pub scene_loading_state: SceneLoadingState,
 
     // Graphics scene state.
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 
     // ui state needed persisted across renders
-    pub ui_state: UiState,
+    pub ui_data: UiState,
 }
 
 impl AppState {
@@ -99,7 +114,7 @@ impl AppState {
 
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);
-        let ui_state = UiState {
+        let ui_data = UiState {
             render_ui_state,
             selected_scene_index: initial_scene.into(),
             scale_factor,
@@ -113,15 +128,18 @@ impl AppState {
             surface,
             surface_config,
             egui_renderer,
-
+            //
             scene_updates_paused: false,
             editing: false,
-
+            //
             scene_mode: initial_scene,
+            file_input_state: FileInputState::Hidden,
+            scene_loading_state: SceneLoadingState::NoData,
+            //
             grapher_state,
             grapher_scene: GrapherScene::None,
-
-            ui_state,
+            //
+            ui_data,
         }
     }
 
@@ -152,55 +170,92 @@ impl AppState {
     }
 
     pub(super) fn handle_scene_changes(&mut self) {
-        // TODO: The logic is a bit brittle in here;
-        // maybe find a better way to organize it.
         match self.scene_mode {
             GrapherSceneMode::Graph => {
-                self.ui_state.file_window_state = FileInputState::Hidden;
-
-                if matches!(self.grapher_scene, GrapherScene::Graph(_)) {
-                    return;
-                }
-                self.editing = false;
-
-                // restore previous camera and light if they were saved
-                self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_scene.try_restore_light(&self.queue);
-
-                let graph_scene = GraphScene::default();
-                let grapher_scene =
-                    GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
-
-                self.grapher_scene = grapher_scene;
+                self.scene_change_graph();
+            }
+            GrapherSceneMode::Model => {
+                self.scene_change_model();
             }
 
-            GrapherSceneMode::Model => {
-                if matches!(self.grapher_scene, GrapherScene::Model(_)) {
-                    if !matches!(
-                        self.ui_state.file_window_state,
-                        FileInputState::NeedsChecked
-                    ) {
-                        return;
-                    }
-                } else {
-                    // Scene doesn't match selection, so need to reload scene.
-                    // First check if current filename points to valid glTF.
-                    self.ui_state.file_window_state = FileInputState::NeedsChecked;
-                }
-                if self.ui_state.filename.is_empty() {
-                    self.grapher_scene = GrapherScene::None;
-                    self.ui_state.file_window_state = FileInputState::NeedsInput;
-                }
-                if !matches!(
-                    self.ui_state.file_window_state,
-                    FileInputState::NeedsChecked
-                ) {
-                    return;
-                }
+            GrapherSceneMode::ImageViewer => {
+                self.scene_change_image();
+            }
+        };
+    }
 
-                // restore previous camera and light if they were saved
-                self.grapher_state.camera_state.maybe_restore_camera();
-                self.grapher_scene.try_restore_light(&self.queue);
+    pub fn hide_file_input(&mut self) {
+        self.file_input_state = FileInputState::Hidden;
+        self.ui_data.show_file_input = false;
+    }
+
+    pub fn show_file_input(&mut self) {
+        if !self.ui_data.show_file_input {
+            self.file_input_state = FileInputState::NeedsInput;
+        }
+        self.ui_data.show_file_input = true;
+    }
+}
+
+impl AppState {
+    fn scene_change_graph(&mut self) {
+        self.hide_file_input();
+
+        // Detect change of mode.
+        if matches!(self.grapher_scene, GrapherScene::Changed) {
+            self.grapher_scene = GrapherScene::None;
+            self.scene_loading_state = SceneLoadingState::NoData;
+        }
+
+        #[allow(clippy::single_match)]
+        match self.scene_loading_state {
+            SceneLoadingState::NoData => {
+                self.grapher_state
+                    .camera_state
+                    .reset_camera(&self.queue, &self.surface_config);
+
+                let graph_scene = GraphScene::default();
+                self.grapher_scene =
+                    GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
+
+                self.scene_loading_state = SceneLoadingState::Loaded;
+                self.editing = false;
+            }
+
+            SceneLoadingState::NeedsLoaded => {
+                // Nothing to do.
+            }
+
+            SceneLoadingState::Loaded => {
+                // Nothing to do.
+            }
+        }
+    }
+
+    fn scene_change_model(&mut self) {
+        // Detect change of mode.
+        if matches!(self.grapher_scene, GrapherScene::Changed) {
+            self.grapher_scene = GrapherScene::None;
+            self.scene_loading_state = SceneLoadingState::NoData;
+            self.ui_data.filename = "".into();
+        }
+
+        #[allow(clippy::single_match)]
+        match self.scene_loading_state {
+            SceneLoadingState::NoData => {
+                self.show_file_input();
+                match self.file_input_state {
+                    FileInputState::NeedsChecked => {
+                        self.scene_loading_state = SceneLoadingState::NeedsLoaded;
+                    }
+                    _ => {}
+                }
+            }
+
+            SceneLoadingState::NeedsLoaded => {
+                self.grapher_state
+                    .camera_state
+                    .reset_camera(&self.queue, &self.surface_config);
 
                 // Try loading scene from file.
                 let model_scene = grapher::scene::textured::model::model_scene(
@@ -208,65 +263,82 @@ impl AppState {
                     &self.queue,
                     &self.surface_config,
                     &mut self.grapher_state,
-                    &self.ui_state.filename,
+                    &self.ui_data.filename,
                 );
 
                 if let Some(scene) = model_scene {
                     self.grapher_scene = GrapherScene::Model(model::ModelSceneData::new(scene));
-                    self.ui_state.file_window_state = FileInputState::Hidden;
+                    self.hide_file_input();
+                    self.scene_loading_state = SceneLoadingState::Loaded;
+
+                    // TODO: Rework this; maybe -> gui_has_focus.
                     self.editing = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
-                    self.ui_state.file_window_state = FileInputState::InvalidFile;
+                    self.file_input_state = FileInputState::InvalidFile;
+                    self.scene_loading_state = SceneLoadingState::NoData;
                 }
             }
 
-            GrapherSceneMode::ImageViewer => {
-                if matches!(self.grapher_scene, GrapherScene::ImageViewer(_)) {
-                    if !matches!(
-                        self.ui_state.file_window_state,
-                        FileInputState::NeedsChecked
-                    ) {
-                        return;
+            SceneLoadingState::Loaded => match self.file_input_state {
+                FileInputState::NeedsChecked => {
+                    self.scene_loading_state = SceneLoadingState::NeedsLoaded;
+                }
+                _ => {}
+            },
+        }
+    }
+
+    fn scene_change_image(&mut self) {
+        // Detect change of mode.
+        if matches!(self.grapher_scene, GrapherScene::Changed) {
+            self.grapher_scene = GrapherScene::None;
+            self.scene_loading_state = SceneLoadingState::NoData;
+            self.ui_data.filename = "".into();
+        }
+
+        #[allow(clippy::single_match)]
+        match self.scene_loading_state {
+            SceneLoadingState::NoData => {
+                self.show_file_input();
+                match self.file_input_state {
+                    FileInputState::NeedsChecked => {
+                        self.scene_loading_state = SceneLoadingState::NeedsLoaded;
                     }
-                } else {
-                    // Scene doesn't match selection, so need to reload scene.
-                    // First check if current filename points to valid glTF.
-                    self.ui_state.file_window_state = FileInputState::NeedsChecked;
+                    _ => {}
                 }
-                if self.ui_state.filename.is_empty() {
-                    self.grapher_scene = GrapherScene::None;
-                    self.ui_state.file_window_state = FileInputState::NeedsInput;
-                }
-                if !matches!(
-                    self.ui_state.file_window_state,
-                    FileInputState::NeedsChecked
-                ) {
-                    return;
-                }
+            }
 
-                // save old camera and lightstate
-                self.grapher_state.camera_state.save_camera();
-                self.grapher_scene.try_save_light();
-
+            SceneLoadingState::NeedsLoaded => {
                 let image_scene = grapher::scene::textured::image_viewer::image_viewer_scene(
                     &self.device,
                     &self.queue,
                     &self.surface_config,
                     &mut self.grapher_state,
-                    &self.ui_state.filename,
+                    &self.ui_data.filename,
                 );
 
                 if let Some(scene) = image_scene {
                     self.grapher_scene =
                         GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(scene));
-                    self.ui_state.file_window_state = FileInputState::Hidden;
+                    self.hide_file_input();
+                    self.scene_loading_state = SceneLoadingState::Loaded;
+
+                    // TODO: Rework this; maybe -> gui_has_focus.
                     self.editing = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
-                    self.ui_state.file_window_state = FileInputState::InvalidFile;
+                    self.file_input_state = FileInputState::InvalidFile;
+                    self.scene_loading_state = SceneLoadingState::NoData;
                 }
             }
-        };
+
+            SceneLoadingState::Loaded => match self.file_input_state {
+                FileInputState::NeedsChecked => {
+                    self.scene_loading_state = SceneLoadingState::NeedsLoaded;
+                }
+                _ => {}
+            },
+        }
     }
 }

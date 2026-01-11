@@ -1,4 +1,4 @@
-// Code to build a scene that renders an image as a texture on a square canvas.
+//! Build a scene that renders an image as a texture on a rectangular canvas.
 
 use super::{SQUARE_INDICES, SQUARE_VERTICES_VERTICAL, TexturedMeshData, build_scene};
 use crate::grapher::{
@@ -12,6 +12,7 @@ use crate::grapher::{
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
 /// Render the scene onto both sides of a square canvas.
+/// Updates camera state to one suited for viewing 2D image.
 pub fn image_viewer_scene(
     device: &Device,
     queue: &Queue,

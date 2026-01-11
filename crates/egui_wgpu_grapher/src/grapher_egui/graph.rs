@@ -1,6 +1,7 @@
-use crate::egui::components::float_edit_line;
+//! UI specific to the grapher mode.
 
 use super::GraphScene;
+use crate::egui::components::float_edit_line;
 
 use egui::{Grid, Ui};
 

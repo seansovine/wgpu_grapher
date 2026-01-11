@@ -15,7 +15,7 @@ pub fn create_gui(
     grapher_scene: &mut GrapherScene,
     render_state: &mut RenderState,
     ui_state: &mut UiState,
-    selected_scene: &mut GrapherSceneMode,
+    scene_mode: &mut GrapherSceneMode,
 ) {
     const AFTER_LABEL_SPACE: f32 = 5.0;
 
@@ -24,7 +24,9 @@ pub fn create_gui(
     ui.label(RichText::new("Select scene").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
-    scene_selection_ui(selected_scene, ui_state, ui);
+    if scene_selection_ui(scene_mode, ui_state, ui).changed() {
+        *grapher_scene = GrapherScene::Changed;
+    }
 
     // parameters for the grapher scene
 
@@ -71,22 +73,12 @@ pub fn create_gui(
 // Place to put persistent ui state that doesn't fit elsewhere.
 
 #[derive(Default)]
-pub enum FileInputState {
-    #[default]
-    Hidden,
-    NeedsInput,
-    BadPath,
-    InvalidFile,
-    NeedsChecked,
-}
-
-#[derive(Default)]
 pub struct UiState {
     pub render_ui_state: RenderUiState,
     pub selected_scene_index: usize,
     pub scale_factor: f32,
-    pub file_window_state: FileInputState,
     pub filename: String,
     pub function_string: String,
     pub function_valid: bool,
+    pub show_file_input: bool,
 }

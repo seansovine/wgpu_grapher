@@ -1,7 +1,6 @@
-use crate::{
-    egui::ui::{FileInputState, UiState},
-    grapher::scene::textured::image_viewer::ImageViewerScene,
-};
+//! UI specific to the image viewer mode.
+
+use crate::{egui::ui::UiState, grapher::scene::textured::image_viewer::ImageViewerScene};
 
 use egui::Ui;
 
@@ -29,6 +28,6 @@ pub fn parameter_ui_image_viewer(
     ui_state: &mut UiState,
 ) {
     if ui.add(egui::Button::new("Change file")).clicked() {
-        ui_state.file_window_state = FileInputState::NeedsInput;
+        ui_state.show_file_input = true;
     }
 }
