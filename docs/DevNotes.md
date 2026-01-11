@@ -2,49 +2,53 @@
 
 Next steps:
 
-1. Add option to render light in scene as a sphere for debugging.
-2. Rework GUI state and parameter handling.
-3. Rework shadow mapping.
+1. Add option to render lights and coordinate axes as scene objects.
+2. Rework graph parameter GUI input and update handling.
+3. Investigate ways to improve shadow mapping.
 
 Things to do later:
 
-4. Enable multisampling.
-5. Port mesh format and lighting from Vulkan Grapher.
+5. Port some mesh generation and lighting code from Vulkan Grapher.
 
 ## Known issues and TODOs
 
+### Coordinate axes and geometry debugging
+
+To help debug lighting and other 3D rendering issues we will add some code to
+optionally render scene objects for lights. It would also be nice to have some
+coordinate axes that can be optionally displayed.
+
 ### Parameter input bugs
 
-The behavior of the graph relative to GUI parameter inputs is very buggy.
-Likely we need to rework the way these values are stored and used into
-a more sane structure.
+The GUI inputs for graph shift and scale are buggy. The way they're implemented
+now also modifies the function object, so results in the graph being
+regenerated on every change.
 
 _Plan:_
 
 We've currently disabled the function position and scale UI until we get the bugs
-ironed out and decide how we want to handle updates to these going forward.
+ironed out and decide how we want to handle updates to these. We may add a separate
+window to update them, with an "apply" button.
 
 ### Shadow mapping bugs
 
 Shadow mapping for the floor mesh doesn't seem to be working correctly, and
-there are some edge cases where strange artifacts appear.
-
-To help debug this and other 3D rendering issues we will add some code to
-optionally render scene objects for light position, coordinate axes, etc.
+there are some edge cases where shadow artifacts appear.
 
 _Example:_
 
-+ Light position: `[3.0, 4.0, 0.0]`
 + Function: `5.0*e^(5.0*(-(x-4.5)^2 - (z-3)^2))`
++ Light position: `[3.0, 4.0, 0.0]`
 
-In this example we see some strange interactions between shadow mapping and
+In this example we see what look like strange interactions between shadow mapping and
 other lighting, in the region where the shadow would be just starting to appear.
-This could be due to issues like overflow or negative values appearing in the
-shader, but I'm not sure.
+I now think this is most likely due to aliasing and issues around the shape of
+the mesh relative to the shape of the surface in certain areas of the graph.
 
 _Example 2:_
 
 + Function: `2.0*e^(5.0*(-(x)^2 - (z)^2))`
++ Light position: `[0.0, 4.0, 0.0]`
 
 This can be used to sanity check basic lighting and coordinate handling. As of now
 everything seems to be working correctly except for shadow mapping.
@@ -62,30 +66,35 @@ As the bumps move in the z-direction, we can see how the shadow varies.
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
+_Example 4:_
+
+I believe this example shows the effects of aliasing (and other factors) at some of
+the shadow boundaries, especially where the shadow is created by our mesh's approximation
+of a curved surface.
+
++ Function: `0.5*e^(-sin(4.0*(x^2 + z^2)))`
++ Light position: `[3.0, 4.0, 0.0]`
+
 _Plan:_
 
-A checkbox for shadow mapping has been added, defaulting to off until we get shadow
-mapping fixed.
+A checkbox for shadow mapping has been added, currently defaulting to off.
 
-TODO: Rework shadow mapping and then verify its correctness.
+TODO: Look into ways to improve shadow mapping in the difficult cases.
 
 ## glTF handling improvements
 
 ### Handle transformations in node tree
 
-Most glTF scenes / models of any complexity have a hierachical structure of 3D
-transformations attached to their hierarchy of nodes and their meshes. We need
-to store these transformations as the node hierarchy is loaded so they can be
-composed properly to render the meshes in the correct positions, scales, and
-orientations. We should have much of what's needed to do a basic version of this
-already.
+Most complex glTF scenes have a hierachy of 3D transformations attached to
+their nodes and meshes. We need to store these transformations as the node
+hierarchy is loaded so they can be composed to render mesh vertices in the correct positions.
+We have most of what's needed for this in place already.
 
 ### Rework lighting for compatibility with glTF PBR material shading
 
-We currently use our own ad-hoc method for representing normals and using them
-in lighting calculations. glTF specifies that normals should be represented in
-the tangent space at each vertex, so each vertex needs to have tangent, bitangent,
-and normal vectors. We have implemented this properly according the the current
-convention in the [Vulkan Grapher](https://github.com/seansovine/vulkan_grapher)
-project. We could port the mesh generation and shader code from there to this
-project.
+We currently represent normals in world coordinates and use them directly
+in lighting calculations. In the glTF model normals are represented in
+the tangent space at each vertex, so each vertex also needs to have tangent and bitangent
+vectors. We have implemented this approach  in the [Vulkan Grapher](https://github.com/seansovine/vulkan_grapher)
+project. We could port some parts of the mesh generation and shader code from there to
+this project.

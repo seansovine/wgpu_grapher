@@ -1,10 +1,10 @@
 # WGPU Grapher
 
 This is mainly an application to graph functions of the form `y = f(x,z)` in 3D using the
-Rust `wgpu` graphics API. I'm also using it as a playground for experimenting with
-ideas and techniques in computer graphics and image processing.
+Rust Wgpu graphics API, but I've also been using it as a playground for experimenting with
+some general ideas and techniques in computer graphics.
 
-It has a simple GUI built using `egui`. In graph mode the user can enter a mathematical expression
+It has a simple GUI built using egui. In graph mode the user can enter a mathematical expression
 in the "Function" window, and if the expression is valid a graph for that function will be generated.
 The mathematical expression parsing and evaluation is handled by the
 [meval](https://docs.rs/meval/latest/meval/) crate.
@@ -15,16 +15,14 @@ The mathematical expression parsing and evaluation is handled by the
 
 _Lighting:_
 
-As you can see in the example, the renderer implements Phong lighting and basic shadow mapping.
+The renderer implements Phong lighting and basic shadow mapping.
 
 ## Project status
 
-This has been a learning platform and is a work in progress. I'm recently coming back to it
-after working on other things for a while. There are a few known bugs that need worked out, and
-I plan to rework some of the code architecture now that the application has grown more complex.
-I hope to get around to cleaning these things up in the near future.
-
-See [Developer Notes](docs/DevNotes.md) for some more details on these and other known issues.
+This has been a learning project and is a work in progress. I'm recently coming back to it
+after working on some other things for a while. There are a few known issues that need worked out,
+and I'm considering possible ways to better structure some parts of the code as more features are
+added. See [Developer Notes](docs/DevNotes.md) for some more details on these issues.
 
 _Older version:_
 
@@ -32,13 +30,13 @@ The `wgpu_grapher` crate in this repository has an older version of the app with
 some features that haven't been ported to the GUI version. Some of those are discussed
 [here](./GrapherCaps.md).
 
-## glTF model viewer
+## glTF viewer
 
-There is a model viewer mode that loads and renders a scene in the [glTF](https://kcoley.github.io/glTF/specification/2.0/figures/gltfOverview-2.0.0a.png)
-format. It currently only supports base color textures (no normal mapping, etc.), and importantly it doesn't
-yet handle submesh transformations, so some models will not render correctly. I plan to add support
-for those in the near future. I also plan to add support for the glTF PBR materials shading model
-and later maybe some more of the other features supported by glTF.
+There is a mode that loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
+format. It currently only supports base color textures (so no normal mapping, etc.). And it doesn't
+yet handle node transformations, so some models won't render correctly. I plan to add support
+for node transformations in the near future. Eventually I plan to add support for glTF PBR materials
+shading, and later hopefully some of the other features supported by glTF.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/model.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
@@ -70,11 +68,11 @@ would like to add some image processing features to this part.
 
 ## Licenses and credits
 
-For the `egui` integration I started with
+For the egui integration I started with
 [this](https://github.com/kaphula/winit-egui-wgpu-template)
-`winit` + `egui` + `wgpu` template , which is released under the MIT license.
-To learn the `wgpu` API I started with the
-[Learn WGPU](https://sotrh.github.io/learn-wgpu/)
+Winit + egui + Wgpu template , which is released under the MIT license.
+To learn the Wgpu API, I started with the
+[Learn Wgpu](https://sotrh.github.io/learn-wgpu/)
 tutorial, and was influenced by the design of the example code there. For many
 graphics concepts and implementations I learned from the awesome
 [Learn OpenGL](https://learnopengl.com/)
