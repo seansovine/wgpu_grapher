@@ -32,10 +32,10 @@ pub struct AppState {
     pub surface: wgpu::Surface<'static>,
     pub egui_renderer: EguiRenderer,
 
-    // whether to update scene state on each redraw event
+    // Should scene run its updates during redraw.
     pub scene_updates_paused: bool,
-    // indicates a ui component is focused, to block other input
-    pub editing: bool,
+    // If GUI has focus some input events are blocked.
+    pub gui_has_focus: bool,
 
     // GUI state machine.
     pub scene_mode: GrapherSceneMode,
@@ -108,12 +108,10 @@ impl AppState {
         surface.configure(&device, &surface_config);
 
         let egui_renderer = EguiRenderer::new(&device, surface_config.format, None, 1, window);
-        let scale_factor = 1.0;
-
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
-
         let render_ui_state =
             RenderUiState::from_render_preferences(&grapher_state.render_preferences);
+        let scale_factor = 1.0;
         let ui_data = UiState {
             render_ui_state,
             selected_scene_index: initial_scene.into(),
@@ -130,7 +128,7 @@ impl AppState {
             egui_renderer,
             //
             scene_updates_paused: false,
-            editing: false,
+            gui_has_focus: false,
             //
             scene_mode: initial_scene,
             file_input_state: FileInputState::Hidden,
@@ -148,9 +146,10 @@ impl AppState {
         self.surface_config.height = height;
         self.surface.configure(&self.device, &self.surface_config);
 
-        // resize depth buffer
+        // Resize depth buffer texture.
         self.grapher_state.depth_buffer =
             grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
+        // Resize MSAA texture.
         self.grapher_state.msaa_data = MultisampleData::create(&self.surface_config, &self.device);
 
         // update camera aspect ratio
@@ -219,7 +218,7 @@ impl AppState {
                     GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
 
                 self.scene_loading_state = SceneLoadingState::Loaded;
-                self.editing = false;
+                self.gui_has_focus = false;
             }
 
             SceneLoadingState::NeedsLoaded => {
@@ -272,7 +271,7 @@ impl AppState {
                     self.scene_loading_state = SceneLoadingState::Loaded;
 
                     // TODO: Rework this; maybe -> gui_has_focus.
-                    self.editing = false;
+                    self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
                     self.file_input_state = FileInputState::InvalidFile;
@@ -325,7 +324,7 @@ impl AppState {
                     self.scene_loading_state = SceneLoadingState::Loaded;
 
                     // TODO: Rework this; maybe -> gui_has_focus.
-                    self.editing = false;
+                    self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
                     self.file_input_state = FileInputState::InvalidFile;

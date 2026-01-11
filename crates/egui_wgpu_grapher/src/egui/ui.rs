@@ -35,6 +35,7 @@ pub fn create_gui(
         ui.label(RichText::new("Scene parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);
 
+        // TODO: editing param may be no longer needed here.
         grapher_scene.parameter_ui(editing, ui, ui_state);
     }
 
@@ -68,6 +69,8 @@ pub fn create_gui(
             *scale_factor = (*scale_factor + 0.1).min(3.0);
         }
     });
+
+    *editing = ui.response().has_focus();
 }
 
 // Place to put persistent ui state that doesn't fit elsewhere.

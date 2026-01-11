@@ -51,10 +51,6 @@ pub fn float_edit_line(
 
         let response = ui.add(egui::TextEdit::singleline(edit_text));
 
-        if response.gained_focus() {
-            *editing = true;
-        }
-
         if response.lost_focus() {
             // parse text and update value if valid
             if let Ok(f_val) = edit_text.parse::<f32>() {
@@ -63,8 +59,8 @@ pub fn float_edit_line(
             } else {
                 *edit_text = edit_value.to_string();
             }
-            *editing = false;
         }
+        *editing = response.has_focus();
     });
 
     changed

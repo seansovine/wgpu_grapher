@@ -182,7 +182,7 @@ impl App {
     }
 
     fn build_gui(state: &mut AppState) {
-        let editing = &mut state.editing;
+        let editing = &mut state.gui_has_focus;
         let context = &state.egui_renderer.context();
 
         // main settings window
@@ -275,8 +275,8 @@ impl ApplicationHandler for App {
         // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
 
-        // short-circuits if editing
-        if !state.editing && state.grapher_state.handle_user_input(&event) {
+        // Stop here if GUI has focus.
+        if !state.gui_has_focus && state.grapher_state.handle_user_input(&event) {
             return;
         }
 
