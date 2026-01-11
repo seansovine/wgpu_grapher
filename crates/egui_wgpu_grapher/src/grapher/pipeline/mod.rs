@@ -79,9 +79,8 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
             bias: wgpu::DepthBiasState::default(),
         }),
         multisample: wgpu::MultisampleState {
-            count: 1,
-            mask: !0,
-            alpha_to_coverage_enabled: false,
+            count: 4,
+            ..Default::default()
         },
         multiview: None,
         cache: None,
@@ -137,7 +136,10 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
                 clamp: 0.0,
             },
         }),
-        multisample: wgpu::MultisampleState::default(),
+        multisample: wgpu::MultisampleState {
+            count: 1,
+            ..Default::default()
+        },
         multiview: None,
         cache: None,
     })
