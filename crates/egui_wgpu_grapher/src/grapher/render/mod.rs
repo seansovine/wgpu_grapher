@@ -39,7 +39,13 @@ impl RenderState {
             }
         }
 
-        // want to clear depth buffer on first render only
+        // want to clear depth & MSAA buffers on first render only
+        let mut load_op = wgpu::LoadOp::Clear(wgpu::Color {
+            r: 0.0,
+            g: 0.0,
+            b: 0.0,
+            a: 1.0,
+        });
         let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
 
         // Render solid meshes if configured. Shadow always comes
@@ -51,6 +57,7 @@ impl RenderState {
                 render_detail(
                     encoder,
                     view,
+                    Some(&self.msaa_data.view),
                     &self.depth_buffer.view,
                     pipeline,
                     mesh.vertex_buffer.slice(..),
@@ -63,9 +70,11 @@ impl RenderState {
                         &shadow.bind_group,
                         &scene.light.camera_matrix_bind_group,
                     ],
+                    load_op,
                     depth_load_op,
                 );
                 depth_load_op = wgpu::LoadOp::Load;
+                load_op = wgpu::LoadOp::Load;
             }
         }
 
@@ -75,6 +84,7 @@ impl RenderState {
                 render_detail(
                     encoder,
                     view,
+                    Some(&self.msaa_data.view),
                     &self.depth_buffer.view,
                     pipeline,
                     mesh.vertex_buffer.slice(..),
@@ -86,9 +96,11 @@ impl RenderState {
                         &scene.light.bind_group,
                         &mesh.texture.bind_group,
                     ],
+                    load_op,
                     depth_load_op,
                 );
                 depth_load_op = wgpu::LoadOp::Load;
+                load_op = wgpu::LoadOp::Load;
             }
         }
     }
@@ -99,24 +111,39 @@ impl RenderState {
 fn render_detail(
     encoder: &mut CommandEncoder,
     view: &TextureView,
+    msaa_view: Option<&TextureView>,
     depth_buffer_view: &TextureView,
     pipeline: &RenderPipeline,
     vertex_buffer: BufferSlice,
     index_buffer: BufferSlice,
     num_indices: u32,
     bind_groups: &[&BindGroup],
+    load_op: wgpu::LoadOp<wgpu::Color>,
     depth_load_op: wgpu::LoadOp<f32>,
 ) {
-    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-        label: Some("render pass"),
-        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+    let color_attachment = if let Some(msaa_view) = msaa_view {
+        wgpu::RenderPassColorAttachment {
+            view: msaa_view,
+            resolve_target: Some(view),
+            ops: wgpu::Operations {
+                load: load_op,
+                store: wgpu::StoreOp::Store,
+            },
+        }
+    } else {
+        wgpu::RenderPassColorAttachment {
             view,
             resolve_target: None,
             ops: wgpu::Operations {
                 load: wgpu::LoadOp::Load,
                 store: wgpu::StoreOp::Store,
             },
-        })],
+        }
+    };
+
+    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("render pass"),
+        color_attachments: &[Some(color_attachment)],
         depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
             view: depth_buffer_view,
             depth_ops: Some(wgpu::Operations {
