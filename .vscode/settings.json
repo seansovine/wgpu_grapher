@@ -1,0 +1,5 @@
+{
+	"rust-analyzer.linkedProjects": [
+		"egui_wgpu_grapher/Cargo.toml"
+	]
+}

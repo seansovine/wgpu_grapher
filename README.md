@@ -17,12 +17,16 @@ _Lighting:_
 
 The renderer implements Phong lighting and basic shadow mapping.
 
+
 ## Project status
 
 This has been a learning project and is a work in progress. I'm recently coming back to it
 after working on some other things for a while. There are a few known issues that need worked out,
 and I'm considering possible ways to better structure some parts of the code as more features are
 added. See [Developer Notes](docs/DevNotes.md) for some more details on these issues.
+
+The active version of this project is in the `egui_wgpu_grapher` crate in the folder with the same
+name.
 
 _Older version:_
 
@@ -70,7 +74,7 @@ would like to add some image processing features to this part.
 
 For the egui integration I started with
 [this](https://github.com/kaphula/winit-egui-wgpu-template)
-Winit + egui + Wgpu template , which is released under the MIT license.
+Winit + egui + Wgpu template, which is released under the MIT license.
 To learn the Wgpu API, I started with the
 [Learn Wgpu](https://sotrh.github.io/learn-wgpu/)
 tutorial, and was influenced by the design of the example code there. For many
