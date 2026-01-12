@@ -8,9 +8,7 @@ use crate::{
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
 
-#[derive(Default)]
 pub enum FileInputState {
-    #[default]
     Hidden,
     NeedsInput,
     BadPath,
@@ -176,7 +174,6 @@ impl AppState {
             GrapherSceneMode::Model => {
                 self.scene_change_model();
             }
-
             GrapherSceneMode::ImageViewer => {
                 self.scene_change_image();
             }
@@ -216,7 +213,6 @@ impl AppState {
                 let graph_scene = GraphScene::default();
                 self.grapher_scene =
                     GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
-
                 self.scene_loading_state = SceneLoadingState::Loaded;
                 self.gui_has_focus = false;
             }
@@ -269,8 +265,6 @@ impl AppState {
                     self.grapher_scene = GrapherScene::Model(model::ModelSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
-
-                    // TODO: Rework this; maybe -> gui_has_focus.
                     self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
@@ -309,6 +303,7 @@ impl AppState {
             }
 
             SceneLoadingState::NeedsLoaded => {
+                // Sets up the camera for 2D image display.
                 let image_scene = grapher::scene::textured::image_viewer::image_viewer_scene(
                     &self.device,
                     &self.queue,
@@ -322,8 +317,6 @@ impl AppState {
                         GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
-
-                    // TODO: Rework this; maybe -> gui_has_focus.
                     self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;

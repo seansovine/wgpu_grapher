@@ -16,12 +16,8 @@ use gltf::{
     mesh::{Mode, Primitive},
 };
 
-#[allow(unused)]
-const TEST_FILE_1: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_sphere/scene.gltf";
-#[allow(unused)]
-const TEST_FILE_2: &str = "/home/sean/Code_projects/wgpu_grapher/scratch/gltf_head/scene.gltf";
-
-const TEST_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
+const DEFAULT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
+const DEFAULT_COLOR_U8: [u8; 4] = [255, 0, 0, 255];
 
 pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<TexturedMeshData>, ()> {
     let Ok((gltf, buffers, _)) = gltf::import(file) else {
@@ -36,21 +32,18 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
             if primitive.mode() != Mode::Triangles {
                 continue;
             }
-
-            // we assume the only primitive is a triangle
             let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
 
             let iter = reader
                 .read_positions()
                 .unwrap()
                 .zip(reader.read_normals().unwrap());
-
             let mut vertices: Vec<GpuVertex> = vec![];
 
             for (position, normal) in iter {
                 vertices.push(GpuVertex {
                     position,
-                    color: TEST_COLOR,
+                    color: DEFAULT_COLOR,
                     normal,
                     ..Default::default()
                 });
@@ -78,7 +71,7 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
                 meshes.push(TexturedMeshData {
                     vertices,
                     indices,
-                    texture: TextureData::solid_color_texture(&[255, 0, 0, 255], device, queue),
+                    texture: TextureData::solid_color_texture(&DEFAULT_COLOR_U8, device, queue),
                 });
             }
 
