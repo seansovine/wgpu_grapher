@@ -10,12 +10,12 @@ egui-winit = "0.31.1"
 winit = "0.30.12"
 pollster = "0.4.0"
 bytemuck = "1.23.2"
-cgmath = "0.18.0"
 rand = { version = "0.9.2", features = ["thread_rng"] }
 egui-typed-input = "0.1.1"
 gltf = "1.4.1"
 clap = { version = "4.5.45", features = ["derive"] }
 meval = "0.2.0"
+cgmath = "0.18.0"
 
 [dependencies.image]
 version = "0.24"

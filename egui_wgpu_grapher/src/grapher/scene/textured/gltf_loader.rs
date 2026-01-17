@@ -3,6 +3,7 @@
 
 use std::{cell::RefCell, path::Path};
 
+use cgmath::{Matrix4, SquareMatrix};
 use egui_wgpu::wgpu::{Device, Queue};
 use gltf::{
     Document, Mesh, Node, Primitive, buffer::Data, image::Source, mesh::Mode, scene::Transform,
@@ -45,15 +46,26 @@ fn node_matrix(node: &Node) -> MatrixUniform {
             scale,
         } => {
             let nontrivial = translation != [0.0_f32, 0.0_f32, 0.0_f32]
-                && rotation != [0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]
-                && scale != [1.0_f32, 1.0_f32, 1.0_f32];
+                || rotation != [0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]
+                || scale != [1.0_f32, 1.0_f32, 1.0_f32];
 
-            // TODO.
             if nontrivial {
-                println!("Warning: Ignoring non-trivial decomposed transformation.");
-            }
+                let t = cgmath::Matrix4::from_translation(translation.into());
+                let r: cgmath::Matrix4<_> =
+                    cgmath::Quaternion::new(rotation[3], rotation[0], rotation[1], rotation[2])
+                        .into();
 
-            MatrixUniform::identity()
+                // Scale matrix.
+                let mut s: Matrix4<f32> = cgmath::Matrix4::identity();
+                s[0][0] = scale[0];
+                s[1][1] = scale[1];
+                s[2][2] = scale[2];
+
+                let transform: [[f32; 4]; 4] = (t * r * s).into();
+                transform.into()
+            } else {
+                MatrixUniform::identity()
+            }
         }
     }
 }
@@ -148,8 +160,8 @@ impl GltfLoader<'_> {
                 println!("Node has decomposed transformation.");
 
                 let nontrivial = translation != [0.0_f32, 0.0_f32, 0.0_f32]
-                    && rotation != [0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]
-                    && scale != [1.0_f32, 1.0_f32, 1.0_f32];
+                    || rotation != [0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]
+                    || scale != [1.0_f32, 1.0_f32, 1.0_f32];
 
                 if nontrivial {
                     Self::indent(depth + 2);
@@ -210,9 +222,9 @@ impl GltfLoader<'_> {
                         .pbr_metallic_roughness()
                         .base_color_factor();
                     let base_color = [
-                        (255.0 * base_color[0] * base_color[3]) as u8,
-                        (255.0 * base_color[1] * base_color[3]) as u8,
-                        (255.0 * base_color[2] * base_color[3]) as u8,
+                        (255.0 * base_color[0]) as u8,
+                        (255.0 * base_color[1]) as u8,
+                        (255.0 * base_color[2]) as u8,
                         255,
                     ];
                     TextureData::solid_color_texture(&base_color, self.device, self.queue)

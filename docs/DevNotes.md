@@ -112,8 +112,7 @@ An idea is to compute the bounding box from the mesh as it is loaded and then ad
 transformation that centers and scales the mesh so that it fills a standard sized bounding box
 at the origin.
 
-We also haven't gotten around to handling decomposed transformations yet, so some models still
-don't render correctly.
+TODO: There seem to be a bug with the decomposed tranformations in some cases.
 
 ### Rework lighting for compatibility with glTF PBR material shading
 

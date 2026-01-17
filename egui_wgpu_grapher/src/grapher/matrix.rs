@@ -32,6 +32,7 @@ impl Default for MatrixUniform {
 impl Mul for MatrixUniform {
     type Output = Self;
 
+    // For convenience; this is rarely used.
     fn mul(self, rhs: Self) -> Self::Output {
         let cg_self: cgmath::Matrix4<_> = self.matrix.into();
         let cg_other: cgmath::Matrix4<_> = rhs.matrix.into();
