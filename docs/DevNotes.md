@@ -5,6 +5,7 @@ Next steps:
 1. Add option to render lights and coordinate axes as scene objects.
 2. Rework graph parameter GUI input and update handling.
 3. Investigate ways to improve shadow mapping.
+4. Add a proper file chooser.
 
 Things to do later:
 
@@ -105,10 +106,14 @@ handing things like this.
 
 ### Handle transformations in node tree
 
-Most complex glTF scenes have a hierachy of 3D transformations attached to
-their nodes and meshes. We need to store these transformations as the node
-hierarchy is loaded so they can be composed to render mesh vertices in the correct positions.
-We have most of what's needed for this in place already.
+We are now loading and composing the transformations along the way. We need some adjustments
+to account for the fact that different models have their vertex coordinates scaled differently.
+An idea is to compute the bounding box from the mesh as it is loaded and then add an additional
+transformation that centers and scales the mesh so that it fills a standard sized bounding box
+at the origin.
+
+We also haven't gotten around to handling decomposed transformations yet, so some models still
+don't render correctly.
 
 ### Rework lighting for compatibility with glTF PBR material shading
 
@@ -118,3 +123,9 @@ the tangent space at each vertex, so each vertex also needs to have tangent and 
 vectors. We have implemented this approach  in the [Vulkan Grapher](https://github.com/seansovine/vulkan_grapher)
 project. We could port some parts of the mesh generation and shader code from there to
 this project.
+
+### Efficiency
+
+We should look at the efficiency of loading and rendering complex models. That's not something
+we have looked at much in the program (yet!) as it has grown out of a program to render just a
+graph into something more like a model viewer.

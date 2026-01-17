@@ -1,7 +1,8 @@
 // Structures and functions for building textured mesh scenes.
 
+pub mod gltf_loader;
 pub mod image_viewer;
-#[allow(dead_code)]
+// #[allow(dead_code)]
 pub mod model;
 pub mod pde;
 

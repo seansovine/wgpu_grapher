@@ -5,16 +5,16 @@ use std::path::Path;
 use super::{GpuVertex, TexturedMeshData, build_scene};
 use crate::grapher::{
     matrix,
-    pipeline::texture::{Image, TextureData},
+    pipeline::texture::TextureData,
     render::RenderState,
-    scene::{RenderScene, Scene},
+    scene::{
+        RenderScene, Scene,
+        textured::gltf_loader::{self, read_texture},
+    },
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
-use gltf::{
-    image::Source,
-    mesh::{Mode, Primitive},
-};
+use gltf::mesh::Mode;
 
 const DEFAULT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 const DEFAULT_COLOR_U8: [u8; 4] = [255, 0, 0, 255];
@@ -71,43 +71,19 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
                 meshes.push(TexturedMeshData {
                     vertices,
                     indices,
+                    // TODO: We should get the color from the material (it may be in KHR_ extension data).
                     texture: TextureData::solid_color_texture(&DEFAULT_COLOR_U8, device, queue),
                 });
             }
 
-            // TODO: consider loading matrices as well
+            // This version doesn't load textures.
         }
     }
 
     Ok(meshes)
 }
 
-fn read_texture(
-    device: &Device,
-    queue: &Queue,
-    primitive: &Primitive<'_>,
-    model_dir: &Path,
-) -> Result<TextureData, ()> {
-    let pbr_metallic = primitive.material().pbr_metallic_roughness();
-
-    if let Some(info) = pbr_metallic.base_color_texture() {
-        let image_source = info.texture().source().source();
-        match image_source {
-            Source::Uri { uri, .. } => {
-                let img_path = model_dir.join(Path::new(uri));
-                let Ok(image) = Image::from_file(img_path.to_str().unwrap()) else {
-                    return Err(());
-                };
-                let texture = TextureData::from_image(&image, device, queue);
-
-                return Ok(texture);
-            }
-            Source::View { .. } => {}
-        }
-    }
-
-    Err(())
-}
+const USE_NEW_LOADER: bool = true;
 
 pub fn model_scene(
     device: &Device,
@@ -117,15 +93,22 @@ pub fn model_scene(
     path: &str,
 ) -> Option<ModelScene> {
     let mut mesh_data = vec![];
-    let Ok(model_meshes) = load_model(device, queue, path) else {
-        return None;
-    };
 
-    // Chosen for particular test examples; need to implement camera movement.
-    let matrix = matrix::MatrixUniform::x_rotation(0.0);
-
-    for mesh in model_meshes {
-        mesh_data.push((mesh, matrix));
+    if USE_NEW_LOADER {
+        let loader = gltf_loader::GltfLoader::create(device, queue, path);
+        let render_scene = loader.traverse();
+        for render_mesh in render_scene.meshes {
+            mesh_data.push((render_mesh.data, render_mesh.matrix));
+        }
+    } else {
+        let Ok(model_meshes) = load_model(device, queue, path) else {
+            return None;
+        };
+        // Chosen for particular test examples; need to implement camera movement.
+        let matrix = matrix::MatrixUniform::x_rotation(0.0);
+        for mesh in model_meshes {
+            mesh_data.push((mesh, matrix));
+        }
     }
 
     // tell shader to use texture for color

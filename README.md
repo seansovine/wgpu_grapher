@@ -37,13 +37,13 @@ some features that haven't been ported to the GUI version. Some of those are dis
 ## glTF viewer
 
 There is a mode that loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
-format. It currently only supports base color textures (so no normal mapping, etc.). And it doesn't
-yet handle node transformations, so some models won't render correctly. I plan to add support
-for node transformations in the near future. Eventually I plan to add support for glTF PBR materials
-shading, and later hopefully some of the other features supported by glTF.
+format. It currently only supports base color textures (so no normal mapping, etc.),
+and there are some things that are not completely loaded yet or that need improved. But hey it's a start.
+Eventually I hope to add support for glTF PBR materials shading, and maybe some of the other
+features supported by glTF.
 
 <p align="center" margin="20px">
-	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/model.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/model_2.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
 *Model from MG Rips on [SketchFab](https://sketchfab.com/3d-models/secret-of-the-mimic-mimic-43d8bb26c79148958f46eb1d10e76667).*

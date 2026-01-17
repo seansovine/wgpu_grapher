@@ -1,5 +1,7 @@
 // General code for creating matrix uniforms and associated buffers.
 
+use std::ops::Mul;
+
 use egui_wgpu::wgpu::{
     BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
     ShaderStages,
@@ -13,6 +15,30 @@ pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MatrixUniform {
     matrix: [[f32; 4]; 4],
+}
+
+impl From<[[f32; 4]; 4]> for MatrixUniform {
+    fn from(value: [[f32; 4]; 4]) -> Self {
+        Self { matrix: value }
+    }
+}
+
+impl Default for MatrixUniform {
+    fn default() -> Self {
+        Self::identity()
+    }
+}
+
+impl Mul for MatrixUniform {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let cg_self: cgmath::Matrix4<_> = self.matrix.into();
+        let cg_other: cgmath::Matrix4<_> = rhs.matrix.into();
+        Self {
+            matrix: (cg_self * cg_other).into(),
+        }
+    }
 }
 
 impl MatrixUniform {
