@@ -1,4 +1,5 @@
 mod state;
+use egui_file_dialog::DialogState;
 use state::*;
 
 use crate::{
@@ -182,18 +183,22 @@ impl App {
     }
 
     fn build_gui(state: &mut AppState) {
-        let editing = &mut state.gui_has_focus;
-        let context = &state.egui_renderer.context();
-
+        // TODO: Experimental. Finish implementing.
         if matches!(state.file_input_state, FileInputState::NeedsInput) {
-            // TODO: Experimental. Finish implementing.
+            let context = &state.egui_renderer.context();
             state.file_dialog.update(context);
             // Check if the user picked a file.
             if let Some(path) = state.file_dialog.take_picked() {
                 state.ui_data.filename = path.to_string_lossy().to_string();
                 state.file_input_state = FileInputState::NeedsChecked;
             }
+            if matches!(state.file_dialog.state(), DialogState::Cancelled) {
+                state.hide_file_input();
+            }
         }
+
+        let context = &state.egui_renderer.context();
+        let editing = &mut state.gui_has_focus;
 
         // main settings window
         egui::Window::new("Settings")

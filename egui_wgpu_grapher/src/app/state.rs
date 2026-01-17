@@ -170,6 +170,9 @@ impl AppState {
     }
 
     pub(super) fn handle_scene_changes(&mut self) {
+        if self.ui_data.show_file_input {
+            self.show_file_input();
+        }
         match self.scene_mode {
             GrapherSceneMode::Graph => {
                 self.scene_change_graph();
@@ -189,10 +192,11 @@ impl AppState {
     }
 
     pub fn show_file_input(&mut self) {
-        if !self.ui_data.show_file_input {
-            self.file_input_state = FileInputState::NeedsInput;
+        if !matches!(self.file_input_state, FileInputState::Hidden) {
+            return;
         }
-        self.ui_data.show_file_input = true;
+        self.file_input_state = FileInputState::NeedsInput;
+        self.ui_data.show_file_input = false;
         self.file_dialog.pick_file();
     }
 }
