@@ -13,9 +13,7 @@ The mathematical expression parsing and evaluation is handled by the
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-_Lighting:_
-
-The renderer implements Phong lighting and basic shadow mapping.
+As can be seen in the example the renderer implements Phong lighting and basic shadow mapping.
 
 
 ## Project status
@@ -28,7 +26,7 @@ added. See [Developer Notes](docs/DevNotes.md) for some more details on these is
 The active version of this project is in the `egui_wgpu_grapher` crate in the folder with the same
 name.
 
-_Older version:_
+### Older version:
 
 The `wgpu_grapher` crate in this repository has an older version of the app with
 some features that haven't been ported to the GUI version. Some of those are discussed

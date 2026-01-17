@@ -5,7 +5,7 @@ Next steps:
 1. Add option to render lights and coordinate axes as scene objects.
 2. Rework graph parameter GUI input and update handling.
 3. Investigate ways to improve shadow mapping.
-4. Add a proper file chooser.
+4. Finish out file choose integration.
 
 Things to do later:
 
@@ -52,7 +52,7 @@ _Example 2:_
 + Light position: `[0.0, 4.0, 0.0]`
 
 This can be used to sanity check basic lighting and coordinate handling. As of now
-everything seems to be working correctly except for shadow mapping.
+everything seems to be working correctly in these areas.
 
 _Example 3:_
 
@@ -123,6 +123,5 @@ this project.
 
 ### Efficiency
 
-We should look at the efficiency of loading and rendering complex models. That's not something
-we have looked at much in the program (yet!) as it has grown out of a program to render just a
-graph into something more like a model viewer.
+We should look at the efficiency of loading and rendering complex models. There are definitely
+a few more things that could be done here.

@@ -5,6 +5,7 @@ use crate::{
     },
     grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph, image_viewer, model},
 };
+use egui_file_dialog::FileDialog;
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
 
@@ -34,6 +35,9 @@ pub struct AppState {
     pub scene_updates_paused: bool,
     // If GUI has focus some input events are blocked.
     pub gui_has_focus: bool,
+
+    // File picker with persistent state.
+    pub file_dialog: FileDialog,
 
     // GUI state machine.
     pub scene_mode: GrapherSceneMode,
@@ -69,19 +73,16 @@ impl AppState {
 
         let features = wgpu::Features::POLYGON_MODE_LINE;
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    required_features: features,
-                    required_limits: Limits {
-                        // TODO: combine bindings into fewer groups
-                        max_bind_groups: 5,
-                        ..Default::default()
-                    },
-                    memory_hints: Default::default(),
+            .request_device(&wgpu::DeviceDescriptor {
+                label: None,
+                required_features: features,
+                required_limits: Limits {
+                    // TODO: combine bindings into fewer groups
+                    max_bind_groups: 5,
+                    ..Default::default()
                 },
-                None,
-            )
+                ..Default::default()
+            })
             .await
             .expect("Failed to create device");
 
@@ -127,6 +128,8 @@ impl AppState {
             //
             scene_updates_paused: false,
             gui_has_focus: false,
+            //
+            file_dialog: FileDialog::new().as_modal(false),
             //
             scene_mode: initial_scene,
             file_input_state: FileInputState::Hidden,
@@ -190,6 +193,7 @@ impl AppState {
             self.file_input_state = FileInputState::NeedsInput;
         }
         self.ui_data.show_file_input = true;
+        self.file_dialog.pick_file();
     }
 }
 
@@ -233,19 +237,17 @@ impl AppState {
             self.grapher_scene = GrapherScene::None;
             self.scene_loading_state = SceneLoadingState::NoData;
             self.ui_data.filename = "".into();
+            self.show_file_input();
         }
 
         #[allow(clippy::single_match)]
         match self.scene_loading_state {
-            SceneLoadingState::NoData => {
-                self.show_file_input();
-                match self.file_input_state {
-                    FileInputState::NeedsChecked => {
-                        self.scene_loading_state = SceneLoadingState::NeedsLoaded;
-                    }
-                    _ => {}
+            SceneLoadingState::NoData => match self.file_input_state {
+                FileInputState::NeedsChecked => {
+                    self.scene_loading_state = SceneLoadingState::NeedsLoaded;
                 }
-            }
+                _ => {}
+            },
 
             SceneLoadingState::NeedsLoaded => {
                 self.grapher_state
@@ -288,19 +290,17 @@ impl AppState {
             self.grapher_scene = GrapherScene::None;
             self.scene_loading_state = SceneLoadingState::NoData;
             self.ui_data.filename = "".into();
+            self.show_file_input();
         }
 
         #[allow(clippy::single_match)]
         match self.scene_loading_state {
-            SceneLoadingState::NoData => {
-                self.show_file_input();
-                match self.file_input_state {
-                    FileInputState::NeedsChecked => {
-                        self.scene_loading_state = SceneLoadingState::NeedsLoaded;
-                    }
-                    _ => {}
+            SceneLoadingState::NoData => match self.file_input_state {
+                FileInputState::NeedsChecked => {
+                    self.scene_loading_state = SceneLoadingState::NeedsLoaded;
                 }
-            }
+                _ => {}
+            },
 
             SceneLoadingState::NeedsLoaded => {
                 // Sets up the camera for 2D image display.

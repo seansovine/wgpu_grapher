@@ -81,6 +81,7 @@ pub struct GltfLoader<'a> {
     document: Document,
     buffer_data: Vec<Data>,
 
+    // Wgpu handles for GPU updates.
     device: &'a Device,
     queue: &'a Queue,
 

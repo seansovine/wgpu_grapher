@@ -185,6 +185,16 @@ impl App {
         let editing = &mut state.gui_has_focus;
         let context = &state.egui_renderer.context();
 
+        if matches!(state.file_input_state, FileInputState::NeedsInput) {
+            // TODO: Experimental. Finish implementing.
+            state.file_dialog.update(context);
+            // Check if the user picked a file.
+            if let Some(path) = state.file_dialog.take_picked() {
+                state.ui_data.filename = path.to_string_lossy().to_string();
+                state.file_input_state = FileInputState::NeedsChecked;
+            }
+        }
+
         // main settings window
         egui::Window::new("Settings")
             .resizable(true)
@@ -204,8 +214,10 @@ impl App {
                 );
             });
 
+        // TODO: We're in process of replacing with a file picker library.
+        const DISABLED: bool = true;
         // maybe show file input window
-        if state.ui_data.show_file_input {
+        if !DISABLED && state.ui_data.show_file_input {
             *editing = true;
             let is_valid = !matches!(
                 state.file_input_state,

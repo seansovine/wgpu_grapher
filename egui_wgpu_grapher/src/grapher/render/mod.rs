@@ -62,6 +62,7 @@ impl RenderState {
                     load: load_op,
                     store: wgpu::StoreOp::Store,
                 },
+                depth_slice: None,
             };
 
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -106,6 +107,7 @@ impl RenderState {
                     load: load_op,
                     store: wgpu::StoreOp::Store,
                 },
+                depth_slice: None,
             };
 
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
