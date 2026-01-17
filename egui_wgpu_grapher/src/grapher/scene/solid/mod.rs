@@ -1,4 +1,4 @@
-// Structures and functions for meshes with color provided per-vertex.
+//! Structures and functions for meshes with color provided per-vertex.
 
 #[allow(dead_code)]
 pub mod graph;

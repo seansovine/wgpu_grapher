@@ -5,6 +5,8 @@ use super::matrix::{self, MatrixState, MatrixUniform, X_AXIS, Y_AXIS};
 use cgmath::SquareMatrix;
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
+use std::f32::consts::PI;
+
 #[derive(Default, Clone)]
 pub enum ProjectionType {
     Orthographic,
@@ -39,7 +41,10 @@ pub struct Camera {
     pub translation_x: f32,
     pub translation_y: f32,
 
-    // Store user rotation so new rotations build on previous.
+    pub alpha: f32,
+    pub gamma: f32,
+
+    // Current user rotation for relative rotation.
     pub user_rotation: cgmath::Matrix4<f32>,
 }
 
@@ -52,6 +57,8 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 );
 
 impl Camera {
+    pub const ABSOLUTE_ROTAITON: bool = true;
+
     pub fn get_matrix(&self) -> cgmath::Matrix4<f32> {
         let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
         let translation = cgmath::Matrix4::from_translation(cgmath::Vector3 {
@@ -71,7 +78,15 @@ impl Camera {
             ),
         };
 
-        OPENGL_TO_WGPU_MATRIX * proj * view * translation * self.user_rotation
+        let user_rotation = if Self::ABSOLUTE_ROTAITON {
+            let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
+            let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
+            gamma_rot * alpha_rot
+        } else {
+            self.user_rotation
+        };
+
+        OPENGL_TO_WGPU_MATRIX * proj * view * translation * user_rotation
     }
 
     pub fn get_perspective_proj(&self) -> cgmath::Matrix4<f32> {
@@ -100,14 +115,22 @@ impl Camera {
             translation_x: 0.0,
             translation_y: 0.0,
             //
+            alpha: 0.0,
+            gamma: 0.0,
+            //
             user_rotation: cgmath::Matrix4::identity(),
         }
     }
 
     pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32) {
-        let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(alpha));
-        let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(gamma));
-        self.user_rotation = gamma_rot * alpha_rot * self.user_rotation;
+        if Self::ABSOLUTE_ROTAITON {
+            self.alpha = (self.alpha + alpha).rem_euclid(2.0 * PI);
+            self.gamma = (self.gamma + gamma).rem_euclid(2.0 * PI);
+        } else {
+            let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(alpha));
+            let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(gamma));
+            self.user_rotation = gamma_rot * alpha_rot * self.user_rotation;
+        }
     }
 }
 
