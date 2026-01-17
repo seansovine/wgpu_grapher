@@ -192,7 +192,10 @@ impl AppState {
     }
 
     pub fn show_file_input(&mut self) {
-        if !matches!(self.file_input_state, FileInputState::Hidden) {
+        if !matches!(
+            self.file_input_state,
+            FileInputState::Hidden | FileInputState::InvalidFile
+        ) {
             return;
         }
         self.file_input_state = FileInputState::NeedsInput;
@@ -249,6 +252,11 @@ impl AppState {
             SceneLoadingState::NoData => match self.file_input_state {
                 FileInputState::NeedsChecked => {
                     self.scene_loading_state = SceneLoadingState::NeedsLoaded;
+                }
+                FileInputState::InvalidFile => {
+                    // TODO: Add modal or other means of telling user file load failed.
+                    println!("File load failed.");
+                    self.show_file_input();
                 }
                 _ => {}
             },

@@ -1,7 +1,7 @@
 //! Read info from a glTF file using the document and buffers returned
 //! by the `import` function of the glTF crate (its higher-level API).
 
-use std::{cell::RefCell, path::Path};
+use std::{cell::RefCell, error::Error, path::Path};
 
 use cgmath::{Matrix4, SquareMatrix};
 use egui_wgpu::wgpu::{Device, Queue};
@@ -90,16 +90,20 @@ pub struct GltfLoader<'a> {
 }
 
 impl<'a> GltfLoader<'a> {
-    pub fn create(device: &'a Device, queue: &'a Queue, gltf_path: &str) -> GltfLoader<'a> {
-        let (document, buffer_data, _images) = gltf::import(gltf_path).unwrap();
-        GltfLoader {
+    pub fn create(
+        device: &'a Device,
+        queue: &'a Queue,
+        gltf_path: &str,
+    ) -> Result<GltfLoader<'a>, Box<dyn Error>> {
+        let (document, buffer_data, _images) = gltf::import(gltf_path)?;
+        Ok(GltfLoader {
             path: gltf_path.into(),
             document,
             buffer_data,
             device,
             queue,
             render_scene: Default::default(),
-        }
+        })
     }
 }
 

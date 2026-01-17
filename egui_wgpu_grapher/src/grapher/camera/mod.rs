@@ -42,7 +42,7 @@ pub struct Camera {
     pub translation_y: f32,
 
     // For absolute rotation vs. relative to previous.
-    pub absolute_rotation: bool,
+    pub relative_rotation: bool,
     pub alpha: f32,
     pub gamma: f32,
 
@@ -78,10 +78,8 @@ impl Camera {
             ),
         };
 
-        let user_rotation = if self.absolute_rotation {
-            let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
-            let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
-            gamma_rot * alpha_rot
+        let user_rotation = if !self.relative_rotation {
+            self.get_absolute_rotation()
         } else {
             self.user_rotation
         };
@@ -115,7 +113,7 @@ impl Camera {
             translation_x: 0.0,
             translation_y: 0.0,
             //
-            absolute_rotation: true,
+            relative_rotation: false,
             alpha: 0.0,
             gamma: 0.0,
             //
@@ -123,8 +121,20 @@ impl Camera {
         }
     }
 
+    pub fn store_absolute_rotation(&mut self) {
+        if self.relative_rotation {
+            self.user_rotation = self.get_absolute_rotation();
+        }
+    }
+
+    pub fn get_absolute_rotation(&self) -> cgmath::Matrix4<f32> {
+        let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
+        let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
+        gamma_rot * alpha_rot
+    }
+
     pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32) {
-        if self.absolute_rotation {
+        if !self.relative_rotation {
             self.alpha = (self.alpha + alpha).rem_euclid(2.0 * PI);
             self.gamma = (self.gamma + gamma).rem_euclid(2.0 * PI);
         } else {

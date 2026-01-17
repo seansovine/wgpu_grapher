@@ -289,8 +289,11 @@ pub fn render_parameter_ui(
             render_ui_state.needs_prefs_update = true;
         }
     }
-    let _ = ui.checkbox(
-        &mut render_state.camera_state.camera.absolute_rotation,
+    let response = ui.checkbox(
+        &mut render_state.camera_state.camera.relative_rotation,
         "Relative rotation",
     );
+    if response.changed() {
+        render_state.camera_state.camera.store_absolute_rotation();
+    }
 }

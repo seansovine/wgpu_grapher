@@ -95,7 +95,9 @@ pub fn model_scene(
     let mut mesh_data = vec![];
 
     if USE_NEW_LOADER {
-        let loader = gltf_loader::GltfLoader::create(device, queue, path);
+        let Ok(loader) = gltf_loader::GltfLoader::create(device, queue, path) else {
+            return None;
+        };
         let render_scene = loader.traverse();
         for render_mesh in render_scene.meshes {
             mesh_data.push((render_mesh.data, render_mesh.matrix));
