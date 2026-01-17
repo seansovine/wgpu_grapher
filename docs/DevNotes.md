@@ -112,8 +112,6 @@ An idea is to compute the bounding box from the mesh as it is loaded and then ad
 transformation that centers and scales the mesh so that it fills a standard sized bounding box
 at the origin.
 
-TODO: There seem to be a bug with the decomposed tranformations in some cases.
-
 ### Rework lighting for compatibility with glTF PBR material shading
 
 We currently represent normals in world coordinates and use them directly

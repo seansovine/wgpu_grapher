@@ -62,6 +62,12 @@ fn node_matrix(node: &Node) -> MatrixUniform {
                 s[2][2] = scale[2];
 
                 let transform: [[f32; 4]; 4] = (t * r * s).into();
+                if DEV_LOGGING {
+                    println!(">>> Node transform matrix:");
+                    for row in transform {
+                        println!(">>> {row:?}");
+                    }
+                }
                 transform.into()
             } else {
                 MatrixUniform::identity()
@@ -118,7 +124,7 @@ impl GltfLoader<'_> {
 
     fn traverse_children(&self, node: &Node, depth: usize, parent_matrix: &MatrixUniform) {
         for child in node.children() {
-            let matrix = *parent_matrix * node_matrix(node);
+            let matrix = *parent_matrix * node_matrix(&child);
             self.add_node(&child, depth, &matrix);
             self.traverse_children(&child, depth + 1, &matrix);
         }
@@ -170,10 +176,6 @@ impl GltfLoader<'_> {
                     println!("Rotation: {rotation:?}");
                     Self::indent(depth + 2);
                     println!("Scale: {scale:?}");
-
-                    panic!(
-                        "UNIMPLEMENTED: Reader expects no non-trivial decomposed transformations."
-                    );
                 }
             }
         }
