@@ -1,3 +1,5 @@
+//! Camera state controller. Originally based on Learn Wgpu tutorial example.
+
 use crate::grapher::camera::{self, ProjectionType};
 
 use winit::{
@@ -7,53 +9,54 @@ use winit::{
 
 use std::f32::consts::PI;
 
+// TODO: Rework this as an event queue.
 pub struct CameraController {
     pub speed: f32,
 
     // rotation keys
-    pub is_up_pressed: bool,
-    pub is_down_pressed: bool,
-    pub is_left_pressed: bool,
-    pub is_right_pressed: bool,
+    pub up_pressed: bool,
+    pub down_pressed: bool,
+    pub left_pressed: bool,
+    pub right_pressed: bool,
 
     // zoom keys
-    pub is_z_pressed: bool,
-    pub is_x_pressed: bool,
+    pub z_pressed: bool,
+    pub x_pressed: bool,
 
     // translation keys
-    pub is_t_pressed: bool,
-    pub is_f_pressed: bool,
-    pub is_g_pressed: bool,
-    pub is_h_pressed: bool,
+    pub t_pressed: bool,
+    pub f_pressed: bool,
+    pub g_pressed: bool,
+    pub h_pressed: bool,
 
-    // modifier
-    pub is_shift_pressed: bool,
+    // modifiers (see TODO)
+    pub shift_pressed: bool,
 }
 
 impl CameraController {
     pub fn new(speed: f32) -> Self {
         Self {
             speed,
-
-            is_up_pressed: false,
-            is_down_pressed: false,
-            is_left_pressed: false,
-            is_right_pressed: false,
-
-            is_z_pressed: false,
-            is_x_pressed: false,
-
-            is_f_pressed: false,
-            is_g_pressed: false,
-            is_h_pressed: false,
-            is_t_pressed: false,
-
-            is_shift_pressed: false,
+            //
+            up_pressed: false,
+            down_pressed: false,
+            left_pressed: false,
+            right_pressed: false,
+            //
+            z_pressed: false,
+            x_pressed: false,
+            //
+            f_pressed: false,
+            g_pressed: false,
+            h_pressed: false,
+            t_pressed: false,
+            //
+            shift_pressed: false,
         }
     }
 
     pub fn update_camera(&mut self, camera: &mut camera::Camera) {
-        let zoom_incr: f32 = if self.is_shift_pressed { 120.0 } else { 1.2 };
+        let zoom_incr: f32 = if self.shift_pressed { 120.0 } else { 1.2 };
         let zoom_incr = zoom_incr * self.speed;
 
         match camera.projection_type {
@@ -64,19 +67,19 @@ impl CameraController {
                 let forward_mag = forward.magnitude();
 
                 // use of look-at from Learn WGPU
-                if self.is_z_pressed && forward_mag > self.speed {
+                if self.z_pressed && forward_mag > self.speed {
                     camera.eye += forward_norm * zoom_incr;
                 }
-                if self.is_x_pressed {
+                if self.x_pressed {
                     camera.eye -= forward_norm * zoom_incr;
                 }
             }
             ProjectionType::Orthographic => {
                 const INCR_ADJUSTMENT: f32 = 50.0;
-                if self.is_z_pressed {
+                if self.z_pressed {
                     camera.ortho_scale *= 1.0 + zoom_incr / INCR_ADJUSTMENT;
                 }
-                if self.is_x_pressed {
+                if self.x_pressed {
                     camera.ortho_scale *= 1.0 - zoom_incr / INCR_ADJUSTMENT;
                 }
             }
@@ -85,36 +88,36 @@ impl CameraController {
         if matches!(camera.projection_type, ProjectionType::Perspective) {
             let angle_incr = self.speed * PI / 4.0;
 
-            if self.is_right_pressed {
-                camera.alpha += angle_incr;
+            if self.right_pressed {
+                camera.increment_user_rotation(angle_incr, 0.0);
             }
-            if self.is_left_pressed {
-                camera.alpha -= angle_incr;
+            if self.left_pressed {
+                camera.increment_user_rotation(-angle_incr, 0.0);
             }
-            if self.is_up_pressed {
-                camera.gamma += angle_incr;
+            if self.up_pressed {
+                camera.increment_user_rotation(0.0, angle_incr);
             }
-            if self.is_down_pressed {
-                camera.gamma -= angle_incr;
+            if self.down_pressed {
+                camera.increment_user_rotation(0.0, -angle_incr);
             }
         }
 
-        let trans_incr = if self.is_shift_pressed {
+        let trans_incr = if self.shift_pressed {
             self.speed * 25.0
         } else {
             self.speed * 0.5
         };
 
-        if self.is_t_pressed {
+        if self.t_pressed {
             camera.translation_y += trans_incr / camera.ortho_scale;
         }
-        if self.is_g_pressed {
+        if self.g_pressed {
             camera.translation_y -= trans_incr / camera.ortho_scale;
         }
-        if self.is_f_pressed {
+        if self.f_pressed {
             camera.translation_x -= trans_incr / camera.ortho_scale;
         }
-        if self.is_h_pressed {
+        if self.h_pressed {
             camera.translation_x += trans_incr / camera.ortho_scale;
         }
     }
@@ -133,47 +136,50 @@ impl CameraController {
                 let is_pressed = *state == ElementState::Pressed;
                 match keycode {
                     KeyCode::KeyW | KeyCode::ArrowUp => {
-                        self.is_up_pressed = is_pressed;
+                        self.up_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyA | KeyCode::ArrowLeft => {
-                        self.is_left_pressed = is_pressed;
+                        self.left_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyS | KeyCode::ArrowDown => {
-                        self.is_down_pressed = is_pressed;
+                        self.down_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyD | KeyCode::ArrowRight => {
-                        self.is_right_pressed = is_pressed;
+                        self.right_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyZ => {
-                        self.is_z_pressed = is_pressed;
+                        self.z_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyX => {
-                        self.is_x_pressed = is_pressed;
+                        self.x_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyT => {
-                        self.is_t_pressed = is_pressed;
+                        self.t_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyF => {
-                        self.is_f_pressed = is_pressed;
+                        self.f_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyG => {
-                        self.is_g_pressed = is_pressed;
+                        self.g_pressed = is_pressed;
                         true
                     }
                     KeyCode::KeyH => {
-                        self.is_h_pressed = is_pressed;
+                        self.h_pressed = is_pressed;
                         true
                     }
+
+                    // TODO: This seems to work, but is it the
+                    //       best way to handle modifiers?
                     KeyCode::ShiftRight => {
-                        self.is_shift_pressed = is_pressed;
+                        self.shift_pressed = is_pressed;
                         true
                     }
                     _ => false,

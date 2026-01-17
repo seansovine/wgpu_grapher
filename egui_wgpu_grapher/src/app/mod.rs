@@ -275,7 +275,7 @@ impl ApplicationHandler for App {
         // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
 
-        // Stop here if GUI has focus.
+        // Stop here if GUI has focus or if the event was handled input.
         if !state.gui_has_focus && state.grapher_state.handle_user_input(&event) {
             return;
         }
@@ -307,7 +307,8 @@ impl ApplicationHandler for App {
                 // Throttle rendering for efficiency.
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
-                // Let scene run any of its own internal updates.
+                // Let scene run any of its own internal updates, which include things like
+                // key press events that were recorded since last redraw and need handling.
                 if !state.scene_updates_paused && state.grapher_scene.is_some() {
                     state.grapher_scene.update(
                         &state.device,
@@ -331,7 +332,8 @@ impl ApplicationHandler for App {
                 if do_render {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;
 
-                    // Let grapher handle internal updates.
+                    // Let grapher handle internal updates, which would be
+                    // used for things like time-dependent scenes or animations.
                     state.grapher_state.update(&mut state.queue);
 
                     self.handle_redraw();

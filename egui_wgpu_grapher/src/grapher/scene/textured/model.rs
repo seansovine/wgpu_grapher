@@ -1,4 +1,4 @@
-// Code to build a scene from data imported from a glTF archive.
+//! Code to build a scene from data imported from a glTF archive.
 
 use std::path::Path;
 
@@ -49,7 +49,7 @@ pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<Text
                 });
             }
 
-            // add "first" mesh text coords if present
+            // First set of texture coords are for vertex color.
             if let Some(iter) = reader.read_tex_coords(0) {
                 vertices
                     .iter_mut()
@@ -104,14 +104,15 @@ pub fn model_scene(
         let Ok(model_meshes) = load_model(device, queue, path) else {
             return None;
         };
-        // Chosen for particular test examples; need to implement camera movement.
+        // This version doesn't individual node/mesh matrices.
         let matrix = matrix::MatrixUniform::x_rotation(0.0);
         for mesh in model_meshes {
             mesh_data.push((mesh, matrix));
         }
     }
 
-    // tell shader to use texture for color
+    // Tell shader to use texture for vertex color.
+    // TODO: Did we implement this?
     state.render_preferences.set_use_texture(true);
     state.render_preferences.update_uniform(queue);
 
