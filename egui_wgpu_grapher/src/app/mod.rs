@@ -183,7 +183,7 @@ impl App {
     }
 
     fn build_gui(state: &mut AppState) {
-        // TODO: Experimental. Finish implementing.
+        // File picker. TODO: Validation, etc.
         if matches!(state.file_input_state, FileInputState::NeedsInput) {
             let context = &state.egui_renderer.context();
             state.file_dialog.update(context);
@@ -203,7 +203,7 @@ impl App {
         // main settings window
         egui::Window::new("Settings")
             .resizable(true)
-            .default_size([200.0, 210.0])
+            .default_size([200.0, 225.0])
             .default_pos([15.0, 15.0])
             .vscroll(true)
             .default_open(true)

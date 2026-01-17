@@ -260,24 +260,20 @@ pub fn render_parameter_ui(
 ) {
     ui.horizontal(|ui| {
         let response = ui.checkbox(&mut render_ui_state.lighting_enabled, "Lighting ");
-
         if response.changed() {
             render_state
                 .render_preferences
                 .set_lighting_enabled(render_ui_state.lighting_enabled);
-
             // only requires updating a uniform with write_buffer
             render_ui_state.needs_prefs_update = true;
         }
 
         if matches!(grapher_scene, GrapherScene::Graph(_)) {
             let response = ui.checkbox(&mut render_ui_state.use_wireframe, "Wireframe ");
-
             if response.changed() {
                 render_state
                     .render_preferences
                     .set_wireframe(render_ui_state.use_wireframe);
-
                 // requires changing polygon mode, and so recreating pipeline
                 grapher_scene.set_needs_update(true);
             }
@@ -285,14 +281,16 @@ pub fn render_parameter_ui(
     });
     if matches!(grapher_scene, GrapherScene::Graph(_)) {
         let response = ui.checkbox(&mut render_ui_state.shadow_enabled, "Shadow ");
-
         if response.changed() {
             render_state
                 .render_preferences
                 .set_shadow_enabled(render_ui_state.shadow_enabled);
-
             // only requires updating a uniform with write_buffer
             render_ui_state.needs_prefs_update = true;
         }
     }
+    let _ = ui.checkbox(
+        &mut render_state.camera_state.camera.absolute_rotation,
+        "Relative rotation",
+    );
 }

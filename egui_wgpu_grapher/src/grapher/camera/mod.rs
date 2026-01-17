@@ -41,6 +41,8 @@ pub struct Camera {
     pub translation_x: f32,
     pub translation_y: f32,
 
+    // For absolute rotation vs. relative to previous.
+    pub absolute_rotation: bool,
     pub alpha: f32,
     pub gamma: f32,
 
@@ -57,8 +59,6 @@ pub const OPENGL_TO_WGPU_MATRIX: cgmath::Matrix4<f32> = cgmath::Matrix4::new(
 );
 
 impl Camera {
-    pub const ABSOLUTE_ROTAITON: bool = true;
-
     pub fn get_matrix(&self) -> cgmath::Matrix4<f32> {
         let view = cgmath::Matrix4::look_at_rh(self.eye, self.target, self.up);
         let translation = cgmath::Matrix4::from_translation(cgmath::Vector3 {
@@ -78,7 +78,7 @@ impl Camera {
             ),
         };
 
-        let user_rotation = if Self::ABSOLUTE_ROTAITON {
+        let user_rotation = if self.absolute_rotation {
             let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
             let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
             gamma_rot * alpha_rot
@@ -115,6 +115,7 @@ impl Camera {
             translation_x: 0.0,
             translation_y: 0.0,
             //
+            absolute_rotation: true,
             alpha: 0.0,
             gamma: 0.0,
             //
@@ -123,7 +124,7 @@ impl Camera {
     }
 
     pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32) {
-        if Self::ABSOLUTE_ROTAITON {
+        if self.absolute_rotation {
             self.alpha = (self.alpha + alpha).rem_euclid(2.0 * PI);
             self.gamma = (self.gamma + gamma).rem_euclid(2.0 * PI);
         } else {
