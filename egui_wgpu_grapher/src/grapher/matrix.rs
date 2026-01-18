@@ -15,11 +15,21 @@ pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct MatrixUniform {
     matrix: [[f32; 4]; 4],
+    // TODO: We should store a cgmath::Matrix4 here. It also
+    //       has repr(c) with the same layout, and that would
+    //       avoid some converseions, though the conversions
+    //       are done pretty rarely.
 }
 
 impl From<[[f32; 4]; 4]> for MatrixUniform {
     fn from(value: [[f32; 4]; 4]) -> Self {
         Self { matrix: value }
+    }
+}
+
+impl From<MatrixUniform> for cgmath::Matrix4<f32> {
+    fn from(value: MatrixUniform) -> Self {
+        value.matrix.into()
     }
 }
 
@@ -76,6 +86,11 @@ impl MatrixUniform {
 
     pub fn update(&mut self, matrix: cgmath::Matrix4<f32>) {
         self.matrix = matrix.into();
+    }
+
+    pub fn mat4_left_mul(&mut self, lhs: &cgmath::Matrix4<f32>) {
+        let matrix_cg: cgmath::Matrix4<_> = self.matrix.into();
+        self.matrix = (lhs * matrix_cg).into();
     }
 }
 

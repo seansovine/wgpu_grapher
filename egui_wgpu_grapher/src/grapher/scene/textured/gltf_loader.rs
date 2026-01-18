@@ -1,9 +1,10 @@
 //! Read info from a glTF file using the document and buffers returned
 //! by the `import` function of the glTF crate (its higher-level API).
 
+use core::f32;
 use std::{cell::RefCell, error::Error, path::Path};
 
-use cgmath::{Matrix4, SquareMatrix};
+use cgmath::{Matrix4, SquareMatrix, Zero};
 use egui_wgpu::wgpu::{Device, Queue};
 use gltf::{
     Document, Mesh, Node, Primitive, buffer::Data, image::Source, mesh::Mode, scene::Transform,
@@ -28,9 +29,60 @@ pub struct RenderMesh {
     pub matrix: MatrixUniform,
 }
 
-#[derive(Default)]
 pub struct RenderScene {
     pub meshes: Vec<RenderMesh>,
+
+    pub min_x: f32,
+    pub max_x: f32,
+    pub min_y: f32,
+    pub max_y: f32,
+    pub min_z: f32,
+    pub max_z: f32,
+}
+
+impl Default for RenderScene {
+    fn default() -> Self {
+        Self {
+            meshes: vec![],
+            min_x: f32::MAX,
+            max_x: f32::MIN,
+            min_y: f32::MAX,
+            max_y: f32::MIN,
+            min_z: f32::MAX,
+            max_z: f32::MIN,
+        }
+    }
+}
+
+impl RenderScene {
+    fn normalize_position(&mut self) {
+        let mut scale_inv = (self.max_x - self.min_x)
+            .max(self.max_y - self.min_y)
+            .max(self.max_z - self.min_z);
+        if scale_inv.is_zero() {
+            scale_inv = 1.0;
+        }
+        const BOX_WIDTH: f32 = 6.0;
+
+        let mut scale: Matrix4<f32> = cgmath::Matrix4::identity();
+        scale[0][0] = BOX_WIDTH / scale_inv;
+        scale[1][1] = BOX_WIDTH / scale_inv;
+        scale[2][2] = BOX_WIDTH / scale_inv;
+
+        let center = cgmath::Vector4::from([
+            (self.max_x + self.min_x) / 2.0,
+            (self.max_y + self.min_y) / 2.0,
+            (self.max_z + self.min_z) / 2.0,
+            1.0,
+        ]);
+        let translation = -1.0 * (scale * center);
+        let translation = cgmath::Matrix4::from_translation(translation.truncate());
+        let normalizer = translation * scale;
+
+        self.meshes.iter_mut().for_each(|mesh| {
+            mesh.matrix.mat4_left_mul(&normalizer);
+        });
+    }
 }
 
 // ------------
@@ -124,6 +176,7 @@ impl GltfLoader<'_> {
                 self.render_scene.borrow().meshes.len()
             );
         }
+        self.render_scene.borrow_mut().normalize_position();
         self.render_scene.into_inner()
     }
 
@@ -260,6 +313,37 @@ impl GltfLoader<'_> {
             },
             matrix: *matrix,
         });
+
+        // For bounding box computation.
+        let mut min_x: f32 = f32::MAX;
+        let mut max_x: f32 = f32::MIN;
+        let mut min_y: f32 = f32::MAX;
+        let mut max_y: f32 = f32::MIN;
+        let mut min_z: f32 = f32::MAX;
+        let mut max_z: f32 = f32::MIN;
+
+        let new_verts = &render_scene.meshes.last().unwrap().data.vertices;
+        let matrix: cgmath::Matrix4<_> = render_scene.meshes.last().unwrap().matrix.into();
+        new_verts.iter().for_each(|vert| {
+            let p = &vert.position;
+            let vert = cgmath::Vector4::from([p[0], p[1], p[2], 1.0_f32]);
+            let world_p = matrix * vert;
+
+            min_x = min_x.min(world_p.x);
+            max_x = max_x.max(world_p.x);
+            min_y = min_y.min(world_p.y);
+            max_y = max_y.max(world_p.y);
+            min_z = min_z.min(world_p.z);
+            max_z = max_z.max(world_p.z);
+        });
+
+        // Done this way to avoid fighitng the borrow checker.
+        render_scene.min_x = render_scene.min_x.min(min_x);
+        render_scene.max_x = render_scene.max_x.max(max_x);
+        render_scene.min_y = render_scene.min_y.min(min_y);
+        render_scene.max_y = render_scene.max_y.max(max_y);
+        render_scene.min_z = render_scene.min_z.min(min_z);
+        render_scene.max_z = render_scene.max_z.max(max_z);
     }
 }
 
