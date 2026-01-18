@@ -12,6 +12,7 @@ use winit::window::Window;
 pub enum FileInputState {
     Hidden,
     NeedsInput,
+    #[allow(unused)]
     BadPath,
     InvalidFile,
     NeedsChecked,

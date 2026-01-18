@@ -5,7 +5,6 @@ Next steps:
 1. Add option to render lights and coordinate axes as scene objects.
 2. Rework graph parameter GUI input and update handling.
 3. Investigate ways to improve shadow mapping.
-4. Finish out file choose integration.
 
 Things to do later:
 
@@ -33,18 +32,16 @@ window to update them, with an "apply" button.
 
 ### Shadow mapping
 
-Shadow mapping for the floor mesh doesn't seem to be working correctly, and
-there are some edge cases where shadow artifacts appear.
+There are some edge cases where shadow artifacts appear.
 
 _Example:_
 
-+ Function: `5.0*e^(5.0*(-(x-4.5)^2 - (z-3)^2))`
++ Function: `2.0*e^(5.0*(-(x-2.0)^2 - (z)^2))`
 + Light position: `[3.0, 4.0, 0.0]`
 
-In this example we see what look like strange interactions between shadow mapping and
-other lighting, in the region where the shadow would be just starting to appear.
-I now think this is most likely due to aliasing and issues around the shape of
-the mesh relative to the shape of the surface in certain areas of the graph.
+It seems this is mostly caused by a combination of shadow aliasing
+and the shape of our mesh not being optimal for certain parts of curved surfaces.
+These effects are brought out more in a few cases.
 
 _Example 2:_
 
@@ -104,14 +101,6 @@ handing things like this.
 
 ## glTF handling improvements
 
-### Handle transformations in node tree
-
-We are now loading and composing the transformations along the way. We need some adjustments
-to account for the fact that different models have their vertex coordinates scaled differently.
-An idea is to compute the bounding box from the mesh as it is loaded and then add an additional
-transformation that centers and scales the mesh so that it fills a standard sized bounding box
-at the origin.
-
 ### Rework lighting for compatibility with glTF PBR material shading
 
 We currently represent normals in world coordinates and use them directly
@@ -123,5 +112,5 @@ this project.
 
 ### Efficiency
 
-We should look at the efficiency of loading and rendering complex models. There are definitely
-a few more things that could be done here.
+We should look more at the efficiency of loading and rendering complex models.
+There are surely many more things that could be done here.

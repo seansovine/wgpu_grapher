@@ -4,7 +4,7 @@ use state::*;
 
 use crate::{
     egui::{
-        components::{self, HasFocus, validate_path},
+        components::{self, HasFocus},
         ui::create_gui,
     },
     grapher,
@@ -236,32 +236,6 @@ impl App {
                     &mut state.scene_mode,
                 );
             });
-
-        // TODO: We're in process of replacing with a file picker library.
-        const DISABLED: bool = true;
-        // maybe show file input window
-        if !DISABLED && state.ui_data.show_file_input {
-            *editing = true;
-            let is_valid = !matches!(
-                state.file_input_state,
-                FileInputState::BadPath | FileInputState::InvalidFile,
-            );
-            components::validated_text_input_window(
-                context,
-                "File",
-                &mut state.ui_data.filename,
-                |filename| {
-                    if !validate_path(filename) {
-                        state.file_input_state = FileInputState::BadPath;
-                    } else {
-                        state.file_input_state = FileInputState::NeedsChecked;
-                    }
-                },
-                is_valid,
-            );
-        } else {
-            *editing = false;
-        }
 
         // show function input in graph mode
         if matches!(state.scene_mode, GrapherSceneMode::Graph) {

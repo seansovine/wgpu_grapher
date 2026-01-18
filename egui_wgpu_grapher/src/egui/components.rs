@@ -1,7 +1,5 @@
 //! Reusable egui components.
 
-use std::path::Path;
-
 use egui::{Color32, Context, Ui};
 
 pub struct HasFocus(pub bool);
@@ -64,8 +62,4 @@ pub fn float_edit_line(
     });
 
     changed
-}
-
-pub fn validate_path(path: &str) -> bool {
-    Path::new(path).exists()
 }
