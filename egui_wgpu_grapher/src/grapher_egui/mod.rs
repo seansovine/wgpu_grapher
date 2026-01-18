@@ -294,6 +294,9 @@ pub fn render_parameter_ui(
         "Relative rotation",
     );
     if response.changed() {
-        render_state.camera_state.camera.store_absolute_rotation();
+        render_state
+            .camera_state
+            .camera
+            .on_relative_rotation_change();
     }
 }

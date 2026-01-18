@@ -129,7 +129,7 @@ impl AppState {
             scene_updates_paused: false,
             gui_has_focus: false,
             //
-            file_dialog: FileDialog::new().as_modal(false),
+            file_dialog: FileDialog::new().as_modal(false).default_pos([250.0, 15.0]),
             //
             scene_mode: initial_scene,
             file_input_state: FileInputState::Hidden,
@@ -252,11 +252,6 @@ impl AppState {
             SceneLoadingState::NoData => match self.file_input_state {
                 FileInputState::NeedsChecked => {
                     self.scene_loading_state = SceneLoadingState::NeedsLoaded;
-                }
-                FileInputState::InvalidFile => {
-                    // TODO: Add modal or other means of telling user file load failed.
-                    println!("File load failed.");
-                    self.show_file_input();
                 }
                 _ => {}
             },

@@ -2,7 +2,7 @@ pub mod controller;
 
 use super::matrix::{self, MatrixState, MatrixUniform, X_AXIS, Y_AXIS};
 
-use cgmath::SquareMatrix;
+use cgmath::{Euler, Matrix3, Quaternion, Rad, SquareMatrix};
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
 use std::f32::consts::PI;
@@ -43,8 +43,9 @@ pub struct Camera {
 
     // For absolute rotation vs. relative to previous.
     pub relative_rotation: bool,
-    pub alpha: f32,
-    pub gamma: f32,
+    pub euler_y: f32,
+    pub euler_x: f32,
+    pub euler_z: f32,
 
     // Current user rotation for relative rotation.
     pub user_rotation: cgmath::Matrix4<f32>,
@@ -78,10 +79,10 @@ impl Camera {
             ),
         };
 
-        let user_rotation = if !self.relative_rotation {
-            self.get_absolute_rotation()
-        } else {
+        let user_rotation = if self.relative_rotation {
             self.user_rotation
+        } else {
+            self.get_absolute_rotation()
         };
 
         OPENGL_TO_WGPU_MATRIX * proj * view * translation * user_rotation
@@ -114,33 +115,58 @@ impl Camera {
             translation_y: 0.0,
             //
             relative_rotation: false,
-            alpha: 0.0,
-            gamma: 0.0,
+            euler_y: 0.0,
+            euler_x: 0.0,
+            euler_z: 0.0,
             //
             user_rotation: cgmath::Matrix4::identity(),
         }
     }
 
-    pub fn store_absolute_rotation(&mut self) {
+    fn store_absolute_rotation(&mut self) {
+        self.user_rotation = self.get_absolute_rotation();
+    }
+
+    fn set_euler_angles(&mut self) {
+        #[rustfmt::skip]
+        let rotation_part = Matrix3::new(
+            self.user_rotation.x.x, self.user_rotation.x.y, self.user_rotation.x.z, //
+            self.user_rotation.y.x, self.user_rotation.y.y, self.user_rotation.y.z, //
+            self.user_rotation.z.x, self.user_rotation.z.y, self.user_rotation.z.z, //
+        );
+        let quaternion = Quaternion::from(rotation_part);
+        let euler_angles: Euler<Rad<_>> = Euler::from(quaternion);
+        self.euler_x = euler_angles.x.0;
+        self.euler_y = euler_angles.y.0;
+        self.euler_z = euler_angles.z.0;
+    }
+
+    pub fn on_relative_rotation_change(&mut self) {
         if self.relative_rotation {
-            self.user_rotation = self.get_absolute_rotation();
+            self.store_absolute_rotation();
+        } else {
+            self.set_euler_angles();
         }
     }
 
     pub fn get_absolute_rotation(&self) -> cgmath::Matrix4<f32> {
-        let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(self.alpha));
-        let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(self.gamma));
-        gamma_rot * alpha_rot
+        let euler_angles = Euler {
+            x: Rad(self.euler_x),
+            y: Rad(self.euler_y),
+            z: Rad(self.euler_z),
+        };
+        let quaternion = Quaternion::from(euler_angles);
+        quaternion.into()
     }
 
     pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32) {
-        if !self.relative_rotation {
-            self.alpha = (self.alpha + alpha).rem_euclid(2.0 * PI);
-            self.gamma = (self.gamma + gamma).rem_euclid(2.0 * PI);
-        } else {
+        if self.relative_rotation {
             let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(alpha));
             let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(gamma));
-            self.user_rotation = gamma_rot * alpha_rot * self.user_rotation;
+            self.user_rotation = alpha_rot * gamma_rot * self.user_rotation;
+        } else {
+            self.euler_y = (self.euler_y + alpha).rem_euclid(2.0 * PI);
+            self.euler_x = (self.euler_x + gamma).rem_euclid(2.0 * PI);
         }
     }
 }

@@ -183,18 +183,36 @@ impl App {
     }
 
     fn build_gui(state: &mut AppState) {
-        // File picker. TODO: Validation, etc.
-        if matches!(state.file_input_state, FileInputState::NeedsInput) {
-            let context = &state.egui_renderer.context();
-            state.file_dialog.update(context);
-            // Check if the user picked a file.
-            if let Some(path) = state.file_dialog.take_picked() {
-                state.ui_data.filename = path.to_string_lossy().to_string();
-                state.file_input_state = FileInputState::NeedsChecked;
+        match state.file_input_state {
+            FileInputState::NeedsInput => {
+                let context = &state.egui_renderer.context();
+                state.file_dialog.update(context);
+                // Check if the user picked a file.
+                if let Some(path) = state.file_dialog.take_picked() {
+                    state.ui_data.filename = path.to_string_lossy().to_string();
+                    state.file_input_state = FileInputState::NeedsChecked;
+                }
+                if matches!(state.file_dialog.state(), DialogState::Cancelled) {
+                    state.hide_file_input();
+                }
             }
-            if matches!(state.file_dialog.state(), DialogState::Cancelled) {
-                state.hide_file_input();
+            FileInputState::InvalidFile => {
+                let context = state.egui_renderer.context();
+                let modal = egui::containers::Modal::new("file_load_failed_modal".into());
+                let mut close_clicked = false;
+                let _ = modal.show(context, |ui| {
+                    ui.heading("Load Failed");
+                    ui.label("Failed to load the selected file.");
+                    if ui.button("Close").clicked() {
+                        close_clicked = true;
+                    }
+                });
+                if close_clicked {
+                    state.file_input_state = FileInputState::Hidden;
+                    state.show_file_input();
+                }
             }
+            _ => {}
         }
 
         let context = &state.egui_renderer.context();
