@@ -1,32 +1,16 @@
-# WGPU Grapher
+# Wgpu Grapher
 
-This is mainly an application to graph functions of the form `y = f(x,z)` in 3D using the
-Rust Wgpu graphics API, but I've also been using it as a playground for experimenting with
-some general ideas and techniques in computer graphics.
-
-It has a simple GUI built using egui. In graph mode the user can enter a mathematical expression
-in the "Function" window, and if the expression is valid a graph for that function will be generated.
-The mathematical expression parsing and evaluation is handled by the
-[meval](https://docs.rs/meval/latest/meval/) crate.
+This is work-in-progress application to graph functions of the form `y = f(x,z)` in 3D using the
+Rust Wgpu graphics API, that also has basic glTF model viewer and image viewer functions.
+It has a simple GUI built using egui.
 
 <p align="center" margin="20px">
-	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-As can be seen in the example the renderer implements Phong lighting and basic shadow mapping.
-
-
-## Project status
-
-This has been a learning project and is a work in progress. I'm recently coming back to it
-after working on some other things for a while. There are a few known issues that need worked out,
-and I'm considering possible ways to better structure some parts of the code as more features are
-added. See [Developer Notes](docs/DevNotes.md) for some more details on these issues.
-
-The active version of this project is in the `egui_wgpu_grapher` crate in the folder with the same
-name.
-
-### Older version:
+The renderer implements Phong lighting and basic shadow mapping. Mathematical expression
+parsing and evaluation are handled by the [meval](https://docs.rs/meval/latest/meval/) crate.
+The current version of this project is in the `egui_wgpu_grapher` crate in the folder with the same name.
 
 The `wgpu_grapher` crate in this repository has an older version of the app with
 some features that haven't been ported to the GUI version. Some of those are discussed
@@ -34,8 +18,8 @@ some features that haven't been ported to the GUI version. Some of those are dis
 
 ## glTF viewer
 
-There is a mode that loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
-format. It currently only supports base color textures (so no normal mapping, etc.),
+The model viewer mode loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
+format. It currently only supports base color textures (no normal mapping, etc. yet),
 and there are some things that are still works in progress. Hopefully we'll get to those soon.
 Eventually I hope to add support for glTF PBR materials shading, and maybe some of the other
 features supported by glTF.

@@ -42,13 +42,13 @@ impl RenderState {
         }
 
         // want to clear depth & MSAA buffers on first render only
-        let load_op = wgpu::LoadOp::Clear(wgpu::Color {
+        let mut load_op = wgpu::LoadOp::Clear(wgpu::Color {
             r: 0.0,
             g: 0.0,
             b: 0.0,
             a: 1.0,
         });
-        let depth_load_op = wgpu::LoadOp::Clear(1.0);
+        let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
 
         // Render solid meshes if configured. Shadow always comes
         // with solid pipeline: these could be put in one struct.
@@ -96,6 +96,9 @@ impl RenderState {
                     ],
                 );
             }
+
+            load_op = wgpu::LoadOp::Load;
+            depth_load_op = wgpu::LoadOp::Load;
         }
 
         // render textured meshes if configured

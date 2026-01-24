@@ -1,5 +1,10 @@
 # Developer Notes
 
+This is a work in progress. There are a few known issues and some improvements
+I'm planning to make in the near future.
+
+## Known issues and TODOs
+
 Next steps:
 
 1. Add option to render lights and coordinate axes as scene objects.
@@ -9,8 +14,6 @@ Next steps:
 Things to do later:
 
 5. Port some mesh generation and lighting code from Vulkan Grapher.
-
-## Known issues and TODOs
 
 ### Coordinate axes and geometry debugging
 
