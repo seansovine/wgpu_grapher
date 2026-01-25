@@ -1,6 +1,5 @@
-//! Structures and functions for meshes with color provided per-vertex.
+//! Code for meshes with color provided per-vertex; currently only graph mode.
 
-#[allow(dead_code)]
 pub mod graph;
 #[allow(dead_code)]
 pub mod pde;

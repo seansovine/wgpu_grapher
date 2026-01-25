@@ -10,6 +10,7 @@ use egui_wgpu::wgpu::{
 pub struct ShaderPreferencesUniform {
     // 1-bit - enable lighting
     // 2-bit - use texture
+    // 4-bit - use shadow mapping
     pub flags: u32,
 }
 
@@ -80,12 +81,12 @@ impl RenderPreferences {
 
 impl RenderPreferences {
     pub fn create(device: &Device) -> Self {
-        // pipeline preferences
+        // pipeline config
         let polygon_mode = PolygonMode::Fill;
 
         // shader preferences
         let uniform = ShaderPreferencesUniform {
-            // lighting enabled by default
+            // only lighting enabled here by default
             flags: 1_u32,
         };
 

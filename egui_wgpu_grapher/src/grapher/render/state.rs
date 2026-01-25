@@ -145,6 +145,7 @@ pub struct ShadowState {
 
 impl ShadowState {
     const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
+
     const SHADOW_SIZE: wgpu::Extent3d = wgpu::Extent3d {
         width: 4000,
         height: 4000,

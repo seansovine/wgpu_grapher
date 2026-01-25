@@ -7,12 +7,12 @@ use meval::Expr;
 pub mod pde;
 
 pub struct FunctionHolder {
-    pub f: Box<dyn Fn(f32, f32) -> f32>,
+    pub f: Box<dyn Fn(f64, f64) -> f64>,
 }
 
 impl<F> From<F> for FunctionHolder
 where
-    F: Fn(f32, f32) -> f32 + 'static,
+    F: Fn(f64, f64) -> f64 + 'static,
 {
     fn from(value: F) -> Self {
         Self {
@@ -22,7 +22,7 @@ where
 }
 
 impl GraphableFunc for FunctionHolder {
-    fn eval(&self, x: f32, y: f32) -> f32 {
+    fn eval(&self, x: f64, y: f64) -> f64 {
         (self.f)(x, y)
     }
 }
@@ -32,11 +32,7 @@ pub fn try_parse_function_string(function_string: &str) -> Option<FunctionHolder
     if let Ok(expr) = function_string.parse::<Expr>()
         && let Ok(func) = expr.bind2("x", "z")
     {
-        let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
-        function = Some(FunctionHolder {
-            f: Box::from(closure),
-        });
+        function = Some(FunctionHolder { f: Box::from(func) });
     }
-
     function
 }

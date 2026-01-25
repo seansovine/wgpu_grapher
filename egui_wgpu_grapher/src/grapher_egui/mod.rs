@@ -1,11 +1,10 @@
-// The code in this module is a bridge between egui and function graphing code.
+//! The code in this model manages the different modes of the app,
+//! including user interface code specific to each of the three modes
+//! and code that maps GUI-modified state to internal handler functions.
 
-#[allow(dead_code)]
-pub mod graph;
-#[allow(dead_code)]
-pub mod image_viewer;
-#[allow(dead_code)]
-pub mod model;
+pub mod graph_ui;
+pub mod image_ui;
+pub mod model_ui;
 
 use crate::{
     egui::ui::UiState,
@@ -14,17 +13,16 @@ use crate::{
         render::RenderState,
         scene::{RenderScene, solid::graph::GraphScene},
     },
-    grapher_egui::image_viewer::{ImageViewerSceneData, parameter_ui_image_viewer},
+    grapher_egui::image_ui::{ImageViewerSceneData, parameter_ui_image_viewer},
 };
-use graph::{GraphSceneData, parameter_ui_graph};
-use model::{ModelSceneData, parameter_ui_model};
+use graph_ui::{GraphSceneData, parameter_ui_graph};
+use model_ui::{ModelSceneData, parameter_ui_model};
 
 use egui::Ui;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, TextureView};
 
-// For use with user input.
-
-#[allow(dead_code)]
+/// Indicates the mode that the user has chosen,
+/// which may or may not have been loaded yet.
 #[derive(clap::ValueEnum, Debug, Default, Clone, Copy)]
 pub enum GrapherSceneMode {
     #[default]
@@ -83,10 +81,12 @@ pub fn scene_selection_ui(
     }
 }
 
-// The following enum replaces dynamic dispatch and allows the
-// GUI to display different data and perform different actions
-// depending on the particular grapher scene that is selected.
-
+/// Manages the state for each of the supported modes:
+/// function grapher; model viewer; image viewer.
+///
+/// `None` indicates that no state has been loaded,
+/// and `Changed` indicates that the user has chosen a
+/// mode but data for that mode hasn't been loaded.
 pub enum GrapherScene {
     Changed,
     None,

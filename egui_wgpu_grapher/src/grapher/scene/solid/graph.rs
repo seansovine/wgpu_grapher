@@ -15,13 +15,13 @@ use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 use meval::Expr;
 
 pub struct GraphParameters {
-    pub scale_x: f32,
-    pub scale_z: f32,
-    pub scale_y: f32,
+    pub scale_x: f64,
+    pub scale_z: f64,
+    pub scale_y: f64,
 
-    pub shift_x: f32,
-    pub shift_z: f32,
-    pub shift_y: f32,
+    pub shift_x: f64,
+    pub shift_z: f64,
+    pub shift_y: f64,
 }
 
 impl Default for GraphParameters {
@@ -43,7 +43,7 @@ pub struct GraphScene {
     pub scene: Option<Scene>,
 
     // size of rectangular domain of graph
-    pub width: f32,
+    pub width: f64,
 
     // TODO: generalize this and move it to RenderScene
     pub needs_update: bool,
@@ -59,7 +59,7 @@ impl Default for GraphScene {
     fn default() -> Self {
         Self {
             scene: None,
-            width: 6.0_f32,
+            width: 6.0_f64,
             needs_update: false,
             parameters: Default::default(),
             function: None,
@@ -103,14 +103,14 @@ pub fn build_scene_for_graph(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
-    width: f32,
+    width: f64,
     f: &impl GraphableFunc,
 ) -> Scene {
     const SUBDIVISIONS: u32 = 750;
 
     let matrix = MatrixUniform::identity();
     // Previously: MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
-
+    //
     // TODO: Omitting floor mesh until we fix its interaction with shadow mapping.
     //
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
@@ -128,14 +128,12 @@ pub fn build_scene_for_graph(
     )
 }
 
-// This is a placeholder providing a default function,
-// until we implement a math expression parser in the UI.
-pub fn get_graph_func(parameters: &GraphParameters) -> FunctionHolder {
+#[allow(dead_code)]
+pub fn get_example_function(parameters: &GraphParameters) -> FunctionHolder {
     // Other good example functions:
     // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
     // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
-
-    let f = |x: f32, z: f32| 2.0_f32.powf(-(x.powi(2) + z.powi(2)).sin());
+    let f = |x: f64, z: f64| 2.0_f64.powf(-(x.powi(2) + z.powi(2)).sin());
     let f = graph::shift_scale_input(
         f,
         parameters.shift_x,
@@ -154,7 +152,7 @@ pub fn demo_graph_scene(
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
 ) -> GraphScene {
-    const WIDTH: f32 = 6.0;
+    const WIDTH: f64 = 6.0;
 
     let parameters = GraphParameters {
         scale_x: 2.0,
@@ -171,10 +169,7 @@ pub fn demo_graph_scene(
     if let Ok(expr) = function_string.parse::<Expr>()
         && let Ok(func) = expr.bind2("x", "z")
     {
-        let closure = move |x: f32, z: f32| -> f32 { func(x as f64, z as f64) as f32 };
-        function = Some(FunctionHolder {
-            f: Box::from(closure),
-        });
+        function = Some(FunctionHolder { f: Box::from(func) });
     }
     // let function = Some(get_graph_func(&parameters));
 

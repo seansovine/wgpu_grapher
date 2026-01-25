@@ -1,4 +1,4 @@
-//! Camera state controller. Originally based on Learn Wgpu tutorial example.
+//! Camera state controller, originally based on the Learn Wgpu example.
 
 use crate::grapher::camera::{self, ProjectionType};
 
@@ -9,7 +9,6 @@ use winit::{
 
 use std::f32::consts::PI;
 
-// TODO: Rework this as an event queue.
 pub struct CameraController {
     pub speed: f32,
 
@@ -29,7 +28,7 @@ pub struct CameraController {
     pub g_pressed: bool,
     pub h_pressed: bool,
 
-    // modifiers (see TODO)
+    // modifiers
     pub shift_pressed: bool,
 }
 
@@ -56,7 +55,7 @@ impl CameraController {
     }
 
     pub fn update_camera(&mut self, camera: &mut camera::Camera) {
-        let zoom_incr: f32 = if self.shift_pressed { 120.0 } else { 1.2 };
+        let zoom_incr: f32 = if self.shift_pressed { 6.0 } else { 1.2 };
         let zoom_incr = zoom_incr * self.speed;
 
         match camera.projection_type {
@@ -65,8 +64,6 @@ impl CameraController {
                 let forward = camera.target - camera.eye;
                 let forward_norm = forward.normalize();
                 let forward_mag = forward.magnitude();
-
-                // use of look-at from Learn WGPU
                 if self.z_pressed && forward_mag > self.speed {
                     camera.eye += forward_norm * zoom_incr;
                 }
@@ -103,7 +100,7 @@ impl CameraController {
         }
 
         let trans_incr = if self.shift_pressed {
-            self.speed * 25.0
+            self.speed * 6.0
         } else {
             self.speed * 0.5
         };
@@ -134,6 +131,7 @@ impl CameraController {
                 ..
             } => {
                 let is_pressed = *state == ElementState::Pressed;
+
                 match keycode {
                     KeyCode::KeyW | KeyCode::ArrowUp => {
                         self.up_pressed = is_pressed;
@@ -176,9 +174,7 @@ impl CameraController {
                         true
                     }
 
-                    // TODO: This seems to work, but is it the
-                    //       best way to handle modifiers?
-                    KeyCode::ShiftRight => {
+                    KeyCode::ShiftRight | KeyCode::ShiftLeft => {
                         self.shift_pressed = is_pressed;
                         true
                     }

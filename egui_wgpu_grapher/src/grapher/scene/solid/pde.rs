@@ -1,3 +1,6 @@
+//! Currently unused. Code to graph a "real-time" wave/heat equation simulation.
+
+#[allow(dead_code)]
 use super::{MeshData, build_scene};
 use crate::grapher::{
     math::{graph::SquareTesselation, pde},
@@ -14,7 +17,7 @@ pub struct WaveEquationScene {
     pub func_mesh: SquareTesselation,
     pub mesh_data: MeshData,
     pub wave_eqn: pde::WaveEquationData,
-    pub display_scale: f32,
+    pub display_scale: f64,
 }
 
 pub fn wave_eqn_scene(
@@ -25,11 +28,15 @@ pub fn wave_eqn_scene(
     const WAVE_EQN_SUBDIV: usize = 600;
     // number of squares is 1 less than number of gridpoints
     const SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
-    const WIDTH: f32 = 1.0;
+    const WIDTH: f64 = 1.0;
 
     let func_mesh = SquareTesselation::generate(SUBDIVISIONS, WIDTH);
     let mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
-    let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
+    let matrix = MatrixUniform::translation(&[
+        (-WIDTH / 2.0_f64) as f32,
+        0.1_f32,
+        (-WIDTH / 2.0_f64) as f32,
+    ]);
 
     let scene = build_scene(
         device,
@@ -44,7 +51,7 @@ pub fn wave_eqn_scene(
     wave_eqn.damping_factor = 0.998;
     wave_eqn.prop_speed = 0.15;
 
-    let display_scale: f32 = 0.075;
+    let display_scale: f64 = 0.075;
 
     WaveEquationScene {
         scene,
@@ -71,7 +78,7 @@ impl RenderScene for WaveEquationScene {
         for i in b..n - b {
             for j in b..n - b {
                 self.mesh_data.vertices[j + i * n].position[1] =
-                    self.display_scale * self.wave_eqn.u_0[i][j];
+                    (self.display_scale * self.wave_eqn.u_0[i][j] as f64) as f32;
             }
         }
 
@@ -115,14 +122,18 @@ pub fn heat_eqn_scene(
     static WAVE_EQN_SUBDIV: usize = 400;
     // number of squares is 1 less than number of gridpoints
     let subdivisions: u32 = WAVE_EQN_SUBDIV as u32 - 1 - (b as u32 * 2);
-    const WIDTH: f32 = 1.0;
+    const WIDTH: f64 = 1.0;
 
     let func_mesh = SquareTesselation::generate(subdivisions, WIDTH);
     let mut mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
 
     func_mesh.update_normals(&mut mesh_data);
 
-    let matrix = MatrixUniform::translation(&[-WIDTH / 2.0_f32, 0.1_f32, -WIDTH / 2.0_f32]);
+    let matrix = MatrixUniform::translation(&[
+        (-WIDTH / 2.0_f64) as f32,
+        0.1_f32,
+        (-WIDTH / 2.0_f64) as f32,
+    ]);
     let scene = build_scene(
         device,
         surface_config,

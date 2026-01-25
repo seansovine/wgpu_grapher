@@ -9,7 +9,7 @@ use texture::DepthBuffer;
 
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 
-// include shaders and make accessor functions
+// Include shaders as static data
 
 pub fn get_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/shader.wgsl").into())
@@ -23,7 +23,7 @@ pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/textured_shader.wgsl").into())
 }
 
-// create a render pipeline
+// Create a render pipeline
 
 pub fn create_render_pipeline<Vertex: Bufferable>(
     device: &Device,
@@ -87,7 +87,7 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
     })
 }
 
-// create pipeline for shadow mapping
+// Create pipeline for shadow mapping
 
 pub fn create_shadow_pipeline<Vertex: Bufferable>(
     device: &Device,

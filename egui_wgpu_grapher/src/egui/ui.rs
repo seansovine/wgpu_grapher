@@ -7,6 +7,19 @@ use crate::{
     },
 };
 
+/// Store persistent data modified by GUI interaction during render passes.
+#[derive(Default)]
+pub struct UiState {
+    pub render_ui_state: RenderUiState,
+    pub selected_scene_index: usize,
+    pub scale_factor: f32,
+    pub filename: String,
+    pub function_string: String,
+    pub function_valid: bool,
+    pub show_file_input: bool,
+}
+
+// Create contents of main GUI window.
 #[allow(clippy::too_many_arguments)]
 pub fn create_gui(
     pixels_per_point: f32,
@@ -20,7 +33,6 @@ pub fn create_gui(
     const AFTER_LABEL_SPACE: f32 = 5.0;
 
     // grapher scenee selection
-
     ui.label(RichText::new("Select scene").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
@@ -29,7 +41,6 @@ pub fn create_gui(
     }
 
     // parameters for the grapher scene
-
     if grapher_scene.is_some() {
         ui.separator();
         ui.label(RichText::new("Scene parameters").strong());
@@ -40,7 +51,6 @@ pub fn create_gui(
     }
 
     // general rendere parameters
-
     ui.separator();
     ui.label(RichText::new("Render parameters").strong());
     ui.add_space(AFTER_LABEL_SPACE);
@@ -53,7 +63,6 @@ pub fn create_gui(
     );
 
     // ui scale parameter
-
     ui.separator();
     ui.label(RichText::new("UI settings").strong());
     ui.add_space(AFTER_LABEL_SPACE);
@@ -70,18 +79,6 @@ pub fn create_gui(
         }
     });
 
+    // Track whether this part of the UI has input focus.
     *editing = ui.response().has_focus();
-}
-
-// Place to put persistent ui state that doesn't fit elsewhere.
-
-#[derive(Default)]
-pub struct UiState {
-    pub render_ui_state: RenderUiState,
-    pub selected_scene_index: usize,
-    pub scale_factor: f32,
-    pub filename: String,
-    pub function_string: String,
-    pub function_valid: bool,
-    pub show_file_input: bool,
 }

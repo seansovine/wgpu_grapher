@@ -89,7 +89,7 @@ impl Square {
 // Graphable function trait.
 
 pub trait GraphableFunc {
-    fn eval(&self, x: f32, y: f32) -> f32;
+    fn eval(&self, x: f64, y: f64) -> f64;
 }
 
 // square tesselation
@@ -119,14 +119,14 @@ impl SquareTesselation {
 
     /// Build tesselation of \[0, width\] x \[0, width\] square
     /// in \(x, z\) coordinate system by smaller squares.
-    pub fn generate(n: u32, width: f32) -> Self {
-        let mut ticks: Vec<f32> = vec![];
+    pub fn generate(n: u32, width: f64) -> Self {
+        let mut ticks: Vec<f64> = vec![];
         let mut vertices: Vec<Vertex> = vec![];
         let mut squares: Vec<Square> = vec![];
 
         // compute axis subdivision points
         for i in 0..=n {
-            ticks.push(i as f32 * (width / n as f32) - width / 2.0);
+            ticks.push(i as f64 * (width / n as f64) - width / 2.0);
         }
 
         // NOTES:
@@ -134,7 +134,7 @@ impl SquareTesselation {
         //   from left to right, visiting rows from back to front.
         for z in &ticks {
             for x in &ticks {
-                vertices.push([*x, 0.0, *z]);
+                vertices.push([*x as f32, 0.0, *z as f32]);
             }
         }
 
@@ -166,7 +166,7 @@ impl SquareTesselation {
         F:,
     {
         for vertex in &mut self.vertices {
-            vertex[1] = f.eval(vertex[0], vertex[2])
+            vertex[1] = f.eval(vertex[0] as f64, vertex[2] as f64) as f32
         }
 
         self
@@ -226,22 +226,22 @@ impl SquareTesselation {
 
 pub fn shift_scale_input<F>(
     f: F,
-    x_shift: f32,
-    x_scale: f32,
-    z_shift: f32,
-    z_scale: f32,
-) -> impl Fn(f32, f32) -> f32
+    x_shift: f64,
+    x_scale: f64,
+    z_shift: f64,
+    z_scale: f64,
+) -> impl Fn(f64, f64) -> f64
 where
-    F: Fn(f32, f32) -> f32,
+    F: Fn(f64, f64) -> f64,
 {
     // new closure takes ownership of old one
-    move |x: f32, z: f32| f((x - x_shift) * x_scale, (z - z_shift) * z_scale)
+    move |x: f64, z: f64| f((x - x_shift) * x_scale, (z - z_shift) * z_scale)
 }
 
-pub fn shift_scale_output<F>(f: F, y_shift: f32, y_scale: f32) -> impl Fn(f32, f32) -> f32
+pub fn shift_scale_output<F>(f: F, y_shift: f64, y_scale: f64) -> impl Fn(f64, f64) -> f64
 where
-    F: Fn(f32, f32) -> f32,
+    F: Fn(f64, f64) -> f64,
 {
     // new closure takes ownership of old one
-    move |x: f32, z: f32| f(x, z) * y_scale + y_shift
+    move |x: f64, z: f64| f(x, z) * y_scale + y_shift
 }

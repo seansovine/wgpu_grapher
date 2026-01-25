@@ -1,5 +1,7 @@
-// This file is currently pretty much verbatim from the template here:
-//  https://github.com/kaphula/winit-egui-wgpu-template
+//! Encapsulates egui frame drawing and state update function calls.
+//!
+//! This file is currently pretty much verbatim from the template here:
+//!  https://github.com/kaphula/winit-egui-wgpu-template
 
 use egui::Context;
 use egui_wgpu::{

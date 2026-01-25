@@ -98,7 +98,7 @@ const LIGHT_SETTINGS = LightSettings(
 fn get_shadow(world_position: vec4<f32>) -> f32 {
     // To convert device coords to texture coords;
     //  reverse is done automatically when rendering to depth buffer.
-    let flip_correction = vec2<f32>(0.5, -0.5);
+    const flip_correction = vec2<f32>(0.5, -0.5);
 
     // To normalize homogenous coords so that w = 1.0;
     //  light view projection may leave them un-normalized.
@@ -108,7 +108,7 @@ fn get_shadow(world_position: vec4<f32>) -> f32 {
     let shadow_tex_coords = world_position.xy *
         proj_correction * flip_correction + vec2<f32>(0.5, 0.5);
 
-    return textureSampleCompareLevel(shadow_texture, shadow_sampler,
+    return textureSampleCompare(shadow_texture, shadow_sampler,
         shadow_tex_coords, world_position.z * proj_correction);
 }
 

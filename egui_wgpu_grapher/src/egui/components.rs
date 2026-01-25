@@ -1,4 +1,4 @@
-//! Reusable egui components.
+//! A few reusable higher-level egui components.
 
 use egui::{Color32, Context, Ui};
 
@@ -38,7 +38,7 @@ pub fn validated_text_input_window(
 pub fn float_edit_line(
     label: &str,
     edit_text: &mut String,
-    edit_value: &mut f32,
+    edit_value: &mut f64,
     editing: &mut bool,
     ui: &mut Ui,
 ) -> bool {
@@ -51,7 +51,7 @@ pub fn float_edit_line(
 
         if response.lost_focus() {
             // parse text and update value if valid
-            if let Ok(f_val) = edit_text.parse::<f32>() {
+            if let Ok(f_val) = edit_text.parse::<f64>() {
                 *edit_value = f_val;
                 changed = true;
             } else {

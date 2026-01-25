@@ -157,7 +157,6 @@ fn draw_mesh(
     for (index, bind_group) in bind_groups.iter().enumerate() {
         render_pass.set_bind_group(index as u32, *bind_group, &[]);
     }
-
     render_pass.set_vertex_buffer(0, vertex_buffer);
     render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint32);
     render_pass.draw_indexed(0..num_indices, 0, 0..1);

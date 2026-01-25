@@ -1,6 +1,8 @@
 use egui_wgpu::wgpu::{self, Device, Queue, SurfaceConfiguration, Texture, TextureView};
 use image::{ImageBuffer, Rgba};
 
+// Image data
+
 pub struct Image {
     pub image: ImageBuffer<Rgba<u8>, Vec<u8>>,
     pub dimensions: (u32, u32),
@@ -20,6 +22,8 @@ impl Image {
         Ok(Self { image, dimensions })
     }
 }
+
+// Texture device data
 
 pub struct TextureData {
     pub bind_group_layout: wgpu::BindGroupLayout,
@@ -155,7 +159,7 @@ pub fn texture_from_image(image: &Image, device: &Device, queue: &Queue) -> wgpu
     texture_from_data_and_dims(&image.image, image.dimensions, device, queue)
 }
 
-// texture matrix
+// Texture matrix device data
 
 /// Represents texture data as a matrix of RGBA bytes.
 #[derive(Clone)]
@@ -189,7 +193,7 @@ pub fn texture_from_matrix(
     texture_from_data_and_dims(&matrix.data, matrix.dimensions, device, queue)
 }
 
-// depth buffer
+// Depth buffer device data
 
 pub struct DepthBuffer {
     pub _texture: Texture,

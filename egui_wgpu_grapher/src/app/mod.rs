@@ -55,7 +55,7 @@ impl App {
 
     pub fn new(initial_scene: Option<GrapherSceneMode>) -> Self {
         let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
-        let window_attributes = Window::default_attributes().with_title("WGPU Grapher");
+        let window_attributes = Window::default_attributes().with_title("Wgpu Grapher");
 
         let last_update_time = time::Instant::now();
         let last_render_time = time::Instant::now();
@@ -264,8 +264,9 @@ impl App {
 }
 
 impl ApplicationHandler for App {
-    /// Handles startup and resume from system suspsend. See discussion in
-    /// [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
+    /// Handles startup and resume from system suspsend.
+    ///
+    /// See discussion in: [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop
             .create_window(self.window_attributes.clone())

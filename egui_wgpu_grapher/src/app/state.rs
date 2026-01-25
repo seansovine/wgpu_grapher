@@ -3,7 +3,7 @@ use crate::{
     grapher::{
         self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
     },
-    grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph, image_viewer, model},
+    grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph_ui, image_ui, model_ui},
 };
 use egui_file_dialog::FileDialog;
 use egui_wgpu::wgpu::{self, Limits};
@@ -224,7 +224,7 @@ impl AppState {
 
                 let graph_scene = GraphScene::default();
                 self.grapher_scene =
-                    GrapherScene::Graph(Box::from(graph::GraphSceneData::new(graph_scene)));
+                    GrapherScene::Graph(Box::from(graph_ui::GraphSceneData::new(graph_scene)));
                 self.scene_loading_state = SceneLoadingState::Loaded;
                 self.gui_has_focus = false;
             }
@@ -272,7 +272,7 @@ impl AppState {
                 );
 
                 if let Some(scene) = model_scene {
-                    self.grapher_scene = GrapherScene::Model(model::ModelSceneData::new(scene));
+                    self.grapher_scene = GrapherScene::Model(model_ui::ModelSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
                     self.gui_has_focus = false;
@@ -322,7 +322,7 @@ impl AppState {
 
                 if let Some(scene) = image_scene {
                     self.grapher_scene =
-                        GrapherScene::ImageViewer(image_viewer::ImageViewerSceneData::new(scene));
+                        GrapherScene::ImageViewer(image_ui::ImageViewerSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
                     self.gui_has_focus = false;

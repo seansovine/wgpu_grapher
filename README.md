@@ -5,7 +5,7 @@ Rust Wgpu graphics API, that also has basic glTF model viewer and image viewer f
 It has a simple GUI built using egui.
 
 <p align="center" margin="20px">
-	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/sine_spines_shadow.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
 The renderer implements Phong lighting and basic shadow mapping. Mathematical expression
