@@ -10,8 +10,8 @@ use crate::{
     egui::ui::UiState,
     grapher::{
         pipeline::render_preferences::RenderPreferences,
-        render::RenderState,
-        scene::{RenderScene, solid::graph::GraphScene},
+        render::{RenderState, ShadowState},
+        scene::{GpuVertex, RenderScene, solid::graph::GraphScene},
     },
     grapher_egui::image_ui::{ImageViewerSceneData, parameter_ui_image_viewer},
 };
@@ -176,6 +176,22 @@ impl GrapherScene {
                 // no-op
             }
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn rebuild_shadow_state(&mut self, device: &Device, surface_config: &SurfaceConfiguration) {
+        if let GrapherScene::Graph(data) = self
+            && let Some(scene) = &mut data.graph_scene.scene
+            && !scene.meshes.is_empty()
+        {
+            let last_mesh = scene.meshes.last().unwrap();
+            let shadow = ShadowState::create::<GpuVertex>(
+                surface_config,
+                device,
+                &scene.light,
+                &last_mesh.bind_group_layout,
+            );
+            scene.shadow = Some(shadow);
         }
     }
 }

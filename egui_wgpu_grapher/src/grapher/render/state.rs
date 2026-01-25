@@ -3,7 +3,7 @@ use crate::grapher::{
     pipeline::{
         self, light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer,
     },
-    scene::{Bufferable, solid::MeshRenderData},
+    scene::Bufferable,
 };
 
 use egui_wgpu::wgpu::{
@@ -74,9 +74,7 @@ impl RenderState {
             msaa_data: msaa_texture,
         }
     }
-}
 
-impl RenderState {
     pub fn handle_user_input(&mut self, event: &WindowEvent) -> bool {
         // All currently handled events affect the camera.
         self.camera_state.controller.process_events(event)
@@ -151,14 +149,11 @@ impl ShadowState {
         surface_config: &SurfaceConfiguration,
         device: &Device,
         light: &LightState,
-        mesh: &MeshRenderData,
+        bind_group_layout: &BindGroupLayout,
     ) -> Self {
         let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
             device,
-            &[
-                &light.camera_matrix_bind_group_layout,
-                &mesh.bind_group_layout,
-            ],
+            &[&light.camera_matrix_bind_group_layout, bind_group_layout],
         );
 
         let _texture = device.create_texture(&TextureDescriptor {

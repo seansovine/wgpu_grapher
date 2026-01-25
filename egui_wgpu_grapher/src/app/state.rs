@@ -153,6 +153,9 @@ impl AppState {
             grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
         // Resize MSAA texture.
         self.grapher_state.msaa_data = MultisampleData::create(&self.surface_config, &self.device);
+        // Resize shadow texture.
+        self.grapher_scene
+            .rebuild_shadow_state(&self.device, &self.surface_config);
 
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;

@@ -1,8 +1,8 @@
 # Wgpu Grapher
 
 This is a work-in-progress application to graph functions of the form `y = f(x,z)` in 3D using the
-Rust Wgpu graphics API, that also has basic glTF model viewer and image viewer functions.
-It has a simple GUI built using egui.
+Rust Wgpu graphics API. It has a simple GUI built using egui, and also has a basic glTF model viewer
+and an image viewer mode.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/sine_spines_shadow.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
