@@ -30,7 +30,7 @@ pub trait RenderScene {
     fn scene(&self) -> &Scene;
 
     /// perform any timestep state updates
-    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool);
+    fn update(&mut self, queue: &Queue, state: &RenderState);
 }
 
 impl RenderScene for Scene {
@@ -38,7 +38,7 @@ impl RenderScene for Scene {
         self
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState, _pre_render: bool) {
+    fn update(&mut self, _queue: &Queue, _state: &RenderState) {
         // no-op; basic scene is static
     }
 }

@@ -3,10 +3,7 @@ use egui_file_dialog::DialogState;
 use state::*;
 
 use crate::{
-    egui::{
-        components::{self, HasFocus},
-        ui::create_gui,
-    },
+    egui::{components, ui::create_gui},
     grapher,
     grapher_egui::GrapherSceneMode,
 };
@@ -243,7 +240,7 @@ impl App {
             let mut function = None;
             {
                 let is_valid_ref = &mut is_valid;
-                let HasFocus(has_focus) = components::validated_text_input_window(
+                *editing = components::validated_text_input_window(
                     context,
                     "Function",
                     &mut state.ui_data.function_string,
@@ -252,8 +249,8 @@ impl App {
                         *is_valid_ref = function.is_some();
                     },
                     state.ui_data.function_valid,
-                );
-                *editing = has_focus;
+                )
+                .has_focus();
             }
             if let Some(func) = function {
                 state.update_graph(func);
@@ -264,9 +261,8 @@ impl App {
 }
 
 impl ApplicationHandler for App {
-    /// Handles startup and resume from system suspsend.
-    ///
-    /// See discussion in: [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability).
+    /// Handles startup and resume from system suspsend. See:
+    /// https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop
             .create_window(self.window_attributes.clone())
@@ -284,8 +280,7 @@ impl ApplicationHandler for App {
 
         // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
-
-        // Stop here if GUI has focus or if the event was handled input.
+        // Only process event if GUI does not have focus.
         if !state.gui_has_focus && state.grapher_state.handle_user_input(&event) {
             return;
         }
@@ -294,7 +289,9 @@ impl ApplicationHandler for App {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-
+            WindowEvent::Resized(new_size) => {
+                self.handle_resized(new_size.width, new_size.height);
+            }
             WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
@@ -306,49 +303,41 @@ impl ApplicationHandler for App {
             } => {
                 event_loop.exit();
             }
-
             WindowEvent::RedrawRequested => {
                 window.request_redraw();
 
                 // Accumulate time for render timeout.
                 self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
                 self.last_update_time = time::Instant::now();
-
                 // Throttle rendering for efficiency.
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
-                // Let scene run any of its own internal updates, which include things like
-                // key press events that were recorded since last redraw and need handling.
+                // Let scene run any of its own internal updates.
                 if !state.scene_updates_paused && state.grapher_scene.is_some() {
                     state.grapher_scene.update(
                         &state.device,
                         &state.surface_config,
                         &state.queue,
                         &state.grapher_state,
-                        do_render,
                     );
                 }
 
                 // Update preference uniform if needed.
-                if state.ui_data.render_ui_state.needs_prefs_update {
+                if state.ui_data.render_ui_state.needs_prefs_uniform_write {
                     state
                         .grapher_state
                         .render_preferences
                         .update_uniform(&state.queue);
-                    state.ui_data.render_ui_state.needs_prefs_update = false;
+                    state.ui_data.render_ui_state.needs_prefs_uniform_write = false;
                 }
 
                 // Re-render the scene.
                 if do_render {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;
-
-                    // Let grapher handle internal updates, which would be
-                    // used for things like time-dependent scenes or animations.
-                    state.grapher_state.update(&mut state.queue);
-
+                    state.grapher_state.update_camera(&mut state.queue);
+                    self.state.as_mut().unwrap().handle_scene_changes();
                     self.handle_redraw();
                     self.render_count += 1;
-                    self.state.as_mut().unwrap().handle_scene_changes();
 
                     if self.render_count == Self::REPORT_FRAMES_INTERVAL {
                         self.avg_framerate = Self::REPORT_FRAMES_INTERVAL as f32
@@ -358,12 +347,8 @@ impl ApplicationHandler for App {
                     }
                 }
 
-                // Throttle event handling often for efficiency.
+                // Also throttle event-handling.
                 thread::sleep(Self::RENDER_TIMEOUT);
-            }
-
-            WindowEvent::Resized(new_size) => {
-                self.handle_resized(new_size.width, new_size.height);
             }
             _ => (),
         }

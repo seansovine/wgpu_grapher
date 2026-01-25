@@ -97,7 +97,7 @@ pub fn build_scene(
     let last_mesh = meshes.last().unwrap();
 
     let light = light::LightState::create(device);
-    let shadow = ShadowState::create::<GpuVertex>(device, &light, last_mesh);
+    let shadow = ShadowState::create::<GpuVertex>(surface_config, device, &light, last_mesh);
 
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,

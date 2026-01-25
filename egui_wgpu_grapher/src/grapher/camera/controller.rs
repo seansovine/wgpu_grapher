@@ -57,7 +57,6 @@ impl CameraController {
     pub fn update_camera(&mut self, camera: &mut camera::Camera) {
         let zoom_incr: f32 = if self.shift_pressed { 6.0 } else { 1.2 };
         let zoom_incr = zoom_incr * self.speed;
-
         match camera.projection_type {
             ProjectionType::Perspective => {
                 use cgmath::InnerSpace;

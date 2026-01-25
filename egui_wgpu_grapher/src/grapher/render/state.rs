@@ -82,19 +82,17 @@ impl RenderState {
         self.camera_state.controller.process_events(event)
     }
 
-    pub fn update(&mut self, queue: &mut Queue) {
+    pub fn update_camera(&mut self, queue: &mut Queue) {
         // adjust controller speed based on framerate
         self.camera_state.controller.speed = 2.125 / self.framerate;
-
         self.camera_state
             .controller
             .update_camera(&mut self.camera_state.camera);
         self.camera_state
             .matrix
             .uniform
-            .update(self.camera_state.camera.get_matrix());
-
-        // update camera matrix uniform
+            .update_matrix(self.camera_state.camera.get_matrix());
+        // we write the uniform every frame
         self.camera_state.update_uniform(queue);
     }
 }
@@ -146,15 +144,11 @@ pub struct ShadowState {
 impl ShadowState {
     const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
-    const SHADOW_SIZE: wgpu::Extent3d = wgpu::Extent3d {
-        width: 4000,
-        height: 4000,
-
-        // 1 layer because we're using 1 light (for now).
-        depth_or_array_layers: 1,
-    };
+    // We use a shadow texture larger than the render surface to reduce aliasing.
+    const SHADOW_TEXTURE_SIZE_FACTOR: u32 = 4;
 
     pub fn create<Vertex: Bufferable>(
+        surface_config: &SurfaceConfiguration,
         device: &Device,
         light: &LightState,
         mesh: &MeshRenderData,
@@ -168,7 +162,11 @@ impl ShadowState {
         );
 
         let _texture = device.create_texture(&TextureDescriptor {
-            size: Self::SHADOW_SIZE,
+            size: Extent3d {
+                width: surface_config.width.max(1) * Self::SHADOW_TEXTURE_SIZE_FACTOR,
+                height: surface_config.height.max(1) * Self::SHADOW_TEXTURE_SIZE_FACTOR,
+                depth_or_array_layers: 1,
+            },
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D2,
@@ -178,6 +176,7 @@ impl ShadowState {
             view_formats: &[],
         });
         let view = _texture.create_view(&wgpu::TextureViewDescriptor::default());
+
         let _sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("shadow"),
             address_mode_u: wgpu::AddressMode::ClampToEdge,

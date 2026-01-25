@@ -8,9 +8,7 @@ use egui_wgpu::wgpu::{
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 
 pub struct ShaderPreferencesUniform {
-    // 1-bit - enable lighting
-    // 2-bit - use texture
-    // 4-bit - use shadow mapping
+    // see constants defined below
     pub flags: u32,
 }
 

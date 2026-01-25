@@ -46,7 +46,7 @@ pub struct GraphScene {
     pub width: f64,
 
     // TODO: generalize this and move it to RenderScene
-    pub needs_update: bool,
+    pub needs_rebuild: bool,
 
     // publicly adjustable parameters
     pub parameters: GraphParameters,
@@ -60,7 +60,7 @@ impl Default for GraphScene {
         Self {
             scene: None,
             width: 6.0_f64,
-            needs_update: false,
+            needs_rebuild: false,
             parameters: Default::default(),
             function: None,
         }
@@ -189,7 +189,7 @@ pub fn demo_graph_scene(
     GraphScene {
         scene,
         width: WIDTH,
-        needs_update,
+        needs_rebuild: needs_update,
         parameters,
         function,
     }
@@ -200,7 +200,7 @@ impl RenderScene for GraphScene {
         self.scene.as_ref().unwrap()
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState, _pre_render: bool) {
+    fn update(&mut self, _queue: &Queue, _state: &RenderState) {
         // no-op for now
     }
 }

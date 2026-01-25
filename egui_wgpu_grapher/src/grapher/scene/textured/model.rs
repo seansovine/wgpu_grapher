@@ -132,7 +132,5 @@ impl RenderScene for ModelScene {
         &self.scene
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState, _pre_render: bool) {
-        // no-op for now
-    }
+    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
 }

@@ -55,7 +55,7 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
     let shift_z = &mut data.graph_scene.parameters.shift_z;
     let shift_y = &mut data.graph_scene.parameters.shift_y;
 
-    let needs_update = &mut data.graph_scene.needs_update;
+    let needs_update = &mut data.graph_scene.needs_rebuild;
 
     // TODO: Temporarily disables function scale and translation UI.
     const CLOSED_FOR_RENOVATION: bool = true;

@@ -68,7 +68,7 @@ impl RenderScene for WaveEquationTextureScene {
         &self.scene
     }
 
-    fn update(&mut self, queue: &Queue, _state: &RenderState, _pre_render: bool) {
+    fn update(&mut self, queue: &Queue, _state: &RenderState) {
         // run next finite-difference timestep
         self.wave_eqn.update();
 

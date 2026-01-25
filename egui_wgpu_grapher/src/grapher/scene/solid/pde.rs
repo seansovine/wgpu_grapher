@@ -67,7 +67,7 @@ impl RenderScene for WaveEquationScene {
         &self.scene
     }
 
-    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool) {
+    fn update(&mut self, queue: &Queue, state: &RenderState) {
         // run next finite-difference timestep
         self.wave_eqn.update();
 
@@ -82,19 +82,17 @@ impl RenderScene for WaveEquationScene {
             }
         }
 
-        if pre_render {
-            if state.render_preferences.lighting_enabled() {
-                // update vertex normals
-                self.func_mesh.update_normals(&mut self.mesh_data);
-            }
-
-            // update vertex buffer
-            queue.write_buffer(
-                &self.scene.meshes[0].vertex_buffer,
-                0,
-                bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),
-            );
+        if state.render_preferences.lighting_enabled() {
+            // update vertex normals
+            self.func_mesh.update_normals(&mut self.mesh_data);
         }
+
+        // update vertex buffer
+        queue.write_buffer(
+            &self.scene.meshes[0].vertex_buffer,
+            0,
+            bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),
+        );
     }
 }
 
@@ -159,7 +157,7 @@ impl RenderScene for HeatEquationScene {
         &self.scene
     }
 
-    fn update(&mut self, queue: &Queue, state: &RenderState, pre_render: bool) {
+    fn update(&mut self, queue: &Queue, state: &RenderState) {
         // run next finite-difference timestep
         self.heat_eqn.update();
 
@@ -182,18 +180,16 @@ impl RenderScene for HeatEquationScene {
             }
         }
 
-        if pre_render {
-            if state.render_preferences.lighting_enabled() {
-                // update vertex normals
-                self.func_mesh.update_normals(&mut self.mesh_data);
-            }
-
-            // update vertex buffer
-            queue.write_buffer(
-                &self.scene.meshes[0].vertex_buffer,
-                0,
-                bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),
-            );
+        if state.render_preferences.lighting_enabled() {
+            // update vertex normals
+            self.func_mesh.update_normals(&mut self.mesh_data);
         }
+
+        // update vertex buffer
+        queue.write_buffer(
+            &self.scene.meshes[0].vertex_buffer,
+            0,
+            bytemuck::cast_slice(self.mesh_data.vertices.as_slice()),
+        );
     }
 }

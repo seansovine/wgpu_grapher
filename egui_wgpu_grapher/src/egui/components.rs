@@ -4,6 +4,12 @@ use egui::{Color32, Context, Ui};
 
 pub struct HasFocus(pub bool);
 
+impl HasFocus {
+    pub fn has_focus(&self) -> bool {
+        self.0
+    }
+}
+
 pub fn validated_text_input_window(
     context: &Context,
     title: &str,

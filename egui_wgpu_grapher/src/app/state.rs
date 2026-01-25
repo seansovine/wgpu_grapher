@@ -54,7 +54,7 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub(super) async fn new(
+    pub async fn new(
         instance: &wgpu::Instance,
         surface: wgpu::Surface<'static>,
         window: &Window,
@@ -143,7 +143,7 @@ impl AppState {
         }
     }
 
-    pub(super) fn resize_surface(&mut self, width: u32, height: u32) {
+    pub fn resize_surface(&mut self, width: u32, height: u32) {
         self.surface_config.width = width;
         self.surface_config.height = height;
         self.surface.configure(&self.device, &self.surface_config);
@@ -156,7 +156,7 @@ impl AppState {
 
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
-        self.grapher_state.update(&mut self.queue);
+        self.grapher_state.update_camera(&mut self.queue);
     }
 
     pub fn update_graph(&mut self, function: FunctionHolder) {
@@ -168,23 +168,6 @@ impl AppState {
                 &self.grapher_state,
             );
         }
-    }
-
-    pub(super) fn handle_scene_changes(&mut self) {
-        if self.ui_data.show_file_input {
-            self.show_file_input();
-        }
-        match self.scene_mode {
-            GrapherSceneMode::Graph => {
-                self.scene_change_graph();
-            }
-            GrapherSceneMode::Model => {
-                self.scene_change_model();
-            }
-            GrapherSceneMode::ImageViewer => {
-                self.scene_change_image();
-            }
-        };
     }
 
     pub fn hide_file_input(&mut self) {
@@ -203,9 +186,24 @@ impl AppState {
         self.ui_data.show_file_input = false;
         self.file_dialog.pick_file();
     }
-}
 
-impl AppState {
+    pub fn handle_scene_changes(&mut self) {
+        if self.ui_data.show_file_input {
+            self.show_file_input();
+        }
+        match self.scene_mode {
+            GrapherSceneMode::Graph => {
+                self.scene_change_graph();
+            }
+            GrapherSceneMode::Model => {
+                self.scene_change_model();
+            }
+            GrapherSceneMode::ImageViewer => {
+                self.scene_change_image();
+            }
+        };
+    }
+
     fn scene_change_graph(&mut self) {
         self.hide_file_input();
 
@@ -215,7 +213,6 @@ impl AppState {
             self.scene_loading_state = SceneLoadingState::NoData;
         }
 
-        #[allow(clippy::single_match)]
         match self.scene_loading_state {
             SceneLoadingState::NoData => {
                 self.grapher_state
@@ -230,11 +227,11 @@ impl AppState {
             }
 
             SceneLoadingState::NeedsLoaded => {
-                // Nothing to do.
+                // Nothing to do here.
             }
 
             SceneLoadingState::Loaded => {
-                // Nothing to do.
+                // Nothing to do here.
             }
         }
     }
@@ -311,6 +308,9 @@ impl AppState {
             },
 
             SceneLoadingState::NeedsLoaded => {
+                self.grapher_state
+                    .camera_state
+                    .reset_camera(&self.queue, &self.surface_config);
                 // Sets up the camera for 2D image display.
                 let image_scene = grapher::scene::textured::image_viewer::image_viewer_scene(
                     &self.device,

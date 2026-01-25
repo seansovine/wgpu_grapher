@@ -97,7 +97,7 @@ pub enum GrapherScene {
 
 impl GrapherScene {
     pub fn is_some(&self) -> bool {
-        !matches!(self, GrapherScene::None)
+        !matches!(self, GrapherScene::None | GrapherScene::Changed)
     }
 
     pub fn render(
@@ -109,16 +109,13 @@ impl GrapherScene {
         match self {
             GrapherScene::Graph(data) => {
                 if data.graph_scene.scene.is_some() {
-                    // pass scene in to state render function
                     render_state.render(view, encoder, data.graph_scene.scene());
                 }
             }
             GrapherScene::Model(data) => {
-                // pass scene in to state render function
                 render_state.render(view, encoder, data.model_scene.scene());
             }
             GrapherScene::ImageViewer(data) => {
-                // pass scene in to state render function
                 render_state.render(view, encoder, data.image_viewer_scene.scene());
             }
             _ => unimplemented!(),
@@ -131,72 +128,27 @@ impl GrapherScene {
         surface_config: &SurfaceConfiguration,
         queue: &Queue,
         state: &RenderState,
-        pre_render: bool,
     ) {
         match self {
             GrapherScene::Graph(data) => {
-                // rebuild scene if parameters changed
-                if data.graph_scene.needs_update {
+                // rebuild scene if non-uniform parameters changed
+                if data.graph_scene.needs_rebuild {
                     data.graph_scene
                         .try_rebuild_scene(device, surface_config, state);
-                    data.graph_scene.needs_update = false;
+                    data.graph_scene.needs_rebuild = false;
                 }
-                // currently a no-op; would perform state update
-                data.graph_scene.update(queue, state, pre_render);
+                data.graph_scene.update(queue, state);
             }
             GrapherScene::Model(data) => {
-                // currently a no-op; would perform state update
-                data.model_scene.update(queue, state, pre_render);
+                data.model_scene.update(queue, state);
             }
             GrapherScene::ImageViewer(data) => {
-                // currently a no-op; would perform state update
-                data.image_viewer_scene.update(queue, state, pre_render);
+                data.image_viewer_scene.update(queue, state);
             }
             _ => unimplemented!(),
         }
     }
 
-    #[allow(unused)]
-    pub fn try_save_light(&mut self) {
-        match self {
-            GrapherScene::Graph(data) => {
-                if let Some(scene) = data.graph_scene.scene.as_mut() {
-                    scene.light.save_light();
-                }
-            }
-            GrapherScene::Model(data) => {
-                data.model_scene.scene.light.save_light();
-            }
-            GrapherScene::ImageViewer(data) => {
-                data.image_viewer_scene.scene.light.save_light();
-            }
-            _ => {} // no-op
-        }
-    }
-
-    #[allow(unused)]
-    pub fn try_restore_light(&mut self, queue: &Queue) {
-        match self {
-            GrapherScene::Graph(data) => {
-                if let Some(scene) = data.graph_scene.scene.as_mut() {
-                    scene.light.maybe_restore_light(queue);
-                }
-            }
-            GrapherScene::Model(data) => {
-                data.model_scene.scene.light.maybe_restore_light(queue);
-            }
-            GrapherScene::ImageViewer(data) => {
-                data.image_viewer_scene
-                    .scene
-                    .light
-                    .maybe_restore_light(queue);
-            }
-            _ => {} // no-op
-        }
-    }
-}
-
-impl GrapherScene {
     pub fn parameter_ui(&mut self, editing: &mut bool, ui: &mut Ui, ui_state: &mut UiState) {
         match self {
             GrapherScene::Graph(data) => {
@@ -212,10 +164,10 @@ impl GrapherScene {
         }
     }
 
-    pub fn set_needs_update(&mut self, needs_update: bool) {
+    pub fn set_needs_rebuild(&mut self, needs_update: bool) {
         match self {
             GrapherScene::Graph(data) => {
-                data.graph_scene.needs_update = needs_update;
+                data.graph_scene.needs_rebuild = needs_update;
             }
             GrapherScene::Model(_data) => {
                 // no-op
@@ -232,13 +184,10 @@ impl GrapherScene {
 
 #[derive(Default)]
 pub struct RenderUiState {
-    // state for ui rendering
     pub lighting_enabled: bool,
     pub use_wireframe: bool,
     pub shadow_enabled: bool,
-
-    // was there an update that needs processed
-    pub needs_prefs_update: bool,
+    pub needs_prefs_uniform_write: bool,
 }
 
 impl RenderUiState {
@@ -247,7 +196,7 @@ impl RenderUiState {
             lighting_enabled: render_prefs.lighting_enabled(),
             use_wireframe: render_prefs.wireframe_enabled(),
             shadow_enabled: render_prefs.shadow_enabled(),
-            needs_prefs_update: false,
+            needs_prefs_uniform_write: false,
         }
     }
 }
@@ -264,8 +213,7 @@ pub fn render_parameter_ui(
             render_state
                 .render_preferences
                 .set_lighting_enabled(render_ui_state.lighting_enabled);
-            // only requires updating a uniform with write_buffer
-            render_ui_state.needs_prefs_update = true;
+            render_ui_state.needs_prefs_uniform_write = true;
         }
 
         if matches!(grapher_scene, GrapherScene::Graph(_)) {
@@ -274,8 +222,8 @@ pub fn render_parameter_ui(
                 render_state
                     .render_preferences
                     .set_wireframe(render_ui_state.use_wireframe);
-                // requires changing polygon mode, and so recreating pipeline
-                grapher_scene.set_needs_update(true);
+                // we recreate the pipeline on (rare) change of poly mode
+                grapher_scene.set_needs_rebuild(true);
             }
         }
     });
@@ -285,8 +233,7 @@ pub fn render_parameter_ui(
             render_state
                 .render_preferences
                 .set_shadow_enabled(render_ui_state.shadow_enabled);
-            // only requires updating a uniform with write_buffer
-            render_ui_state.needs_prefs_update = true;
+            render_ui_state.needs_prefs_uniform_write = true;
         }
     }
     let response = ui.checkbox(

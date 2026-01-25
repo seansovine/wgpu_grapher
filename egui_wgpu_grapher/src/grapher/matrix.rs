@@ -84,7 +84,7 @@ impl MatrixUniform {
         }
     }
 
-    pub fn update(&mut self, matrix: cgmath::Matrix4<f32>) {
+    pub fn update_matrix(&mut self, matrix: cgmath::Matrix4<f32>) {
         self.matrix = matrix.into();
     }
 

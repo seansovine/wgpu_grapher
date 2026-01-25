@@ -175,10 +175,6 @@ pub struct CameraState {
     pub camera: Camera,
     pub matrix: MatrixState,
     pub controller: controller::CameraController,
-
-    // provides a basic undo for camera changes
-    #[allow(unused)]
-    pub previous_camera: Option<Camera>,
 }
 
 impl CameraState {
@@ -193,7 +189,6 @@ impl CameraState {
             camera,
             matrix,
             controller,
-            previous_camera: None,
         }
     }
 
@@ -216,18 +211,5 @@ impl CameraState {
             0,
             bytemuck::cast_slice(&[self.matrix.uniform]),
         );
-    }
-
-    #[allow(unused)]
-    pub fn save_camera(&mut self) {
-        self.previous_camera = Some(self.camera.clone());
-    }
-
-    #[allow(unused)]
-    // Restores camera state from previous if one was saved.
-    pub fn maybe_restore_camera(&mut self) {
-        if let Some(camera) = self.previous_camera.take() {
-            self.camera = camera;
-        }
     }
 }

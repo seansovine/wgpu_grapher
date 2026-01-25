@@ -94,7 +94,7 @@ const LIGHT_SETTINGS = LightSettings(
     0.6,   // specular
 );
 
-// Modified from the WGPU shadow example.
+// Modified from the Wgpu shadow example.
 fn get_shadow(world_position: vec4<f32>) -> f32 {
     // To convert device coords to texture coords;
     //  reverse is done automatically when rendering to depth buffer.
