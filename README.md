@@ -1,6 +1,6 @@
 # Wgpu Grapher
 
-This is work-in-progress application to graph functions of the form `y = f(x,z)` in 3D using the
+This is a work-in-progress application to graph functions of the form `y = f(x,z)` in 3D using the
 Rust Wgpu graphics API, that also has basic glTF model viewer and image viewer functions.
 It has a simple GUI built using egui.
 

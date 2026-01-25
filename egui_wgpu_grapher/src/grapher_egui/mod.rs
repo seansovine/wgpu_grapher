@@ -1,4 +1,4 @@
-//! The code in this model manages the different modes of the app,
+//! The code in this module manages the different modes of the app,
 //! including user interface code specific to each of the three modes
 //! and code that maps GUI-modified state to internal handler functions.
 
@@ -86,7 +86,7 @@ pub fn scene_selection_ui(
 ///
 /// `None` indicates that no state has been loaded,
 /// and `Changed` indicates that the user has chosen a
-/// mode but data for that mode hasn't been loaded.
+/// new mode but data for that mode hasn't been loaded.
 pub enum GrapherScene {
     Changed,
     None,
@@ -237,7 +237,7 @@ pub struct RenderUiState {
     pub use_wireframe: bool,
     pub shadow_enabled: bool,
 
-    // was there and update that needs processed
+    // was there an update that needs processed
     pub needs_prefs_update: bool,
 }
 
