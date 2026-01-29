@@ -252,6 +252,11 @@ impl App {
                 )
                 .has_focus();
             }
+            if *editing {
+                // Workaround to clear click event that focused gui.
+                // TODO: Might be a way to have egui do this for us.
+                state.grapher_state.clear_clicked();
+            }
             if let Some(func) = function {
                 state.update_graph(func);
             }

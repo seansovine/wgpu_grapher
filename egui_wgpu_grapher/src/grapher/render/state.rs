@@ -79,6 +79,9 @@ impl RenderState {
         // All currently handled events affect the camera.
         self.camera_state.controller.process_events(event)
     }
+    pub fn clear_clicked(&mut self) {
+        self.camera_state.controller.left_down = false;
+    }
 
     pub fn update_camera(&mut self, queue: &mut Queue) {
         // adjust controller speed based on framerate

@@ -3,12 +3,14 @@
 use crate::grapher::camera::{self, ProjectionType};
 
 use winit::{
-    event::{ElementState, KeyEvent, WindowEvent},
+    dpi::PhysicalPosition,
+    event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
     keyboard::{KeyCode, PhysicalKey},
 };
 
 use std::f32::consts::PI;
 
+#[derive(Default)]
 pub struct CameraController {
     pub speed: f32,
 
@@ -30,33 +32,28 @@ pub struct CameraController {
 
     // modifiers
     pub shift_pressed: bool,
+    pub ctrl_pressed: bool,
+
+    // mouse sate
+    pub left_down: bool,
+    pub last_pos: PhysicalPosition<f64>,
+    pub last_drag: Option<[f64; 2]>,
+    pub last_mouse_scroll: Option<f32>,
 }
 
 impl CameraController {
     pub fn new(speed: f32) -> Self {
         Self {
             speed,
-            //
-            up_pressed: false,
-            down_pressed: false,
-            left_pressed: false,
-            right_pressed: false,
-            //
-            z_pressed: false,
-            x_pressed: false,
-            //
-            f_pressed: false,
-            g_pressed: false,
-            h_pressed: false,
-            t_pressed: false,
-            //
-            shift_pressed: false,
+            left_down: false,
+            ..Default::default()
         }
     }
 
     pub fn update_camera(&mut self, camera: &mut camera::Camera) {
         let zoom_incr: f32 = if self.shift_pressed { 6.0 } else { 1.2 };
         let zoom_incr = zoom_incr * self.speed;
+        const MOUSE_SCROLL_RATE: f32 = 5.0;
         match camera.projection_type {
             ProjectionType::Perspective => {
                 use cgmath::InnerSpace;
@@ -69,6 +66,9 @@ impl CameraController {
                 if self.x_pressed {
                     camera.eye -= forward_norm * zoom_incr;
                 }
+                if let Some(scroll) = self.last_mouse_scroll.take() {
+                    camera.eye += scroll * MOUSE_SCROLL_RATE * forward_norm * zoom_incr;
+                }
             }
             ProjectionType::Orthographic => {
                 const INCR_ADJUSTMENT: f32 = 50.0;
@@ -78,6 +78,26 @@ impl CameraController {
                 if self.x_pressed {
                     camera.ortho_scale *= 1.0 - zoom_incr / INCR_ADJUSTMENT;
                 }
+                if let Some(scroll) = self.last_mouse_scroll.take() {
+                    camera.ortho_scale *=
+                        1.0 + scroll * MOUSE_SCROLL_RATE * zoom_incr / INCR_ADJUSTMENT;
+                }
+            }
+        }
+
+        if let Some(incr) = self.last_drag.take() {
+            const MOUSE_ROTATION_RATE: f32 = 0.05;
+            const MOUSE_TRANSLATION_RATE: f32 = 0.25;
+            if !self.ctrl_pressed {
+                camera.increment_user_rotation(
+                    incr[0] as f32 * MOUSE_ROTATION_RATE,
+                    incr[1] as f32 * MOUSE_ROTATION_RATE,
+                );
+            } else {
+                camera.translation_x +=
+                    incr[0] as f32 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
+                camera.translation_y -=
+                    incr[1] as f32 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
             }
         }
 
@@ -177,9 +197,50 @@ impl CameraController {
                         self.shift_pressed = is_pressed;
                         true
                     }
+                    KeyCode::ControlLeft | KeyCode::ControlRight => {
+                        self.ctrl_pressed = is_pressed;
+                        true
+                    }
+
                     _ => false,
                 }
             }
+
+            WindowEvent::MouseInput {
+                device_id: _,
+                state,
+                button,
+            } => {
+                if *button == MouseButton::Left {
+                    self.left_down = state.is_pressed();
+                }
+                true
+            }
+            WindowEvent::CursorMoved {
+                device_id: _,
+                position,
+            } => {
+                if self.left_down {
+                    let drag_x = position.x - self.last_pos.x;
+                    let drag_y = position.y - self.last_pos.y;
+                    if let Some(drag) = self.last_drag.as_mut() {
+                        drag[0] += drag_x;
+                        drag[1] += drag_y;
+                    } else {
+                        self.last_drag = Some([drag_x, drag_y]);
+                    }
+                }
+                self.last_pos = *position;
+                true
+            }
+            WindowEvent::MouseWheel {
+                delta: MouseScrollDelta::LineDelta(_, y),
+                ..
+            } => {
+                self.last_mouse_scroll = Some(*y);
+                true
+            }
+
             _ => false,
         }
     }

@@ -41,6 +41,14 @@ would like to add some image processing features to this part.
 
 *Image from Tom Swinnen on [Pexels](https://www.pexels.com/photo/seashore-under-blue-sky-and-white-clouds-view-946351/).*
 
+## Mouse controls
+
+| Input                    | Action            |
+| ------------------------ | ----------------- |
+| `click + drag`           | rotate graph      |
+| `control + click + drag` | translate graph   |
+| `mouse wheel`            | zoom graph        |
+
 ## Key controls
 
 | key     | action       | key     | action       |
