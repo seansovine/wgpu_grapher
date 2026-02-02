@@ -116,8 +116,7 @@ pub fn build_scene_for_graph(
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
     //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
 
-    let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
-        .apply_function(f)
+    let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width, f)
         .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
     build_scene(

@@ -3,7 +3,7 @@
 #[allow(dead_code)]
 use super::{MeshData, build_scene};
 use crate::grapher::{
-    math::{graph::SquareTesselation, pde},
+    math::{FunctionHolder, graph::SquareTesselation, pde},
     matrix::MatrixUniform,
     render::RenderState,
     scene::{RenderScene, Scene},
@@ -30,7 +30,8 @@ pub fn wave_eqn_scene(
     const SUBDIVISIONS: u32 = WAVE_EQN_SUBDIV as u32 - 1;
     const WIDTH: f64 = 1.0;
 
-    let func_mesh = SquareTesselation::generate(SUBDIVISIONS, WIDTH);
+    let func_mesh =
+        SquareTesselation::generate(SUBDIVISIONS, WIDTH, &FunctionHolder::from(|_, _| 0.0));
     let mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
     let matrix = MatrixUniform::translation(&[
         (-WIDTH / 2.0_f64) as f32,
@@ -122,7 +123,8 @@ pub fn heat_eqn_scene(
     let subdivisions: u32 = WAVE_EQN_SUBDIV as u32 - 1 - (b as u32 * 2);
     const WIDTH: f64 = 1.0;
 
-    let func_mesh = SquareTesselation::generate(subdivisions, WIDTH);
+    let func_mesh =
+        SquareTesselation::generate(subdivisions, WIDTH, &FunctionHolder::from(|_, _| 0.0));
     let mut mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
 
     func_mesh.update_normals(&mut mesh_data);

@@ -73,16 +73,27 @@ pub struct Square {
 }
 
 impl Square {
-    fn triangles(&self) -> [Triangle; 4] {
+    fn triangles(&self, flip: bool) -> [Triangle; 4] {
         let c = &self.corner_indices;
-        [
-            // top faces
-            Triangle::create(c[0], c[2], c[3], false),
-            Triangle::create(c[0], c[1], c[2], false),
-            // bottom faces w/ reflected normals
-            Triangle::create(c[0], c[3], c[2], true),
-            Triangle::create(c[0], c[2], c[1], true),
-        ]
+        if flip {
+            [
+                // top faces
+                Triangle::create(c[0], c[1], c[3], false),
+                Triangle::create(c[1], c[2], c[3], false),
+                // bottom faces w/ reflected normals
+                Triangle::create(c[0], c[3], c[1], true),
+                Triangle::create(c[1], c[3], c[2], true),
+            ]
+        } else {
+            [
+                // top faces
+                Triangle::create(c[0], c[2], c[3], false),
+                Triangle::create(c[0], c[1], c[2], false),
+                // bottom faces w/ reflected normals
+                Triangle::create(c[0], c[3], c[2], true),
+                Triangle::create(c[0], c[2], c[1], true),
+            ]
+        }
     }
 }
 
@@ -119,7 +130,7 @@ impl SquareTesselation {
 
     /// Build tesselation of \[0, width\] x \[0, width\] square
     /// in \(x, z\) coordinate system by smaller squares.
-    pub fn generate(n: u32, width: f64) -> Self {
+    pub fn generate<F: GraphableFunc>(n: u32, width: f64, f: &F) -> Self {
         let mut ticks: Vec<f64> = vec![];
         let mut vertices: Vec<Vertex> = vec![];
         let mut squares: Vec<Square> = vec![];
@@ -134,7 +145,7 @@ impl SquareTesselation {
         //   from left to right, visiting rows from back to front.
         for z in &ticks {
             for x in &ticks {
-                vertices.push([*x as f32, 0.0, *z as f32]);
+                vertices.push([*x as f32, f.eval(*x, *z) as f32, *z as f32]);
             }
         }
 
@@ -161,6 +172,7 @@ impl SquareTesselation {
         }
     }
 
+    #[allow(unused)]
     pub fn apply_function<F: GraphableFunc>(&mut self, f: &F) -> &mut Self
     where
         F:,
@@ -178,7 +190,14 @@ impl SquareTesselation {
         let mut vertices: Vec<scene::GpuVertex> = vec![];
 
         for square in &self.squares {
-            for t in square.triangles() {
+            let diag_1 = (self.vertices[square.corner_indices[0] as usize][1]
+                - self.vertices[square.corner_indices[2] as usize][1])
+                .abs();
+            let diag_2 = (self.vertices[square.corner_indices[1] as usize][1]
+                - self.vertices[square.corner_indices[3] as usize][1])
+                .abs();
+            let flip = diag_1 > diag_2;
+            for t in square.triangles(flip) {
                 indices.extend_from_slice(&t.vertex_indices);
                 for v in t.vertex_indices.map(|v| v as usize) {
                     if normals[v].is_none() {
@@ -202,7 +221,8 @@ impl SquareTesselation {
 
     pub fn update_normals(&self, mesh_data: &mut MeshData) {
         for square in &self.squares {
-            for t in square.triangles() {
+            // TODO: If this is used we should set flip correctly.
+            for t in square.triangles(false) {
                 let i_1 = t.vertex_indices[0] as usize;
                 let i_2 = t.vertex_indices[1] as usize;
                 let i_3 = t.vertex_indices[2] as usize;
