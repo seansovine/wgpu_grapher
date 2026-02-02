@@ -23,7 +23,6 @@ impl ImageViewerSceneData {
 // model-specific parameter ui
 pub fn parameter_ui_image_viewer(
     _data: &mut ImageViewerSceneData,
-    _editing: &mut bool,
     ui: &mut Ui,
     ui_state: &mut UiState,
 ) {

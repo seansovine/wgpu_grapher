@@ -1,5 +1,7 @@
 //! A few reusable higher-level egui components.
 
+#![allow(dead_code)]
+
 use egui::{Color32, Context, Ui};
 
 pub struct HasFocus(pub bool);
@@ -45,7 +47,6 @@ pub fn float_edit_line(
     label: &str,
     edit_text: &mut String,
     edit_value: &mut f64,
-    editing: &mut bool,
     ui: &mut Ui,
 ) -> bool {
     let mut changed = false;
@@ -64,7 +65,6 @@ pub fn float_edit_line(
                 *edit_text = edit_value.to_string();
             }
         }
-        *editing = response.has_focus();
     });
 
     changed

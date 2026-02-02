@@ -24,7 +24,6 @@ pub struct UiState {
 pub fn create_gui(
     pixels_per_point: f32,
     ui: &mut Ui,
-    editing: &mut bool,
     grapher_scene: &mut GrapherScene,
     render_state: &mut RenderState,
     ui_state: &mut UiState,
@@ -47,7 +46,7 @@ pub fn create_gui(
         ui.add_space(AFTER_LABEL_SPACE);
 
         // TODO: editing param may be no longer needed here.
-        grapher_scene.parameter_ui(editing, ui, ui_state);
+        grapher_scene.parameter_ui(ui, ui_state);
     }
 
     // general rendere parameters
@@ -78,7 +77,4 @@ pub fn create_gui(
             *scale_factor = (*scale_factor + 0.1).min(3.0);
         }
     });
-
-    // Track whether this part of the UI has input focus.
-    *editing = ui.response().has_focus();
 }

@@ -213,7 +213,6 @@ impl App {
         }
 
         let context = &state.egui_renderer.context();
-        let editing = &mut state.gui_has_focus;
 
         // main settings window
         egui::Window::new("Settings")
@@ -226,7 +225,6 @@ impl App {
                 create_gui(
                     context.pixels_per_point(),
                     ui,
-                    editing,
                     &mut state.grapher_scene,
                     &mut state.grapher_state,
                     &mut state.ui_data,
@@ -240,7 +238,7 @@ impl App {
             let mut function = None;
             {
                 let is_valid_ref = &mut is_valid;
-                *editing = components::validated_text_input_window(
+                let _ = components::validated_text_input_window(
                     context,
                     "Function",
                     &mut state.ui_data.function_string,
@@ -249,13 +247,7 @@ impl App {
                         *is_valid_ref = function.is_some();
                     },
                     state.ui_data.function_valid,
-                )
-                .has_focus();
-            }
-            if *editing {
-                // Workaround to clear click event that focused gui.
-                // TODO: Might be a way to have egui do this for us.
-                state.grapher_state.clear_clicked();
+                );
             }
             if let Some(func) = function {
                 state.update_graph(func);
@@ -285,8 +277,11 @@ impl ApplicationHandler for App {
 
         // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
+        let context = state.egui_renderer.context();
         // Only process event if GUI does not have focus.
-        if !state.gui_has_focus && state.grapher_state.handle_user_input(&event) {
+        if !(context.wants_keyboard_input() || context.wants_pointer_input())
+            && state.grapher_state.handle_user_input(&event)
+        {
             return;
         }
 

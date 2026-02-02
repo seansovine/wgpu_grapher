@@ -34,8 +34,6 @@ pub struct AppState {
 
     // Should scene run its updates during redraw.
     pub scene_updates_paused: bool,
-    // If GUI has focus some input events are blocked.
-    pub gui_has_focus: bool,
 
     // File picker with persistent state.
     pub file_dialog: FileDialog,
@@ -128,7 +126,6 @@ impl AppState {
             egui_renderer,
             //
             scene_updates_paused: false,
-            gui_has_focus: false,
             //
             file_dialog: FileDialog::new().as_modal(false).default_pos([250.0, 15.0]),
             //
@@ -226,7 +223,6 @@ impl AppState {
                 self.grapher_scene =
                     GrapherScene::Graph(Box::from(graph_ui::GraphSceneData::new(graph_scene)));
                 self.scene_loading_state = SceneLoadingState::Loaded;
-                self.gui_has_focus = false;
             }
 
             SceneLoadingState::NeedsLoaded => {
@@ -275,7 +271,6 @@ impl AppState {
                     self.grapher_scene = GrapherScene::Model(model_ui::ModelSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
-                    self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
                     self.file_input_state = FileInputState::InvalidFile;
@@ -328,7 +323,6 @@ impl AppState {
                         GrapherScene::ImageViewer(image_ui::ImageViewerSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
-                    self.gui_has_focus = false;
                 } else {
                     self.grapher_scene = GrapherScene::None;
                     self.file_input_state = FileInputState::InvalidFile;

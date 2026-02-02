@@ -46,7 +46,7 @@ impl GraphSceneData {
 }
 
 // graph-specific parameter ui
-pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mut Ui) {
+pub fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
     let scale_x = &mut data.graph_scene.parameters.scale_x;
     let scale_z = &mut data.graph_scene.parameters.scale_z;
     let scale_y = &mut data.graph_scene.parameters.scale_y;
@@ -62,33 +62,18 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
 
     if !CLOSED_FOR_RENOVATION {
         Grid::new("graph parameter input").show(ui, |ui| {
-            *needs_update = float_edit_line(
-                "x scale",
-                &mut data.ui_data.scale_x_text,
-                scale_x,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("x scale", &mut data.ui_data.scale_x_text, scale_x, ui)
+                || *needs_update;
             ui.end_row();
 
             // scale parameter edits
 
-            *needs_update = float_edit_line(
-                "z scale",
-                &mut data.ui_data.scale_z_text,
-                scale_z,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("z scale", &mut data.ui_data.scale_z_text, scale_z, ui)
+                || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line(
-                "y scale",
-                &mut data.ui_data.scale_y_text,
-                scale_y,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("y scale", &mut data.ui_data.scale_y_text, scale_y, ui)
+                || *needs_update;
             ui.end_row();
 
             ui.separator();
@@ -96,31 +81,16 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, editing: &mut bool, ui: &mu
 
             // shift parameter edits
 
-            *needs_update = float_edit_line(
-                "x shift",
-                &mut data.ui_data.shift_x_text,
-                shift_x,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("x shift", &mut data.ui_data.shift_x_text, shift_x, ui)
+                || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line(
-                "z shift",
-                &mut data.ui_data.shift_z_text,
-                shift_z,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("z shift", &mut data.ui_data.shift_z_text, shift_z, ui)
+                || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line(
-                "y shift",
-                &mut data.ui_data.shift_y_text,
-                shift_y,
-                editing,
-                ui,
-            ) || *needs_update;
+            *needs_update = float_edit_line("y shift", &mut data.ui_data.shift_y_text, shift_y, ui)
+                || *needs_update;
             ui.end_row();
         });
     }

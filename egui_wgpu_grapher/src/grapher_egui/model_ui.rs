@@ -21,12 +21,7 @@ impl ModelSceneData {
 }
 
 // model-specific parameter ui
-pub fn parameter_ui_model(
-    _data: &mut ModelSceneData,
-    _editing: &mut bool,
-    ui: &mut Ui,
-    ui_state: &mut UiState,
-) {
+pub fn parameter_ui_model(_data: &mut ModelSceneData, ui: &mut Ui, ui_state: &mut UiState) {
     if ui.add(egui::Button::new("Change file")).clicked() {
         ui_state.show_file_input = true;
     }

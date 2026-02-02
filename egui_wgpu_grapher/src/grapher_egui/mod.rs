@@ -149,16 +149,16 @@ impl GrapherScene {
         }
     }
 
-    pub fn parameter_ui(&mut self, editing: &mut bool, ui: &mut Ui, ui_state: &mut UiState) {
+    pub fn parameter_ui(&mut self, ui: &mut Ui, ui_state: &mut UiState) {
         match self {
             GrapherScene::Graph(data) => {
-                parameter_ui_graph(data, editing, ui);
+                parameter_ui_graph(data, ui);
             }
             GrapherScene::Model(data) => {
-                parameter_ui_model(data, editing, ui, ui_state);
+                parameter_ui_model(data, ui, ui_state);
             }
             GrapherScene::ImageViewer(data) => {
-                parameter_ui_image_viewer(data, editing, ui, ui_state);
+                parameter_ui_image_viewer(data, ui, ui_state);
             }
             _ => {}
         }
