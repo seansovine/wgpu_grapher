@@ -12,7 +12,6 @@ pub struct Scene {
     // solid and textured render pipelines
     pub pipeline: Option<RenderPipeline>,
     pub textured_pipeline: Option<RenderPipeline>,
-
     // meshes
     pub meshes: Vec<solid::MeshRenderData>,
     pub textured_meshes: Vec<textured::TexturedMeshRenderData>,

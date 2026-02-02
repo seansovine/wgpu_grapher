@@ -111,8 +111,7 @@ pub fn build_scene(
             &state.bind_group_layout,
             &last_mesh.bind_group_layout,
             &light.bind_group_layout,
-            &shadow.bind_group_layout,
-            &light.camera_matrix_bind_group_layout,
+            &shadow.render_pass_bind_group_layout,
         ],
         state.render_preferences.polygon_mode,
     );

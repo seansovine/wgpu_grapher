@@ -45,7 +45,7 @@ pub struct GraphScene {
     // size of rectangular domain of graph
     pub width: f64,
 
-    // TODO: generalize this and move it to RenderScene
+    // have parameters changed that require mesh regen
     pub needs_rebuild: bool,
 
     // publicly adjustable parameters
@@ -109,9 +109,8 @@ pub fn build_scene_for_graph(
     const SUBDIVISIONS: u32 = 750;
 
     let matrix = MatrixUniform::identity();
-    // Previously: MatrixUniform::translation(&[-width / 2.0_f32, 0.0f32, -width / 2.0_f32]);
-    //
-    // TODO: Omitting floor mesh until we fix its interaction with shadow mapping.
+
+    // TODO: Add GUI parameter for floor mesh.
     //
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
     //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
@@ -119,19 +118,11 @@ pub fn build_scene_for_graph(
     let func_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width, f)
         .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
 
-    build_scene(
-        device,
-        surface_config,
-        state,
-        vec![(func_mesh, matrix)], // omitting: (floor_mesh, matrix),
-    )
+    build_scene(device, surface_config, state, vec![(func_mesh, matrix)])
 }
 
 #[allow(dead_code)]
 pub fn get_example_function(parameters: &GraphParameters) -> FunctionHolder {
-    // Other good example functions:
-    // let f = |x: f32, z: f32| (x * x + z * z).sqrt().sin() / (x * x + z * z).sqrt();
-    // let f = |x: f32, z: f32| x.powi(2) + z.powi(2);
     let f = |x: f64, z: f64| 2.0_f64.powf(-(x.powi(2) + z.powi(2)).sin());
     let f = graph::shift_scale_input(
         f,
@@ -170,7 +161,6 @@ pub fn demo_graph_scene(
     {
         function = Some(FunctionHolder { f: Box::from(func) });
     }
-    // let function = Some(get_graph_func(&parameters));
 
     let mut scene = None;
     if let Some(f) = function.as_ref() {
@@ -199,7 +189,5 @@ impl RenderScene for GraphScene {
         self.scene.as_ref().unwrap()
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState) {
-        // no-op for now
-    }
+    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
 }

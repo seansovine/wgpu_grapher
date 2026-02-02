@@ -76,8 +76,6 @@ impl AppState {
                 label: None,
                 required_features: features,
                 required_limits: Limits {
-                    // TODO: combine bindings into fewer groups
-                    max_bind_groups: 5,
                     ..Default::default()
                 },
                 ..Default::default()

@@ -26,7 +26,7 @@ pub struct LightState {
     pub bind_group: BindGroup,
 
     // light view matrix used for shadow mapping
-    pub _camera_matrix: MatrixState,
+    pub camera_matrix: MatrixState,
     pub camera_matrix_bind_group_layout: BindGroupLayout,
     pub camera_matrix_bind_group: BindGroup,
 
@@ -56,7 +56,7 @@ impl LightState {
             _padding_2: 0_u32,
         };
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Light VB"),
+            label: Some("Light UBO"),
             contents: bytemuck::cast_slice(&[uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -87,18 +87,18 @@ impl LightState {
         // Create view matrix for use in shadow mapping.
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = MatrixUniform::from(matrix);
-        let _camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
+        let camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
 
         let camera_matrix_bind_group_layout =
             device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                entries: &[_camera_matrix.bind_group_layout_entry],
+                entries: &[camera_matrix.bind_group_layout_entry],
                 label: Some("solid mesh matrix bind group layout"),
             });
         let camera_matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
             layout: &camera_matrix_bind_group_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
-                resource: _camera_matrix.buffer.as_entire_binding(),
+                resource: camera_matrix.buffer.as_entire_binding(),
             }],
             label: Some("solid mesh matrix bind group"),
         });
@@ -111,11 +111,11 @@ impl LightState {
             buffer,
             bind_group_layout,
             bind_group,
-
-            _camera_matrix,
+            //
+            camera_matrix,
             camera_matrix_bind_group_layout,
             camera_matrix_bind_group,
-
+            //
             previous_uniform: None,
         }
     }
@@ -135,6 +135,10 @@ impl LightState {
         let projection = cgmath::ortho(-1.0_f32, 1.0_f32, -1.0_f32, 1.0_f32, -1.0, 1.0);
 
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
+    }
+
+    pub fn camera_view_matrix(&self) -> &MatrixState {
+        &self.camera_matrix
     }
 
     #[allow(unused)]

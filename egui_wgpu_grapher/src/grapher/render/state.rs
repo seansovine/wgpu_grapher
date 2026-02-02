@@ -133,14 +133,14 @@ impl MultisampleData {
 // State for shadow map.
 
 pub struct ShadowState {
-    pub pipeline: RenderPipeline,
+    pub shadow_pass_pipeline: RenderPipeline,
 
     pub _texture: wgpu::Texture,
     pub view: TextureView,
     pub _sampler: Sampler,
 
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
+    pub render_pass_bind_group_layout: BindGroupLayout,
+    pub render_pass_bind_group: BindGroup,
 }
 
 impl ShadowState {
@@ -150,11 +150,14 @@ impl ShadowState {
         surface_config: &SurfaceConfiguration,
         device: &Device,
         light: &LightState,
-        bind_group_layout: &BindGroupLayout,
+        model_matrix_bind_group_layout: &BindGroupLayout,
     ) -> Self {
         let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
             device,
-            &[&light.camera_matrix_bind_group_layout, bind_group_layout],
+            &[
+                &light.camera_matrix_bind_group_layout,
+                model_matrix_bind_group_layout,
+            ],
         );
 
         let surface_width = surface_config.width.max(1);
@@ -203,6 +206,10 @@ impl ShadowState {
             ..Default::default()
         });
 
+        let camera_view_matrix = light.camera_view_matrix();
+        let mut camera_view_bgl_entry = camera_view_matrix.bind_group_layout_entry;
+        camera_view_bgl_entry.binding = 2;
+
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[
                 wgpu::BindGroupLayoutEntry {
@@ -221,6 +228,7 @@ impl ShadowState {
                     ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
                     count: None,
                 },
+                camera_view_bgl_entry,
             ],
             label: None,
         });
@@ -235,17 +243,21 @@ impl ShadowState {
                     binding: 1,
                     resource: wgpu::BindingResource::Sampler(&_sampler),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 2,
+                    resource: camera_view_matrix.buffer.as_entire_binding(),
+                },
             ],
             label: None,
         });
 
         Self {
-            pipeline,
+            shadow_pass_pipeline: pipeline,
             _texture,
             view,
             _sampler,
-            bind_group_layout,
-            bind_group,
+            render_pass_bind_group_layout: bind_group_layout,
+            render_pass_bind_group: bind_group,
         }
     }
 }

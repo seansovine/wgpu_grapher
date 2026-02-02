@@ -76,8 +76,7 @@ fn vs_main(vertex: VertexInput) -> VertexOutput {
 var shadow_texture: texture_depth_2d;
 @group(3) @binding(1)
 var shadow_sampler: sampler_comparison;
-
-@group(4) @binding(0)
+@group(3) @binding(2)
 var<uniform> light_view: MatrixUniform;
 
 struct LightSettings {

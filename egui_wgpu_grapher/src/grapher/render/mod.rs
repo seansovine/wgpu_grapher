@@ -27,7 +27,7 @@ impl RenderState {
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
-            pass.set_pipeline(&shadow_state.pipeline);
+            pass.set_pipeline(&shadow_state.shadow_pass_pipeline);
             pass.set_bind_group(0, &scene.light.camera_matrix_bind_group, &[]);
 
             // Shadows are currently drawn for solid scene objects only.
@@ -91,8 +91,7 @@ impl RenderState {
                         &self.bind_group,
                         &mesh.bind_group,
                         &scene.light.bind_group,
-                        &shadow.bind_group,
-                        &scene.light.camera_matrix_bind_group,
+                        &shadow.render_pass_bind_group,
                     ],
                 );
             }

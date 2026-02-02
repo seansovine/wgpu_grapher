@@ -106,8 +106,8 @@ pub struct HeatEquationScene {
     pub heat_eqn: pde::HeatEquationData,
     pub display_scale: f32,
 
-    // HACK: we don't update boundary each render,
-    // but keep buffer area fixed to avoid flicker
+    // we don't update boundary each render, but
+    // keep buffer area fixed to avoid flicker
     b: usize,
 }
 
