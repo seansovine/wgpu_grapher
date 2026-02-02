@@ -10,7 +10,7 @@ use crate::{
     egui::ui::UiState,
     grapher::{
         pipeline::render_preferences::RenderPreferences,
-        render::{RenderState, ShadowState},
+        render::ShadowState,
         scene::{GpuVertex, RenderScene, solid::graph::GraphScene},
     },
     grapher_egui::image_ui::{ImageViewerSceneData, parameter_ui_image_viewer},
@@ -20,6 +20,8 @@ use model_ui::{ModelSceneData, parameter_ui_model};
 
 use egui::Ui;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, TextureView};
+
+pub use crate::grapher::render::RenderState;
 
 /// Indicates the mode that the user has chosen,
 /// which may or may not have been loaded yet.

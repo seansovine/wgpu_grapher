@@ -1,10 +1,8 @@
 use egui::{RichText, Ui};
 
-use crate::{
-    grapher::render::RenderState,
-    grapher_egui::{
-        GrapherScene, GrapherSceneMode, RenderUiState, render_parameter_ui, scene_selection_ui,
-    },
+use crate::grapher_egui::{
+    GrapherScene, GrapherSceneMode, RenderState, RenderUiState, render_parameter_ui,
+    scene_selection_ui,
 };
 
 /// Store persistent data modified by GUI interaction during render passes.

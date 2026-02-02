@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+use std::f32;
+
 use egui::{Color32, Context, Ui};
 
 pub struct HasFocus(pub bool);
@@ -21,18 +23,23 @@ pub fn validated_text_input_window(
 ) -> HasFocus {
     let mut text_has_focus = false;
     egui::Window::new(title)
-        .resizable(true)
-        .default_size([800.0, 600.0])
+        .default_width(300.0)
         .default_pos([250.0, 15.0])
+        .resizable([true, false])
         .collapsible(false)
         .show(context, |ui| {
-            let response = ui.add(egui::TextEdit::singleline(input).text_color({
-                if !is_valid {
-                    Color32::from_rgb(176, 44, 44)
-                } else {
-                    Color32::from_gray(208)
-                }
-            }));
+            let response = ui.add(
+                egui::TextEdit::singleline(input)
+                    .text_color({
+                        if !is_valid {
+                            Color32::from_gray(104)
+                        } else {
+                            Color32::from_gray(208)
+                        }
+                    })
+                    .desired_width(f32::INFINITY)
+                    .desired_rows(1),
+            );
 
             if response.lost_focus() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                 validate(input);
