@@ -3,8 +3,7 @@
 use crate::grapher::camera::{self, ProjectionType};
 
 use winit::{
-    dpi::PhysicalPosition,
-    event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
+    event::{DeviceEvent, ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
     keyboard::{KeyCode, PhysicalKey},
 };
 
@@ -36,7 +35,6 @@ pub struct CameraController {
 
     // mouse sate
     pub left_down: bool,
-    pub last_pos: PhysicalPosition<f64>,
     pub last_drag: Option<[f64; 2]>,
     pub last_mouse_scroll: Option<f32>,
 }
@@ -86,8 +84,8 @@ impl CameraController {
         }
 
         if let Some(incr) = self.last_drag.take() {
-            const MOUSE_ROTATION_RATE: f32 = 0.05;
-            const MOUSE_TRANSLATION_RATE: f32 = 0.25;
+            const MOUSE_ROTATION_RATE: f32 = 0.0125;
+            const MOUSE_TRANSLATION_RATE: f32 = 0.03125;
             if !self.ctrl_pressed {
                 camera.increment_user_rotation(
                     incr[0] as f32 * MOUSE_ROTATION_RATE,
@@ -135,6 +133,19 @@ impl CameraController {
         }
         if self.h_pressed {
             camera.translation_x += trans_incr / camera.ortho_scale;
+        }
+    }
+
+    pub fn process_device_events(&mut self, event: &DeviceEvent) {
+        if let DeviceEvent::MouseMotion { delta } = event
+            && self.left_down
+        {
+            if let Some(drag) = self.last_drag.as_mut() {
+                drag[0] += delta.0;
+                drag[1] += delta.1;
+            } else {
+                self.last_drag = Some([delta.0, delta.1]);
+            }
         }
     }
 
@@ -214,23 +225,6 @@ impl CameraController {
                 if *button == MouseButton::Left {
                     self.left_down = state.is_pressed();
                 }
-                true
-            }
-            WindowEvent::CursorMoved {
-                device_id: _,
-                position,
-            } => {
-                if self.left_down {
-                    let drag_x = position.x - self.last_pos.x;
-                    let drag_y = position.y - self.last_pos.y;
-                    if let Some(drag) = self.last_drag.as_mut() {
-                        drag[0] += drag_x;
-                        drag[1] += drag_y;
-                    } else {
-                        self.last_drag = Some([drag_x, drag_y]);
-                    }
-                }
-                self.last_pos = *position;
                 true
             }
             WindowEvent::MouseWheel {

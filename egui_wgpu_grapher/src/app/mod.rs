@@ -267,6 +267,17 @@ impl ApplicationHandler for App {
         pollster::block_on(self.set_window(window));
     }
 
+    fn device_event(
+        &mut self,
+        _event_loop: &ActiveEventLoop,
+        _device_id: winit::event::DeviceId,
+        event: winit::event::DeviceEvent,
+    ) {
+        if let Some(state) = self.state.as_mut() {
+            state.grapher_state.handle_device_input(&event);
+        }
+    }
+
     fn window_event(&mut self, event_loop: &ActiveEventLoop, _: WindowId, event: WindowEvent) {
         let Some(state) = self.state.as_mut() else {
             return;

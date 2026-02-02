@@ -11,7 +11,7 @@ use egui_wgpu::wgpu::{
     BindGroupLayoutDescriptor, Device, Extent3d, Queue, RenderPipeline, Sampler,
     SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureUsages, TextureView,
 };
-use winit::event::WindowEvent;
+use winit::event::{DeviceEvent, WindowEvent};
 
 // State for global rendering environment.
 
@@ -78,6 +78,10 @@ impl RenderState {
     pub fn handle_user_input(&mut self, event: &WindowEvent) -> bool {
         // All currently handled events affect the camera.
         self.camera_state.controller.process_events(event)
+    }
+
+    pub fn handle_device_input(&mut self, event: &DeviceEvent) {
+        self.camera_state.controller.process_device_events(event);
     }
 
     pub fn update_camera(&mut self, queue: &mut Queue) {
