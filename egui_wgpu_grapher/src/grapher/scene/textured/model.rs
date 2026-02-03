@@ -98,7 +98,14 @@ pub fn model_scene(
         let Ok(loader) = gltf_loader::GltfLoader::create(device, queue, path) else {
             return None;
         };
-        let render_scene = loader.traverse();
+        let read_result = loader.traverse();
+        let Ok(render_scene) = read_result else {
+            println!(
+                "Error while reading glTF scene: {:?}",
+                read_result.err().unwrap()
+            );
+            return None;
+        };
         for render_mesh in render_scene.meshes {
             mesh_data.push((render_mesh.data, render_mesh.matrix));
         }

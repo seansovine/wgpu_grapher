@@ -160,14 +160,14 @@ impl<'a> GltfLoader<'a> {
 }
 
 impl GltfLoader<'_> {
-    pub fn traverse(self) -> RenderScene {
+    pub fn traverse(self) -> Result<RenderScene, Box<dyn Error>> {
         let root_matrix = MatrixUniform::identity();
         for scene in self.document.scenes() {
             // Traverse root nodes of scene.
             for node in scene.nodes() {
                 let matrix = root_matrix * node_matrix(&node);
-                self.add_node(&node, 1, &matrix);
-                self.traverse_children(&node, 2, &matrix);
+                self.add_node(&node, 1, &matrix)?;
+                self.traverse_children(&node, 2, &matrix)?;
             }
         }
         if DEV_LOGGING {
@@ -177,15 +177,21 @@ impl GltfLoader<'_> {
             );
         }
         self.render_scene.borrow_mut().normalize_position();
-        self.render_scene.into_inner()
+        Ok(self.render_scene.into_inner())
     }
 
-    fn traverse_children(&self, node: &Node, depth: usize, parent_matrix: &MatrixUniform) {
+    fn traverse_children(
+        &self,
+        node: &Node,
+        depth: usize,
+        parent_matrix: &MatrixUniform,
+    ) -> Result<(), Box<dyn Error>> {
         for child in node.children() {
             let matrix = *parent_matrix * node_matrix(&child);
-            self.add_node(&child, depth, &matrix);
-            self.traverse_children(&child, depth + 1, &matrix);
+            self.add_node(&child, depth, &matrix)?;
+            self.traverse_children(&child, depth + 1, &matrix)?;
         }
+        Ok(())
     }
 
     fn indent(depth: usize) {
@@ -193,14 +199,20 @@ impl GltfLoader<'_> {
         print!("{}", " ".repeat(depth * INDENT));
     }
 
-    fn add_node(&self, node: &Node, depth: usize, matrix: &MatrixUniform) {
+    fn add_node(
+        &self,
+        node: &Node,
+        depth: usize,
+        matrix: &MatrixUniform,
+    ) -> Result<(), Box<dyn Error>> {
         if DEV_LOGGING {
             // Some logging.
             Self::log_node(node, depth);
         }
         if let Some(mesh) = node.mesh() {
-            self.add_mesh(&mesh, depth + 1, matrix);
+            self.add_mesh(&mesh, depth + 1, matrix)?;
         }
+        Ok(())
     }
 
     fn log_node(node: &Node, depth: usize) {
@@ -240,7 +252,12 @@ impl GltfLoader<'_> {
         println!();
     }
 
-    fn add_mesh(&self, mesh: &Mesh, depth: usize, matrix: &MatrixUniform) {
+    fn add_mesh(
+        &self,
+        mesh: &Mesh,
+        depth: usize,
+        matrix: &MatrixUniform,
+    ) -> Result<(), Box<dyn Error>> {
         if DEV_LOGGING {
             Self::indent(depth);
             println!("Node has mesh.");
@@ -259,8 +276,12 @@ impl GltfLoader<'_> {
             // Add position and normal coordinates.
             let iter = reader
                 .read_positions()
-                .unwrap()
-                .zip(reader.read_normals().unwrap());
+                .ok_or("Failed to read vertex positions.")?
+                .zip(
+                    reader
+                        .read_normals()
+                        .ok_or("glTF file contained no normal data.")?,
+                );
             for (position, normal) in iter {
                 vertices.push(GpuVertex {
                     position,
@@ -271,12 +292,19 @@ impl GltfLoader<'_> {
             }
 
             // Add indices.
-            indices = reader.read_indices().unwrap().into_u32().collect();
+            indices = reader
+                .read_indices()
+                .ok_or("The glTF contained a mesh with no indicies.")?
+                .into_u32()
+                .collect();
 
             // Read or create texture.
-            let model_path = Path::new(&self.path).parent().unwrap();
+            let model_path = Path::new(&self.path)
+                .parent()
+                .expect("Failed to get directory of glTF file.");
             texture = read_texture(self.device, self.queue, &primitive, model_path)
-                .unwrap_or_else(|()| {
+                .unwrap_or_else(|err| {
+                    println!("{err}");
                     let base_color = primitive
                         .material()
                         .pbr_metallic_roughness()
@@ -309,7 +337,7 @@ impl GltfLoader<'_> {
             data: TexturedMeshData {
                 vertices,
                 indices,
-                texture: texture.unwrap(),
+                texture: texture.expect("Texture should have been assigned."),
             },
             matrix: *matrix,
         });
@@ -322,8 +350,18 @@ impl GltfLoader<'_> {
         let mut min_z: f32 = f32::MAX;
         let mut max_z: f32 = f32::MIN;
 
-        let new_verts = &render_scene.meshes.last().unwrap().data.vertices;
-        let matrix: cgmath::Matrix4<_> = render_scene.meshes.last().unwrap().matrix.into();
+        let new_verts = &render_scene
+            .meshes
+            .last()
+            .expect("A new mesh should have been added.")
+            .data
+            .vertices;
+        let matrix: cgmath::Matrix4<_> = render_scene
+            .meshes
+            .last()
+            .expect("A new mesh should have been added.")
+            .matrix
+            .into();
         new_verts.iter().for_each(|vert| {
             let p = &vert.position;
             let vert = cgmath::Vector4::from([p[0], p[1], p[2], 1.0_f32]);
@@ -344,6 +382,8 @@ impl GltfLoader<'_> {
         render_scene.max_y = render_scene.max_y.max(max_y);
         render_scene.min_z = render_scene.min_z.min(min_z);
         render_scene.max_z = render_scene.max_z.max(max_z);
+
+        Ok(())
     }
 }
 
@@ -352,19 +392,21 @@ pub fn read_texture(
     queue: &Queue,
     primitive: &Primitive<'_>,
     model_dir: &Path,
-) -> Result<TextureData, ()> {
+) -> Result<TextureData, Box<dyn Error>> {
     let pbr_metallic = primitive.material().pbr_metallic_roughness();
-
     if let Some(info) = pbr_metallic.base_color_texture() {
         let image_source = info.texture().source().source();
         match image_source {
             Source::Uri { uri, .. } => {
                 let img_path = model_dir.join(Path::new(uri));
-                let Ok(image) = Image::from_file(img_path.to_str().unwrap()) else {
-                    return Err(());
+                let Ok(image) = Image::from_file(
+                    img_path
+                        .to_str()
+                        .ok_or("Failed to convert path to string.")?,
+                ) else {
+                    return Err("Failed to read texture file.".into());
                 };
                 let texture = TextureData::from_image(&image, device, queue);
-
                 return Ok(texture);
             }
             Source::View { .. } => {
@@ -372,6 +414,5 @@ pub fn read_texture(
             }
         }
     }
-
-    Err(())
+    Err("Mesh primitive contained no base metallic texture.".into())
 }
