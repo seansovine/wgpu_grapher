@@ -98,7 +98,7 @@ fn main() -> Result<(), ()> {
                 binding: 0,
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly, // Is this correct?
+                    access: wgpu::StorageTextureAccess::ReadWrite,
                     format: wgpu::TextureFormat::R32Float,
                     view_dimension: wgpu::TextureViewDimension::D2,
                 },
@@ -108,7 +108,7 @@ fn main() -> Result<(), ()> {
                 binding: 1,
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly, // Is this correct?
+                    access: wgpu::StorageTextureAccess::ReadWrite,
                     format: wgpu::TextureFormat::R32Float,
                     view_dimension: wgpu::TextureViewDimension::D2,
                 },
@@ -118,7 +118,7 @@ fn main() -> Result<(), ()> {
                 binding: 2,
                 visibility: wgpu::ShaderStages::COMPUTE,
                 ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::WriteOnly, // Is this correct?
+                    access: wgpu::StorageTextureAccess::ReadWrite,
                     format: wgpu::TextureFormat::R32Float,
                     view_dimension: wgpu::TextureViewDimension::D2,
                 },
@@ -159,8 +159,6 @@ fn main() -> Result<(), ()> {
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
-
-    // NOTE: We may be missing some config to user our textures in the compute shader.
 
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
