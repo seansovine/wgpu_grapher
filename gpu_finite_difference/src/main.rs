@@ -40,6 +40,8 @@ fn main() -> Result<(), ()> {
         return Err(());
     };
 
+    // Create textures to hold solution data at three timesteps.
+
     let texture_size = wgpu::Extent3d {
         width: TEXTURE_WIDTH,
         height: TEXTURE_HEIGHT,
@@ -103,6 +105,8 @@ fn main() -> Result<(), ()> {
         ..Default::default()
     });
     init_texture(&queue, &texture_3, texture_size);
+
+    // Create compute pipeline.
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("Wave Eqn Data Bind Group Layout"),
@@ -172,6 +176,64 @@ fn main() -> Result<(), ()> {
         compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     });
+
+    // Staging buffer for copying from device to host.
+
+    let staging_buffer_size =
+        TEXTURE_HEIGHT as u64 * TEXTURE_HEIGHT as u64 * std::mem::size_of::<f32>() as u64;
+    let staging_buffer = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Staging Buffer"),
+        size: staging_buffer_size,
+        usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+        mapped_at_creation: false,
+    });
+
+    // Copy texture data to image to check initialization.
+
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+    encoder.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture: &texture_1,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: &staging_buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<f32>() as u32),
+                rows_per_image: Some(TEXTURE_HEIGHT),
+            },
+        },
+        texture_size,
+    );
+
+    // Block until transfer is done.
+    queue.submit(std::iter::once(encoder.finish()));
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+
+    static DONE: OnceLock<bool> = OnceLock::new();
+    staging_buffer
+        .slice(..)
+        .map_async(wgpu::MapMode::Read, |_| {
+            DONE.get_or_init(|| true);
+        });
+
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+    assert!(DONE.get().unwrap());
+
+    let mapped_data = staging_buffer.slice(..).get_mapped_range();
+    let _data: &[f32] = bytemuck::cast_slice(&mapped_data);
+
+    // TODO: Write data to image.
+
+    drop(mapped_data);
+    staging_buffer.unmap();
+
+    // Do a compute pass.
 
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
