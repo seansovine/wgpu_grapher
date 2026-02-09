@@ -25,7 +25,7 @@ correctly.
 
 _The next steps will be:_
 
-1. Add code to initialize the texture data.
+1. ~~Add code to initialize the texture data.~~
 
 2. Add code to copy the texture data from the device and write it to an image file.
 
