@@ -2,9 +2,12 @@
 //!
 //! We'll start as one linear block of code, then organize it more later.
 
-use std::sync::OnceLock;
+use std::sync::{LazyLock, Mutex, OnceLock};
 
-use wgpu::{Extent3d, Origin3d, Queue, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture};
+use image::{ImageBuffer, Luma};
+use wgpu::{
+    Buffer, Device, Extent3d, Origin3d, Queue, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture,
+};
 
 const TEXTURE_WIDTH: u32 = 1024;
 const TEXTURE_HEIGHT: u32 = 1024;
@@ -188,50 +191,16 @@ fn main() -> Result<(), ()> {
         mapped_at_creation: false,
     });
 
-    // Copy texture data to image to check initialization.
+    // Save texture data to image to check initialization.
 
-    let mut encoder =
-        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-    encoder.copy_texture_to_buffer(
-        wgpu::TexelCopyTextureInfo {
-            texture: &texture_1,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
-        },
-        wgpu::TexelCopyBufferInfo {
-            buffer: &staging_buffer,
-            layout: wgpu::TexelCopyBufferLayout {
-                offset: 0,
-                bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<f32>() as u32),
-                rows_per_image: Some(TEXTURE_HEIGHT),
-            },
-        },
+    save_texture_to_image(
+        &device,
+        &queue,
+        &staging_buffer,
+        &texture_1,
         texture_size,
+        "scratch/init_data.jpg",
     );
-
-    // Block until transfer is done.
-    queue.submit(std::iter::once(encoder.finish()));
-    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-
-    static DONE: OnceLock<bool> = OnceLock::new();
-    staging_buffer
-        .slice(..)
-        .map_async(wgpu::MapMode::Read, |_| {
-            DONE.get_or_init(|| true);
-        });
-
-    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-    assert!(DONE.get().unwrap());
-
-    let mapped_data = staging_buffer.slice(..).get_mapped_range();
-    let _data: &[f32] = bytemuck::cast_slice(&mapped_data);
-
-    // TODO: Write data to image.
-
-    drop(mapped_data);
-    staging_buffer.unmap();
 
     // Do a compute pass.
 
@@ -257,6 +226,17 @@ fn main() -> Result<(), ()> {
     // Let shader run to completion.
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
+    // Write another image from second texture to check shader.
+
+    save_texture_to_image(
+        &device,
+        &queue,
+        &staging_buffer,
+        &texture_2,
+        texture_size,
+        "scratch/after_data.jpg",
+    );
+
     log::info!("Compute pipeline ran successfully!");
 
     // TODO:
@@ -264,9 +244,9 @@ fn main() -> Result<(), ()> {
     // This gives the basic framework to run a compute shader on the device
     // with textures bound for data storage. Now we need to do the following:
     //
-    // 1. Add code to copy the texture data back out so we can save it to an image.
-    // 2. Add a uniform binding to the pipeline / shader to pass current timestep, etc.
-    // 3. Add code in the shader to do the computations.
+    // 1. Add a uniform binding to the pipeline / shader to pass current timestep, etc.
+    // 2. Add code in the shader to do the computations.
+    // 3. Run for N timesteps and write image every M timesteps.
 
     Ok(())
 }
@@ -275,10 +255,10 @@ static INIT_DATA: OnceLock<Vec<f32>> = OnceLock::new();
 
 fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
     let init_data = INIT_DATA.get_or_init(|| {
-        let mut buffer = vec![0.0f32; TEXTURE_HEIGHT as usize * TEXTURE_WIDTH as usize];
+        let mut buffer = vec![64.0f32; TEXTURE_HEIGHT as usize * TEXTURE_WIDTH as usize];
         for i in TEXTURE_HEIGHT / 4..TEXTURE_HEIGHT * 3 / 4 {
             for j in TEXTURE_WIDTH / 4..TEXTURE_WIDTH * 3 / 4 {
-                buffer[i as usize * TEXTURE_WIDTH as usize + j as usize] = 5.0;
+                buffer[i as usize * TEXTURE_WIDTH as usize + j as usize] = 192.0;
             }
         }
         buffer
@@ -299,4 +279,70 @@ fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
         },
         texture_size,
     );
+}
+
+fn save_texture_to_image(
+    device: &Device,
+    queue: &Queue,
+    staging_buffer: &Buffer,
+    texture: &Texture,
+    texture_size: Extent3d,
+    filename: &str,
+) {
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+    encoder.copy_texture_to_buffer(
+        wgpu::TexelCopyTextureInfo {
+            texture,
+            mip_level: 0,
+            origin: wgpu::Origin3d::ZERO,
+            aspect: wgpu::TextureAspect::All,
+        },
+        wgpu::TexelCopyBufferInfo {
+            buffer: staging_buffer,
+            layout: wgpu::TexelCopyBufferLayout {
+                offset: 0,
+                bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<f32>() as u32),
+                rows_per_image: Some(TEXTURE_HEIGHT),
+            },
+        },
+        texture_size,
+    );
+
+    // Block until transfer is done.
+    queue.submit(std::iter::once(encoder.finish()));
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+
+    static DONE: LazyLock<Mutex<bool>> = LazyLock::new(|| false.into());
+    staging_buffer
+        .slice(..)
+        .map_async(wgpu::MapMode::Read, |_| {
+            *(DONE.lock().unwrap()) = true;
+        });
+
+    device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
+
+    // This check shouldn't be needed; when poll returns all work should be done.
+    let mut done = DONE.lock().unwrap();
+    assert!(*done);
+    *done = false;
+
+    let mapped_data = staging_buffer.slice(..).get_mapped_range();
+    let data: &[f32] = bytemuck::cast_slice(&mapped_data);
+
+    let image_buf = ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(
+        TEXTURE_WIDTH,
+        TEXTURE_HEIGHT,
+        data.iter()
+            .map(|val| val.clamp(0.0, 255.0) as u8)
+            .collect::<Vec<_>>(),
+    )
+    .unwrap();
+    image_buf
+        .save_with_format(filename, image::ImageFormat::Bmp)
+        .unwrap();
+
+    drop(mapped_data);
+    staging_buffer.unmap();
 }

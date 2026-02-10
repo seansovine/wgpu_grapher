@@ -16,7 +16,7 @@ fn advance(@builtin(global_invocation_id) global_id: vec3<u32>) {
     var value: vec4<f32> = textureLoad(eqn_timestep_0_data, coords);
 
     // Update value as a test.
-    value.x *= 0.5;
+    value.x *= 0.25;
     textureStore(eqn_timestep_1_data, coords, value);
 
     // TODO:

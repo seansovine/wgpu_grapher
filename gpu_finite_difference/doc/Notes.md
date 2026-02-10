@@ -27,7 +27,7 @@ _The next steps will be:_
 
 1. ~~Add code to initialize the texture data.~~
 
-2. Add code to copy the texture data from the device and write it to an image file.
+2. ~~Add code to copy the texture data from the device and write it to an image file.~~
 
 3. Add a uniform binding to the pipeline to pass timestep and other params to the shader.
 
@@ -58,7 +58,7 @@ grapher vertex buffer that stores previous timestep data.
 
 The device is free to run the compute and render pipelines in any order it wants. We
 could add a call that blocks the host between the compute and render pass. But I think
-I read somehwere that you can also reuse the same bindgroup for data that's used in both
+I read somewhere that you can also reuse the same bindgroup for data that's used in both
 pipelines, and Wgpu will insert a memory barrier that forces the pipelines to run one after
 the other. This is similar to Vulkan, but Wgpu automates part of the process for you, it
 seems.
