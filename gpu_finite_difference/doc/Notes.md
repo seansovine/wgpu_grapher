@@ -29,7 +29,7 @@ _The next steps will be:_
 
 2. ~~Add code to copy the texture data from the device and write it to an image file.~~
 
-3. Add a uniform binding to the pipeline to pass timestep and other params to the shader.
+3. ~~Add a uniform binding to the pipeline to pass timestep and other params to the shader.~~
 
 4. Add code in the shader to implement one timestep of the solver.
 

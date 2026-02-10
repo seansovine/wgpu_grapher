@@ -4,13 +4,21 @@
 
 use std::sync::{LazyLock, Mutex, OnceLock};
 
+use bytemuck::{Pod, Zeroable};
 use image::{ImageBuffer, Luma};
 use wgpu::{
-    Buffer, Device, Extent3d, Origin3d, Queue, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture,
+    Buffer, Device, Extent3d, Origin3d, Queue, TexelCopyBufferLayout, TexelCopyTextureInfo,
+    Texture, util::DeviceExt,
 };
 
 const TEXTURE_WIDTH: u32 = 1024;
 const TEXTURE_HEIGHT: u32 = 1024;
+
+#[repr(C)]
+#[derive(Debug, Default, Copy, Clone, Pod, Zeroable)]
+struct Uniform {
+    timestep: u32,
+}
 
 fn main() -> Result<(), ()> {
     env_logger::init();
@@ -109,6 +117,38 @@ fn main() -> Result<(), ()> {
     });
     init_texture(&queue, &texture_3, texture_size);
 
+    // Create uniform buffer and bind group.
+
+    let mut uniform = Uniform::default();
+    let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        label: Some("Uniform Buffer"),
+        contents: bytemuck::cast_slice(&[uniform]),
+        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+    });
+
+    let uniform_bind_group_layout =
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::COMPUTE,
+                ty: wgpu::BindingType::Buffer {
+                    ty: wgpu::BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+            label: Some("Uniform Bind Group Layout"),
+        });
+    let uniform_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &uniform_bind_group_layout,
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: uniform_buffer.as_entire_binding(),
+        }],
+        label: Some("Uniform Bind Group"),
+    });
+
     // Create compute pipeline.
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -167,7 +207,7 @@ fn main() -> Result<(), ()> {
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: None,
-        bind_group_layouts: &[&bind_group_layout],
+        bind_group_layouts: &[&bind_group_layout, &uniform_bind_group_layout],
         immediate_size: 0,
     });
     let module = device.create_shader_module(wgpu::include_wgsl!("shaders/solver.wgsl"));
@@ -202,26 +242,55 @@ fn main() -> Result<(), ()> {
         "scratch/init_data.jpg",
     );
 
-    // Do a compute pass.
+    // Do a couple compute passes.
 
-    let mut encoder =
-        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    {
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-    let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-        label: None,
-        timestamp_writes: None,
-    });
-    compute_pass.set_pipeline(&pipeline);
-    compute_pass.set_bind_group(0, &bind_group, &[]);
+        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
+        compute_pass.set_pipeline(&pipeline);
+        compute_pass.set_bind_group(0, &bind_group, &[]);
+        compute_pass.set_bind_group(1, &uniform_bind_group, &[]);
 
-    let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
-    let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
-    compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
+        let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
+        let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
+        compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
 
-    // Release encoder borrow.
-    drop(compute_pass);
-    let command_buffer = encoder.finish();
-    queue.submit([command_buffer]);
+        // Release encoder borrow.
+        drop(compute_pass);
+        let command_buffer = encoder.finish();
+        queue.submit([command_buffer]);
+    }
+
+    // Update uniform timestep value.
+    uniform.timestep += 1;
+    queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
+
+    {
+        let mut encoder =
+            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
+        compute_pass.set_pipeline(&pipeline);
+        compute_pass.set_bind_group(0, &bind_group, &[]);
+        compute_pass.set_bind_group(1, &uniform_bind_group, &[]);
+
+        let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
+        let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
+        compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
+
+        // Release encoder borrow.
+        drop(compute_pass);
+        let command_buffer = encoder.finish();
+        queue.submit([command_buffer]);
+    }
 
     // Let shader run to completion.
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
@@ -234,7 +303,16 @@ fn main() -> Result<(), ()> {
         &staging_buffer,
         &texture_2,
         texture_size,
-        "scratch/after_data.jpg",
+        "scratch/after_data_1.jpg",
+    );
+
+    save_texture_to_image(
+        &device,
+        &queue,
+        &staging_buffer,
+        &texture_3,
+        texture_size,
+        "scratch/after_data_2.jpg",
     );
 
     log::info!("Compute pipeline ran successfully!");
@@ -244,9 +322,8 @@ fn main() -> Result<(), ()> {
     // This gives the basic framework to run a compute shader on the device
     // with textures bound for data storage. Now we need to do the following:
     //
-    // 1. Add a uniform binding to the pipeline / shader to pass current timestep, etc.
-    // 2. Add code in the shader to do the computations.
-    // 3. Run for N timesteps and write image every M timesteps.
+    // 1. Add code in the shader to do the computations.
+    // 2. Run for N timesteps and write image every M timesteps.
 
     Ok(())
 }
