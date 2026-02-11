@@ -41,7 +41,8 @@ fn main() -> Result<(), ()> {
     let Ok((device, queue)) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
         required_features: wgpu::Features::TEXTURE_BINDING_ARRAY
-            | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY,
+            | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY
+            | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
         required_limits: wgpu::Limits::downlevel_defaults(),
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,
@@ -60,62 +61,24 @@ fn main() -> Result<(), ()> {
         depth_or_array_layers: 1,
     };
 
-    let texture_1 = device.create_texture(&wgpu::TextureDescriptor {
+    let data_texture = device.create_texture(&wgpu::TextureDescriptor {
         label: Some("Wave Eqn Data Texture"),
         size: texture_size,
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::R32Float,
+        format: wgpu::TextureFormat::Rgba32Float,
         usage: wgpu::TextureUsages::STORAGE_BINDING
             | wgpu::TextureUsages::COPY_SRC
             | wgpu::TextureUsages::COPY_DST,
         view_formats: &[],
     });
-    let texture_view_1 = texture_1.create_view(&wgpu::TextureViewDescriptor {
+    let texture_view_1 = data_texture.create_view(&wgpu::TextureViewDescriptor {
         label: Some("Wave Eqn Data Texture Array View"),
         dimension: Some(wgpu::TextureViewDimension::D2),
         ..Default::default()
     });
-    init_texture(&queue, &texture_1, texture_size);
-
-    let texture_2 = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Wave Eqn Data Texture"),
-        size: texture_size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::R32Float,
-        usage: wgpu::TextureUsages::STORAGE_BINDING
-            | wgpu::TextureUsages::COPY_SRC
-            | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
-    });
-    let texture_view_2 = texture_2.create_view(&wgpu::TextureViewDescriptor {
-        label: Some("Wave Eqn Data Texture Array View"),
-        dimension: Some(wgpu::TextureViewDimension::D2),
-        ..Default::default()
-    });
-    init_texture(&queue, &texture_2, texture_size);
-
-    let texture_3 = device.create_texture(&wgpu::TextureDescriptor {
-        label: Some("Wave Eqn Data Texture"),
-        size: texture_size,
-        mip_level_count: 1,
-        sample_count: 1,
-        dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::R32Float,
-        usage: wgpu::TextureUsages::STORAGE_BINDING
-            | wgpu::TextureUsages::COPY_SRC
-            | wgpu::TextureUsages::COPY_DST,
-        view_formats: &[],
-    });
-    let texture_view_3 = texture_3.create_view(&wgpu::TextureViewDescriptor {
-        label: Some("Wave Eqn Data Texture Array View"),
-        dimension: Some(wgpu::TextureViewDimension::D2),
-        ..Default::default()
-    });
-    init_texture(&queue, &texture_3, texture_size);
+    init_texture(&queue, &data_texture, texture_size);
 
     // Create uniform buffer and bind group.
 
@@ -153,56 +116,24 @@ fn main() -> Result<(), ()> {
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
         label: Some("Wave Eqn Data Bind Group Layout"),
-        entries: &[
-            wgpu::BindGroupLayoutEntry {
-                binding: 0,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::ReadWrite,
-                    format: wgpu::TextureFormat::R32Float,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                },
-                count: None,
+        entries: &[wgpu::BindGroupLayoutEntry {
+            binding: 0,
+            visibility: wgpu::ShaderStages::COMPUTE,
+            ty: wgpu::BindingType::StorageTexture {
+                access: wgpu::StorageTextureAccess::ReadWrite,
+                format: wgpu::TextureFormat::Rgba32Float,
+                view_dimension: wgpu::TextureViewDimension::D2,
             },
-            wgpu::BindGroupLayoutEntry {
-                binding: 1,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::ReadWrite,
-                    format: wgpu::TextureFormat::R32Float,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                },
-                count: None,
-            },
-            wgpu::BindGroupLayoutEntry {
-                binding: 2,
-                visibility: wgpu::ShaderStages::COMPUTE,
-                ty: wgpu::BindingType::StorageTexture {
-                    access: wgpu::StorageTextureAccess::ReadWrite,
-                    format: wgpu::TextureFormat::R32Float,
-                    view_dimension: wgpu::TextureViewDimension::D2,
-                },
-                count: None,
-            },
-        ],
+            count: None,
+        }],
     });
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Wave Eqn Data Compute Bind Group"),
         layout: &bind_group_layout,
-        entries: &[
-            wgpu::BindGroupEntry {
-                binding: 0,
-                resource: wgpu::BindingResource::TextureView(&texture_view_1),
-            },
-            wgpu::BindGroupEntry {
-                binding: 1,
-                resource: wgpu::BindingResource::TextureView(&texture_view_2),
-            },
-            wgpu::BindGroupEntry {
-                binding: 2,
-                resource: wgpu::BindingResource::TextureView(&texture_view_3),
-            },
-        ],
+        entries: &[wgpu::BindGroupEntry {
+            binding: 0,
+            resource: wgpu::BindingResource::TextureView(&texture_view_1),
+        }],
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -223,7 +154,7 @@ fn main() -> Result<(), ()> {
     // Staging buffer for copying from device to host.
 
     let staging_buffer_size =
-        TEXTURE_HEIGHT as u64 * TEXTURE_HEIGHT as u64 * std::mem::size_of::<f32>() as u64;
+        TEXTURE_HEIGHT as u64 * TEXTURE_HEIGHT as u64 * std::mem::size_of::<[f32; 4]>() as u64;
     let staging_buffer = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Staging Buffer"),
         size: staging_buffer_size,
@@ -237,7 +168,8 @@ fn main() -> Result<(), ()> {
         &device,
         &queue,
         &staging_buffer,
-        &texture_1,
+        &data_texture,
+        0,
         texture_size,
         "scratch/init_data.jpg",
     );
@@ -301,7 +233,8 @@ fn main() -> Result<(), ()> {
         &device,
         &queue,
         &staging_buffer,
-        &texture_2,
+        &data_texture,
+        1,
         texture_size,
         "scratch/after_data_1.jpg",
     );
@@ -310,7 +243,8 @@ fn main() -> Result<(), ()> {
         &device,
         &queue,
         &staging_buffer,
-        &texture_3,
+        &data_texture,
+        2,
         texture_size,
         "scratch/after_data_2.jpg",
     );
@@ -328,14 +262,20 @@ fn main() -> Result<(), ()> {
     Ok(())
 }
 
-static INIT_DATA: OnceLock<Vec<f32>> = OnceLock::new();
+static INIT_DATA: OnceLock<Vec<[f32; 4]>> = OnceLock::new();
 
 fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
     let init_data = INIT_DATA.get_or_init(|| {
-        let mut buffer = vec![64.0f32; TEXTURE_HEIGHT as usize * TEXTURE_WIDTH as usize];
+        let mut buffer = vec![
+            [64.0f32, 64.0f32, 64.0f32, 0.0f32];
+            TEXTURE_HEIGHT as usize * TEXTURE_WIDTH as usize
+        ];
         for i in TEXTURE_HEIGHT / 4..TEXTURE_HEIGHT * 3 / 4 {
             for j in TEXTURE_WIDTH / 4..TEXTURE_WIDTH * 3 / 4 {
-                buffer[i as usize * TEXTURE_WIDTH as usize + j as usize] = 192.0;
+                let coord = i as usize * TEXTURE_WIDTH as usize + j as usize;
+                buffer[coord][0] = 192.0;
+                buffer[coord][1] = 192.0;
+                buffer[coord][2] = 192.0;
             }
         }
         buffer
@@ -351,7 +291,7 @@ fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
         bytemuck::cast_slice(init_data),
         TexelCopyBufferLayout {
             offset: 0,
-            bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<f32>() as u32),
+            bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<[f32; 4]>() as u32),
             rows_per_image: Some(TEXTURE_HEIGHT),
         },
         texture_size,
@@ -363,6 +303,7 @@ fn save_texture_to_image(
     queue: &Queue,
     staging_buffer: &Buffer,
     texture: &Texture,
+    component: usize,
     texture_size: Extent3d,
     filename: &str,
 ) {
@@ -380,7 +321,7 @@ fn save_texture_to_image(
             buffer: staging_buffer,
             layout: wgpu::TexelCopyBufferLayout {
                 offset: 0,
-                bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<f32>() as u32),
+                bytes_per_row: Some(TEXTURE_WIDTH * std::mem::size_of::<[f32; 4]>() as u32),
                 rows_per_image: Some(TEXTURE_HEIGHT),
             },
         },
@@ -406,16 +347,15 @@ fn save_texture_to_image(
     *done = false;
 
     let mapped_data = staging_buffer.slice(..).get_mapped_range();
-    let data: &[f32] = bytemuck::cast_slice(&mapped_data);
+    let data: &[[f32; 4]] = bytemuck::cast_slice(&mapped_data);
+    let selected_data: Vec<u8> = data
+        .iter()
+        .map(|v| v[component].clamp(0.0, 255.0) as u8)
+        .collect();
 
-    let image_buf = ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(
-        TEXTURE_WIDTH,
-        TEXTURE_HEIGHT,
-        data.iter()
-            .map(|val| val.clamp(0.0, 255.0) as u8)
-            .collect::<Vec<_>>(),
-    )
-    .unwrap();
+    let image_buf =
+        ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(TEXTURE_WIDTH, TEXTURE_HEIGHT, selected_data)
+            .unwrap();
     image_buf
         .save_with_format(filename, image::ImageFormat::Bmp)
         .unwrap();
