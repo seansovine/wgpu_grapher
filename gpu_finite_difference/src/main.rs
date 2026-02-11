@@ -7,8 +7,8 @@ use std::sync::{LazyLock, Mutex, OnceLock};
 use bytemuck::{Pod, Zeroable};
 use image::{ImageBuffer, Luma};
 use wgpu::{
-    Buffer, Device, Extent3d, Origin3d, Queue, TexelCopyBufferLayout, TexelCopyTextureInfo,
-    Texture, util::DeviceExt,
+    BindGroup, Buffer, ComputePipeline, Device, Extent3d, Origin3d, Queue, TexelCopyBufferLayout,
+    TexelCopyTextureInfo, Texture, util::DeviceExt,
 };
 
 const TEXTURE_WIDTH: u32 = 1024;
@@ -176,55 +176,22 @@ fn main() -> Result<(), ()> {
 
     // Do a couple compute passes.
 
-    {
-        let mut encoder =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    const NUM_STEPS: usize = 2;
 
-        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-            label: None,
-            timestamp_writes: None,
-        });
-        compute_pass.set_pipeline(&pipeline);
-        compute_pass.set_bind_group(0, &bind_group, &[]);
-        compute_pass.set_bind_group(1, &uniform_bind_group, &[]);
+    for _ in 0..NUM_STEPS {
+        compute_pass(
+            &device,
+            &queue,
+            &pipeline,
+            &[&bind_group, &uniform_bind_group],
+        );
 
-        let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
-        let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
-        compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
-
-        // Release encoder borrow.
-        drop(compute_pass);
-        let command_buffer = encoder.finish();
-        queue.submit([command_buffer]);
+        // Update uniform timestep value.
+        uniform.timestep += 1;
+        queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
     }
 
-    // Update uniform timestep value.
-    uniform.timestep += 1;
-    queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
-
-    {
-        let mut encoder =
-            device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
-            label: None,
-            timestamp_writes: None,
-        });
-        compute_pass.set_pipeline(&pipeline);
-        compute_pass.set_bind_group(0, &bind_group, &[]);
-        compute_pass.set_bind_group(1, &uniform_bind_group, &[]);
-
-        let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
-        let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
-        compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
-
-        // Release encoder borrow.
-        drop(compute_pass);
-        let command_buffer = encoder.finish();
-        queue.submit([command_buffer]);
-    }
-
-    // Let shader run to completion.
+    // Block until all pipeline commands have run.
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
     // Write another image from second texture to check shader.
@@ -260,6 +227,34 @@ fn main() -> Result<(), ()> {
     // 2. Run for N timesteps and write image every M timesteps.
 
     Ok(())
+}
+
+fn compute_pass(
+    device: &Device,
+    queue: &Queue,
+    pipeline: &ComputePipeline,
+    bind_groups: &[&BindGroup],
+) {
+    let mut encoder =
+        device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+
+    let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+        label: None,
+        timestamp_writes: None,
+    });
+    compute_pass.set_pipeline(pipeline);
+
+    for (i, bg) in bind_groups.iter().enumerate() {
+        compute_pass.set_bind_group(i as u32, *bg, &[]);
+    }
+
+    let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
+    let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
+    compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
+
+    // Release encoder borrow.
+    drop(compute_pass);
+    queue.submit([encoder.finish()]);
 }
 
 static INIT_DATA: OnceLock<Vec<[f32; 4]>> = OnceLock::new();
