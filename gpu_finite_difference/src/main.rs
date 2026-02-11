@@ -73,7 +73,7 @@ fn main() -> Result<(), ()> {
             | wgpu::TextureUsages::COPY_DST,
         view_formats: &[],
     });
-    let texture_view_1 = data_texture.create_view(&wgpu::TextureViewDescriptor {
+    let texture_view = data_texture.create_view(&wgpu::TextureViewDescriptor {
         label: Some("Wave Eqn Data Texture Array View"),
         dimension: Some(wgpu::TextureViewDimension::D2),
         ..Default::default()
@@ -132,7 +132,7 @@ fn main() -> Result<(), ()> {
         layout: &bind_group_layout,
         entries: &[wgpu::BindGroupEntry {
             binding: 0,
-            resource: wgpu::BindingResource::TextureView(&texture_view_1),
+            resource: wgpu::BindingResource::TextureView(&texture_view),
         }],
     });
 
@@ -176,9 +176,10 @@ fn main() -> Result<(), ()> {
 
     // Do a couple compute passes.
 
-    const NUM_STEPS: usize = 2;
+    const NUM_STEPS: usize = 4000;
+    const IMAGE_STEPS: usize = 100;
 
-    for _ in 0..NUM_STEPS {
+    for i in 0..NUM_STEPS {
         compute_pass(
             &device,
             &queue,
@@ -189,43 +190,25 @@ fn main() -> Result<(), ()> {
         // Update uniform timestep value.
         uniform.timestep += 1;
         queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
+
+        if i.is_multiple_of(IMAGE_STEPS) {
+            println!("Writing image for timestep {}...", uniform.timestep);
+            save_texture_to_image(
+                &device,
+                &queue,
+                &staging_buffer,
+                &data_texture,
+                1,
+                texture_size,
+                &format!("scratch/data_at_timestep_{}.jpg", uniform.timestep),
+            );
+        }
     }
 
     // Block until all pipeline commands have run.
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
-    // Write another image from second texture to check shader.
-
-    save_texture_to_image(
-        &device,
-        &queue,
-        &staging_buffer,
-        &data_texture,
-        1,
-        texture_size,
-        "scratch/after_data_1.jpg",
-    );
-
-    save_texture_to_image(
-        &device,
-        &queue,
-        &staging_buffer,
-        &data_texture,
-        2,
-        texture_size,
-        "scratch/after_data_2.jpg",
-    );
-
     log::info!("Compute pipeline ran successfully!");
-
-    // TODO:
-    //
-    // This gives the basic framework to run a compute shader on the device
-    // with textures bound for data storage. Now we need to do the following:
-    //
-    // 1. Add code in the shader to do the computations.
-    // 2. Run for N timesteps and write image every M timesteps.
-
     Ok(())
 }
 

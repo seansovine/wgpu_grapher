@@ -10,23 +10,29 @@ struct Uniform {
 fn advance(@builtin(global_invocation_id) global_id: vec3<u32>) {
     // All three textures should have the same dimensions.
     let texture_dims: vec2<u32> = textureDimensions(eqn_data);
-    if global_id.x > texture_dims.x || global_id.y > texture_dims.y {
+    if global_id.x == 0 || global_id.x > texture_dims.x - 2
+        || global_id.y == 0 || global_id.y > texture_dims.y - 2 {
         return;
     }
-    // TODO: In our solver we'll need to respect the boundary conditions here.
+    // Don't update boundary points and stay within data range.
 
     let coords = vec2<u32>(global_id.x, global_id.y);
-    // This function always returns a vec4, regardless of texture dimensions.
-    var value: vec4<f32> = textureLoad(eqn_data, coords);
+
+    var x_ij: vec4<f32> = textureLoad(eqn_data, coords);
+    let x_imj: vec4<f32> = textureLoad(eqn_data, vec2<u32>(coords.x - 1, coords.y));
+    let x_ipj: vec4<f32> = textureLoad(eqn_data, vec2<u32>(coords.x + 1, coords.y));
+    let x_ijm: vec4<f32> = textureLoad(eqn_data, vec2<u32>(coords.x, coords.y - 1));
+    let x_ijp: vec4<f32> = textureLoad(eqn_data, vec2<u32>(coords.x, coords.y + 1));
 
     let t = params_uniform.timestep % 3;
+    let t_m1 = (params_uniform.timestep + 2) % 3;
+    let t_m2 = (params_uniform.timestep + 1) % 3;
 
-    if (t == 0) {
-        value[1] = 0.5 * value[0];
-    } else if (t == 1) {
-        value[2] = 1.5 * value[0];
-    }
-    textureStore(eqn_data, coords, value);
+    const R: f32 = 0.35;
 
-    // TODO: Implement one timestep of the equation solver.
+    let x_new: f32 = R * (x_imj[t_m1] + x_ipj[t_m1] + x_ijm[t_m1] + x_ijp[t_m1] - 4.0 * x_ij[t_m1])
+                    + 2.0 * x_ij[t_m1] - x_ij[t_m2];
+
+    x_ij[t] = x_new;
+    textureStore(eqn_data, coords, x_ij);
 }
