@@ -171,13 +171,13 @@ fn main() -> Result<(), ()> {
         &data_texture,
         0,
         texture_size,
-        "scratch/init_data.jpg",
+        &format!("scratch/data_at_timestep_{:04}.jpg", uniform.timestep),
     );
 
     // Do a couple compute passes.
 
     const NUM_STEPS: usize = 4000;
-    const IMAGE_STEPS: usize = 100;
+    const IMAGE_STEPS: usize = 50;
 
     for i in 0..NUM_STEPS {
         compute_pass(
@@ -200,7 +200,7 @@ fn main() -> Result<(), ()> {
                 &data_texture,
                 1,
                 texture_size,
-                &format!("scratch/data_at_timestep_{}.jpg", uniform.timestep),
+                &format!("scratch/data_at_timestep_{:04}.jpg", uniform.timestep),
             );
         }
     }

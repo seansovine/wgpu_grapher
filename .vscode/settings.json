@@ -1,5 +1,9 @@
 {
 	"rust-analyzer.linkedProjects": [
 		"egui_wgpu_grapher/Cargo.toml"
+	],
+	"cSpell.words": [
+		"grapher",
+		"Wgpu"
 	]
 }

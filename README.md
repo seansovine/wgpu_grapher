@@ -41,6 +41,21 @@ would like to add some image processing features to this part.
 
 *Image from Tom Swinnen on [Pexels](https://www.pexels.com/photo/seashore-under-blue-sky-and-white-clouds-view-946351/).*
 
+## GPU wave equation simulation
+
+The `gpu_finite_difference` crate has a finite-difference wave equation solver implemented on the
+GPU using a Wgpu compute shader.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/wave_eqn.gif?raw=true" alt="drawing" width="400" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
+Eventually I want to merge this into the Grapher, so that it will use the user's input function as
+an initial condition and update the graph with each timestep of the wave equation solution. There
+is a version of this in the old `wgpu_grapher` crate, but that version does the solving on the CPU
+and does a lot of work to copy the vertex data to the GPU for rendering. This version will be much
+more efficient.
+
 ## Mouse controls
 
 | Input                    | Action            |
