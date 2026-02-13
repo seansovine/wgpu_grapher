@@ -2,7 +2,7 @@
 //!
 //! We'll start as one linear block of code, then organize it more later.
 
-use std::sync::{LazyLock, Mutex, OnceLock};
+use std::sync::OnceLock;
 
 use bytemuck::{Pod, Zeroable};
 use image::{ImageBuffer, Luma};
@@ -14,14 +14,11 @@ use wgpu::{
 const TEXTURE_WIDTH: u32 = 1024;
 const TEXTURE_HEIGHT: u32 = 1024;
 
-#[repr(C)]
-#[derive(Debug, Default, Copy, Clone, Pod, Zeroable)]
-struct Uniform {
-    timestep: u32,
-}
-
 fn main() -> Result<(), ()> {
     env_logger::init();
+
+    // ------------------
+    // Wgpu device setup.
 
     let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
     let adapter =
@@ -52,6 +49,7 @@ fn main() -> Result<(), ()> {
         return Err(());
     };
 
+    // ---------------------------------------------------------
     // Create textures to hold solution data at three timesteps.
 
     let texture_size = wgpu::Extent3d {
@@ -80,15 +78,21 @@ fn main() -> Result<(), ()> {
     });
     init_texture(&queue, &data_texture, texture_size);
 
+    // -------------------------------------
     // Create uniform buffer and bind group.
 
+    #[repr(C)]
+    #[derive(Debug, Default, Copy, Clone, Pod, Zeroable)]
+    struct Uniform {
+        timestep: u32,
+    }
     let mut uniform = Uniform::default();
+
     let uniform_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Uniform Buffer"),
         contents: bytemuck::cast_slice(&[uniform]),
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     });
-
     let uniform_bind_group_layout =
         device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
             entries: &[wgpu::BindGroupLayoutEntry {
@@ -112,6 +116,7 @@ fn main() -> Result<(), ()> {
         label: Some("Uniform Bind Group"),
     });
 
+    // ------------------------
     // Create compute pipeline.
 
     let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
@@ -151,6 +156,7 @@ fn main() -> Result<(), ()> {
         cache: None,
     });
 
+    // -----------------------------------------------
     // Staging buffer for copying from device to host.
 
     let staging_buffer_size =
@@ -162,6 +168,7 @@ fn main() -> Result<(), ()> {
         mapped_at_creation: false,
     });
 
+    // ---------------------------------------------------
     // Save texture data to image to check initialization.
 
     save_texture_to_image(
@@ -174,10 +181,11 @@ fn main() -> Result<(), ()> {
         &format!("scratch/data_at_timestep_{:04}.jpg", uniform.timestep),
     );
 
-    // Do a couple compute passes.
+    // -----------------------
+    // Do some compute passes.
 
     const NUM_STEPS: usize = 4000;
-    const IMAGE_STEPS: usize = 50;
+    const IMAGE_STEPS: usize = 25;
 
     for i in 0..NUM_STEPS {
         compute_pass(
@@ -187,10 +195,6 @@ fn main() -> Result<(), ()> {
             &[&bind_group, &uniform_bind_group],
         );
 
-        // Update uniform timestep value.
-        uniform.timestep += 1;
-        queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
-
         if i.is_multiple_of(IMAGE_STEPS) {
             println!("Writing image for timestep {}...", uniform.timestep);
             save_texture_to_image(
@@ -198,16 +202,22 @@ fn main() -> Result<(), ()> {
                 &queue,
                 &staging_buffer,
                 &data_texture,
-                1,
+                uniform.timestep as usize % 3,
                 texture_size,
                 &format!("scratch/data_at_timestep_{:04}.jpg", uniform.timestep),
             );
         }
+
+        // Update uniform timestep value.
+        uniform.timestep += 1;
+        queue.write_buffer(&uniform_buffer, 0, bytemuck::bytes_of(&uniform));
     }
+
+    // ----------
+    // Finish up.
 
     // Block until all pipeline commands have run.
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-
     log::info!("Compute pipeline ran successfully!");
     Ok(())
 }
@@ -220,13 +230,11 @@ fn compute_pass(
 ) {
     let mut encoder =
         device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
     let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
         label: None,
         timestamp_writes: None,
     });
     compute_pass.set_pipeline(pipeline);
-
     for (i, bg) in bind_groups.iter().enumerate() {
         compute_pass.set_bind_group(i as u32, *bg, &[]);
     }
@@ -235,14 +243,13 @@ fn compute_pass(
     let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
     compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
 
-    // Release encoder borrow.
     drop(compute_pass);
     queue.submit([encoder.finish()]);
 }
 
-static INIT_DATA: OnceLock<Vec<[f32; 4]>> = OnceLock::new();
-
 fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
+    static INIT_DATA: OnceLock<Vec<[f32; 4]>> = OnceLock::new();
+
     let init_data = INIT_DATA.get_or_init(|| {
         let mut buffer = vec![
             [64.0f32, 64.0f32, 64.0f32, 0.0f32];
@@ -258,7 +265,6 @@ fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
         }
         buffer
     });
-
     queue.write_texture(
         TexelCopyTextureInfo {
             texture,
@@ -310,19 +316,10 @@ fn save_texture_to_image(
     queue.submit(std::iter::once(encoder.finish()));
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
 
-    static DONE: LazyLock<Mutex<bool>> = LazyLock::new(|| false.into());
     staging_buffer
         .slice(..)
-        .map_async(wgpu::MapMode::Read, |_| {
-            *(DONE.lock().unwrap()) = true;
-        });
-
+        .map_async(wgpu::MapMode::Read, |_| {});
     device.poll(wgpu::PollType::wait_indefinitely()).unwrap();
-
-    // This check shouldn't be needed; when poll returns all work should be done.
-    let mut done = DONE.lock().unwrap();
-    assert!(*done);
-    *done = false;
 
     let mapped_data = staging_buffer.slice(..).get_mapped_range();
     let data: &[[f32; 4]] = bytemuck::cast_slice(&mapped_data);
@@ -331,10 +328,8 @@ fn save_texture_to_image(
         .map(|v| v[component].clamp(0.0, 255.0) as u8)
         .collect();
 
-    let image_buf =
-        ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(TEXTURE_WIDTH, TEXTURE_HEIGHT, selected_data)
-            .unwrap();
-    image_buf
+    ImageBuffer::<Luma<u8>, Vec<u8>>::from_vec(TEXTURE_WIDTH, TEXTURE_HEIGHT, selected_data)
+        .unwrap()
         .save_with_format(filename, image::ImageFormat::Bmp)
         .unwrap();
 
