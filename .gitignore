@@ -1,4 +1,5 @@
 /target
 /scratch/
 
+.vscode
 *.code-workspace

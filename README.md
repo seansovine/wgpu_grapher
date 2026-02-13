@@ -85,6 +85,6 @@ To learn the Wgpu API, I started with the
 tutorial, and was influenced by the design of the example code there. For many
 graphics concepts and implementations I learned from the awesome
 [Learn OpenGL](https://learnopengl.com/)
-tutorial.
+tutorial. Also, see my [thoughts on AI as a tool](./docs/AI.md).
 
 This software is released under the MIT license.
