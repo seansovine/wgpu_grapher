@@ -9,7 +9,8 @@ use texture::DepthBuffer;
 
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
 
-// Include shaders as static data
+// -------------------------------
+// Include shaders as static data.
 
 pub fn get_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/shader.wgsl").into())
@@ -23,7 +24,12 @@ pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/textured_shader.wgsl").into())
 }
 
-// Create a render pipeline
+pub fn get_2d_shader() -> wgpu::ShaderSource<'static> {
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/2d_shader.wgsl").into())
+}
+
+// -------------------------
+// Create a render pipeline.
 
 pub fn create_render_pipeline<Vertex: Bufferable>(
     device: &Device,
@@ -87,7 +93,8 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
     })
 }
 
-// Create pipeline for shadow mapping
+// -----------------------------------
+// Create pipeline for shadow mapping.
 
 pub fn create_shadow_pipeline<Vertex: Bufferable>(
     device: &Device,
@@ -138,6 +145,63 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
         }),
         multisample: wgpu::MultisampleState {
             count: 1,
+            ..Default::default()
+        },
+        multiview: None,
+        cache: None,
+    })
+}
+
+// ---------------------------------------
+// Create pipeline setup for 2D rendering.
+
+pub fn create_2d_pipeline(
+    device: &Device,
+    config: &SurfaceConfiguration,
+    bind_group_layouts: &[&BindGroupLayout],
+) -> RenderPipeline {
+    let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("a shader"),
+        source: get_2d_shader(),
+    });
+
+    let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        label: Some("a render pipeline layout"),
+        bind_group_layouts,
+        push_constant_ranges: &[],
+    });
+
+    device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+        label: Some("a render pipeline"),
+        layout: Some(&render_pipeline_layout),
+        vertex: wgpu::VertexState {
+            module: &shader_module,
+            entry_point: Some("vs_main"),
+            buffers: &[],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        },
+        fragment: Some(wgpu::FragmentState {
+            module: &shader_module,
+            entry_point: Some("fs_main"),
+            targets: &[Some(wgpu::ColorTargetState {
+                format: config.format,
+                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                write_mask: wgpu::ColorWrites::ALL,
+            })],
+            compilation_options: wgpu::PipelineCompilationOptions::default(),
+        }),
+        primitive: wgpu::PrimitiveState {
+            topology: wgpu::PrimitiveTopology::TriangleList,
+            strip_index_format: None,
+            front_face: wgpu::FrontFace::Ccw,
+            cull_mode: Some(wgpu::Face::Back),
+            polygon_mode: wgpu::PolygonMode::Fill,
+            unclipped_depth: false,
+            conservative: false,
+        },
+        depth_stencil: None,
+        multisample: wgpu::MultisampleState {
+            count: 4,
             ..Default::default()
         },
         multiview: None,

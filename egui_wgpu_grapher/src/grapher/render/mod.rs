@@ -1,12 +1,17 @@
 //! Top-level code for tracking render state and executing render passes.
 
 mod state;
-// re-export state
 pub use state::*;
 
 use super::scene::Scene;
+use crate::grapher::scene::two_d::TwoDScene;
 
-use egui_wgpu::wgpu::{self, BindGroup, BufferSlice, CommandEncoder, RenderPass, TextureView};
+use egui_wgpu::wgpu::{
+    self, BindGroup, BufferSlice, Color, CommandEncoder, RenderPass, TextureView,
+};
+
+// -------------------------------
+// Main 3D scene rendering method.
 
 impl RenderState {
     pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene) {
@@ -159,4 +164,34 @@ fn draw_mesh(
     render_pass.set_vertex_buffer(0, vertex_buffer);
     render_pass.set_index_buffer(index_buffer, wgpu::IndexFormat::Uint32);
     render_pass.draw_indexed(0..num_indices, 0, 0..1);
+}
+
+// ------------------------------
+// Function to render a 2D scene.
+
+pub fn render_2d(
+    view: &TextureView,
+    encoder: &mut CommandEncoder,
+    scene: &TwoDScene,
+    render_state: &RenderState,
+) {
+    let color_attachment = wgpu::RenderPassColorAttachment {
+        view: &render_state.msaa_data.view,
+        resolve_target: Some(view),
+        ops: wgpu::Operations {
+            load: wgpu::LoadOp::Clear(Color::BLACK),
+            store: wgpu::StoreOp::Store,
+        },
+        depth_slice: None,
+    };
+    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+        label: Some("render pass"),
+        color_attachments: &[Some(color_attachment)],
+        depth_stencil_attachment: None,
+        occlusion_query_set: None,
+        timestamp_writes: None,
+    });
+    render_pass.set_pipeline(&scene.pipeline);
+    render_pass.set_index_buffer(scene.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+    render_pass.draw_indexed(0..6, 0, 0..1);
 }

@@ -5,7 +5,9 @@ use crate::grapher_egui::{
     scene_selection_ui,
 };
 
-/// Store persistent data modified by GUI interaction during render passes.
+// ---------------------------------------
+// Store data modified by GUI interaction.
+
 #[derive(Default)]
 pub struct UiState {
     pub render_ui_state: RenderUiState,
@@ -17,7 +19,9 @@ pub struct UiState {
     pub show_file_input: bool,
 }
 
+// -----------------------------------
 // Create contents of main GUI window.
+
 #[allow(clippy::too_many_arguments)]
 pub fn create_gui(
     pixels_per_point: f32,
@@ -29,7 +33,6 @@ pub fn create_gui(
 ) {
     const AFTER_LABEL_SPACE: f32 = 5.0;
 
-    // grapher scenee selection
     ui.label(RichText::new("Select scene").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
@@ -37,29 +40,26 @@ pub fn create_gui(
         *grapher_scene = GrapherScene::Changed;
     }
 
-    // parameters for the grapher scene
     if grapher_scene.is_some() {
         ui.separator();
         ui.label(RichText::new("Scene parameters").strong());
         ui.add_space(AFTER_LABEL_SPACE);
-
-        // TODO: editing param may be no longer needed here.
         grapher_scene.parameter_ui(ui, ui_state);
     }
 
-    // general rendere parameters
     ui.separator();
     ui.label(RichText::new("Render parameters").strong());
     ui.add_space(AFTER_LABEL_SPACE);
 
-    render_parameter_ui(
-        render_state,
-        &mut ui_state.render_ui_state,
-        grapher_scene,
-        ui,
-    );
+    if !matches!(scene_mode, GrapherSceneMode::Solver) {
+        render_parameter_ui(
+            render_state,
+            &mut ui_state.render_ui_state,
+            grapher_scene,
+            ui,
+        );
+    }
 
-    // ui scale parameter
     ui.separator();
     ui.label(RichText::new("UI settings").strong());
     ui.add_space(AFTER_LABEL_SPACE);

@@ -1,9 +1,15 @@
 use crate::{
     egui::{egui_tools::EguiRenderer, ui::UiState},
     grapher::{
-        self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
+        self,
+        math::FunctionHolder,
+        render::MultisampleData,
+        scene::{solid::graph::GraphScene, two_d::TwoDScene},
     },
-    grapher_egui::{GrapherScene, GrapherSceneMode, RenderUiState, graph_ui, image_ui, model_ui},
+    grapher_egui::{
+        GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
+        solver_scene::SolverSceneData,
+    },
 };
 use egui_file_dialog::FileDialog;
 use egui_wgpu::wgpu::{self, Limits};
@@ -32,12 +38,13 @@ pub struct AppState {
     pub surface: wgpu::Surface<'static>,
     pub egui_renderer: EguiRenderer,
 
-    // Should scene run its updates during redraw.
-    pub scene_updates_paused: bool,
-
     // File picker with persistent state.
     pub file_dialog: FileDialog,
+    // ui state needed persisted across renders
+    pub ui_data: UiState,
 
+    // Should scene run its updates during redraw.
+    pub scene_updates_paused: bool,
     // GUI state machine.
     pub scene_mode: GrapherSceneMode,
     pub file_input_state: FileInputState,
@@ -46,9 +53,6 @@ pub struct AppState {
     // Graphics scene state.
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
-
-    // ui state needed persisted across renders
-    pub ui_data: UiState,
 }
 
 impl AppState {
@@ -123,18 +127,16 @@ impl AppState {
             surface_config,
             egui_renderer,
             //
-            scene_updates_paused: false,
-            //
             file_dialog: FileDialog::new().as_modal(false).default_pos([250.0, 15.0]),
+            ui_data,
             //
+            scene_updates_paused: false,
             scene_mode: initial_scene,
             file_input_state: FileInputState::Hidden,
             scene_loading_state: SceneLoadingState::NoData,
             //
             grapher_state,
             grapher_scene: GrapherScene::None,
-            //
-            ui_data,
         }
     }
 
@@ -199,6 +201,9 @@ impl AppState {
             GrapherSceneMode::ImageViewer => {
                 self.scene_change_image();
             }
+            GrapherSceneMode::Solver => {
+                self.scene_change_solver();
+            }
         };
     }
 
@@ -219,7 +224,7 @@ impl AppState {
 
                 let graph_scene = GraphScene::default();
                 self.grapher_scene =
-                    GrapherScene::Graph(Box::from(graph_ui::GraphSceneData::new(graph_scene)));
+                    GrapherScene::Graph(Box::from(graph_scene::GraphSceneData::new(graph_scene)));
                 self.scene_loading_state = SceneLoadingState::Loaded;
             }
 
@@ -266,7 +271,8 @@ impl AppState {
                 );
 
                 if let Some(scene) = model_scene {
-                    self.grapher_scene = GrapherScene::Model(model_ui::ModelSceneData::new(scene));
+                    self.grapher_scene =
+                        GrapherScene::Model(model_scene::ModelSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
                 } else {
@@ -318,7 +324,7 @@ impl AppState {
 
                 if let Some(scene) = image_scene {
                     self.grapher_scene =
-                        GrapherScene::ImageViewer(image_ui::ImageViewerSceneData::new(scene));
+                        GrapherScene::ImageViewer(image_scene::ImageViewerSceneData::new(scene));
                     self.hide_file_input();
                     self.scene_loading_state = SceneLoadingState::Loaded;
                 } else {
@@ -335,5 +341,13 @@ impl AppState {
                 _ => {}
             },
         }
+    }
+
+    fn scene_change_solver(&mut self) {
+        self.hide_file_input();
+        self.grapher_scene = GrapherScene::Solver(SolverSceneData {
+            scene: TwoDScene::new(&self.device, &self.surface_config),
+        });
+        self.scene_loading_state = SceneLoadingState::Loaded;
     }
 }

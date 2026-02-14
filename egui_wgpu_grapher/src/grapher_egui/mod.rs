@@ -1,36 +1,42 @@
-//! The code in this module manages the different modes of the app,
-//! including user interface code specific to each of the three modes
-//! and code that maps GUI-modified state to internal handler functions.
+//! Code to manage the different modes of the app, to dispatch high-level
+//! calls based on the current mode, and to map GUI-modified state to
+//! internal handler functions for the current mode.
 
-pub mod graph_ui;
-pub mod image_ui;
-pub mod model_ui;
+pub mod graph_scene;
+pub mod image_scene;
+pub mod model_scene;
+pub mod solver_scene;
 
 use crate::{
     egui::ui::UiState,
     grapher::{
         pipeline::render_preferences::RenderPreferences,
-        render::ShadowState,
+        render::{ShadowState, render_2d},
         scene::{GpuVertex, RenderScene, solid::graph::GraphScene},
     },
-    grapher_egui::image_ui::{ImageViewerSceneData, parameter_ui_image_viewer},
+    grapher_egui::{
+        image_scene::{ImageViewerSceneData, parameter_ui_image_viewer},
+        solver_scene::SolverSceneData,
+    },
 };
-use graph_ui::{GraphSceneData, parameter_ui_graph};
-use model_ui::{ModelSceneData, parameter_ui_model};
+use graph_scene::{GraphSceneData, parameter_ui_graph};
+use model_scene::{ModelSceneData, parameter_ui_model};
 
 use egui::Ui;
 use egui_wgpu::wgpu::{CommandEncoder, Device, Queue, SurfaceConfiguration, TextureView};
 
 pub use crate::grapher::render::RenderState;
 
-/// Indicates the mode that the user has chosen,
-/// which may or may not have been loaded yet.
+// --------------------------------
+// Grapher mode chosen by the user.
+
 #[derive(clap::ValueEnum, Debug, Default, Clone, Copy)]
 pub enum GrapherSceneMode {
     #[default]
     Graph,
     Model,
     ImageViewer,
+    Solver,
 }
 
 impl From<GrapherSceneMode> for usize {
@@ -39,6 +45,7 @@ impl From<GrapherSceneMode> for usize {
             GrapherSceneMode::Graph => 0,
             GrapherSceneMode::Model => 1,
             GrapherSceneMode::ImageViewer => 2,
+            GrapherSceneMode::Solver => 3,
         }
     }
 }
@@ -49,6 +56,7 @@ impl From<usize> for GrapherSceneMode {
             0 => GrapherSceneMode::Graph,
             1 => GrapherSceneMode::Model,
             2 => GrapherSceneMode::ImageViewer,
+            3 => GrapherSceneMode::Solver,
             _ => unimplemented!(),
         }
     }
@@ -67,7 +75,7 @@ pub fn scene_selection_ui(
     ui_state: &mut UiState,
     ui: &mut Ui,
 ) -> Changed {
-    let alternatives = ["graph", "model", "image"];
+    let alternatives = ["graph", "model", "image", "solver"];
     let selected_scene_index = &mut ui_state.selected_scene_index;
     let response = egui::ComboBox::from_id_salt("select scene").show_index(
         ui,
@@ -83,18 +91,19 @@ pub fn scene_selection_ui(
     }
 }
 
-/// Manages the state for each of the supported modes:
-/// function grapher; model viewer; image viewer.
-///
-/// `None` indicates that no state has been loaded,
-/// and `Changed` indicates that the user has chosen a
-/// new mode but data for that mode hasn't been loaded.
+// ----------------------------------
+// Grapher mode and associated state.
+
 pub enum GrapherScene {
+    // Means user has chosen new mode that needs loaded.
     Changed,
+    // Means that no state has been loaded.
     None,
+
     Graph(Box<GraphSceneData>),
     Model(ModelSceneData),
     ImageViewer(ImageViewerSceneData),
+    Solver(SolverSceneData),
 }
 
 impl GrapherScene {
@@ -119,6 +128,9 @@ impl GrapherScene {
             }
             GrapherScene::ImageViewer(data) => {
                 render_state.render(view, encoder, data.image_viewer_scene.scene());
+            }
+            GrapherScene::Solver(data) => {
+                render_2d(view, encoder, &data.scene, render_state);
             }
             _ => unimplemented!(),
         }
@@ -146,6 +158,9 @@ impl GrapherScene {
             }
             GrapherScene::ImageViewer(data) => {
                 data.image_viewer_scene.update(queue, state);
+            }
+            GrapherScene::Solver(..) => {
+                // TODO
             }
             _ => unimplemented!(),
         }
@@ -198,7 +213,8 @@ impl GrapherScene {
     }
 }
 
-// Code for building the grapher renderer parameter ui.
+// ------------------------------
+// Grapher renderer parameter ui.
 
 #[derive(Default)]
 pub struct RenderUiState {
