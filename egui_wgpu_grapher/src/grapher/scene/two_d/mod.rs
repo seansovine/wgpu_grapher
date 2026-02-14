@@ -310,6 +310,15 @@ impl TwoDScene {
         );
     }
 
+    pub fn update_aspect_ratio(&mut self, queue: &Queue, new_ratio: f32) {
+        self.uniform.data.aspect_ratio = new_ratio;
+        queue.write_buffer(
+            &self.uniform.buffer,
+            0,
+            bytemuck::bytes_of(&self.uniform.data),
+        );
+    }
+
     pub fn solver_timestep(&self, encoder: &mut CommandEncoder) {
         let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
             label: None,

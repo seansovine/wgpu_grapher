@@ -1,8 +1,6 @@
 use crate::{
     egui::{egui_tools::EguiRenderer, ui::UiState},
-    grapher::{
-        self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
-    },
+    grapher::{self, math::FunctionHolder, scene::solid::graph::GraphScene},
     grapher_egui::{
         GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
         solver_scene::SolverSceneData,
@@ -155,14 +153,10 @@ impl AppState {
         self.surface_config.height = height;
         self.surface.configure(&self.device, &self.surface_config);
 
-        // Resize depth buffer texture.
-        self.grapher_state.depth_buffer =
-            grapher::pipeline::texture::DepthBuffer::create(&self.surface_config, &self.device);
-        // Resize MSAA texture.
-        self.grapher_state.msaa_data = MultisampleData::create(&self.surface_config, &self.device);
-        // Resize shadow texture.
+        self.grapher_state
+            .handle_resize(&self.device, &self.surface_config);
         self.grapher_scene
-            .rebuild_shadow_state(&self.device, &self.surface_config);
+            .handle_resize(&self.device, &self.queue, &self.surface_config);
 
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;

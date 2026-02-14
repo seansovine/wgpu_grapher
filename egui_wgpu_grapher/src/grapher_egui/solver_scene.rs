@@ -19,6 +19,11 @@ impl SolverSceneData {
 
     pub fn update(&mut self, _: &Queue) {}
 
+    pub fn handle_resize(&mut self, queue: &Queue, surface_config: &SurfaceConfiguration) {
+        let new_ratio = surface_config.height as f32 / surface_config.width as f32;
+        self.scene.update_aspect_ratio(queue, new_ratio);
+    }
+
     pub fn run_solver(&mut self, device: &Device, queue: &Queue) {
         const TIMESTEPS_PER_FRAME: usize = 4;
 

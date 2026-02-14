@@ -97,6 +97,13 @@ impl RenderState {
         // we write the uniform every frame
         self.camera_state.update_uniform(queue);
     }
+
+    pub fn handle_resize(&mut self, device: &Device, surface_config: &SurfaceConfiguration) {
+        // Resize depth buffer texture.
+        self.depth_buffer = DepthBuffer::create(surface_config, device);
+        // Resize MSAA texture.
+        self.msaa_data = MultisampleData::create(surface_config, device);
+    }
 }
 
 // State for MSAA.

@@ -202,7 +202,19 @@ impl GrapherScene {
         }
     }
 
-    pub fn rebuild_shadow_state(&mut self, device: &Device, surface_config: &SurfaceConfiguration) {
+    pub fn handle_resize(
+        &mut self,
+        device: &Device,
+        queue: &Queue,
+        surface_config: &SurfaceConfiguration,
+    ) {
+        self.rebuild_shadow_state(device, surface_config);
+        if let GrapherScene::Solver(data) = self {
+            data.handle_resize(queue, surface_config);
+        }
+    }
+
+    fn rebuild_shadow_state(&mut self, device: &Device, surface_config: &SurfaceConfiguration) {
         if let GrapherScene::Graph(data) = self
             && let Some(scene) = &mut data.graph_scene.scene
             && !scene.meshes.is_empty()
