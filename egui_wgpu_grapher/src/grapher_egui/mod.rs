@@ -145,7 +145,7 @@ impl GrapherScene {
     ) {
         match self {
             GrapherScene::Graph(data) => {
-                // rebuild scene if non-uniform parameters changed
+                // Rebuild scene if non-uniform parameters changed.
                 if data.graph_scene.needs_rebuild {
                     data.graph_scene
                         .try_rebuild_scene(device, surface_config, state);
@@ -160,7 +160,7 @@ impl GrapherScene {
                 data.image_viewer_scene.update(queue, state);
             }
             GrapherScene::Solver(..) => {
-                // TODO
+                // TODO: Run next N compute passes for equation solver timesteps.
             }
             _ => unimplemented!(),
         }
@@ -224,8 +224,8 @@ pub struct RenderUiState {
     pub needs_prefs_uniform_write: bool,
 }
 
-impl RenderUiState {
-    pub fn from_render_preferences(render_prefs: &RenderPreferences) -> Self {
+impl From<&RenderPreferences> for RenderUiState {
+    fn from(render_prefs: &RenderPreferences) -> Self {
         Self {
             lighting_enabled: render_prefs.lighting_enabled(),
             use_wireframe: render_prefs.wireframe_enabled(),

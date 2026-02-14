@@ -31,7 +31,7 @@ pub enum SceneLoadingState {
 }
 
 pub struct AppState {
-    // wgpu and egui state
+    // Wgpu and egui state.
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
     pub surface_config: wgpu::SurfaceConfiguration,
@@ -40,11 +40,12 @@ pub struct AppState {
 
     // File picker with persistent state.
     pub file_dialog: FileDialog,
-    // ui state needed persisted across renders
+    // UI state needed persisted across render passes.
     pub ui_data: UiState,
 
     // Should scene run its updates during redraw.
     pub scene_updates_paused: bool,
+
     // GUI state machine.
     pub scene_mode: GrapherSceneMode,
     pub file_input_state: FileInputState,
@@ -85,7 +86,7 @@ impl AppState {
                 ..Default::default()
             })
             .await
-            .expect("Failed to create device");
+            .expect("Failed to create Wgpu device.");
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let selected_format = wgpu::TextureFormat::Bgra8UnormSrgb;
@@ -93,7 +94,7 @@ impl AppState {
             .formats
             .iter()
             .find(|d| **d == selected_format)
-            .expect("failed to select proper surface texture format!");
+            .expect("Failed to select proper surface texture format.");
 
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -109,8 +110,7 @@ impl AppState {
 
         let egui_renderer = EguiRenderer::new(&device, surface_config.format, None, 1, window);
         let grapher_state = grapher::render::RenderState::new(&device, &surface_config).await;
-        let render_ui_state =
-            RenderUiState::from_render_preferences(&grapher_state.render_preferences);
+        let render_ui_state: RenderUiState = (&grapher_state.render_preferences).into();
         let scale_factor = 1.0;
         let ui_data = UiState {
             render_ui_state,
