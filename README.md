@@ -28,7 +28,7 @@ features supported by glTF.
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/model_2.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-*Model from official glTF sample collection.*
+_Model from official glTF sample collection._
 
 ## Image viewer
 
@@ -39,18 +39,19 @@ would like to add some image processing features to this part.
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/image.png?raw=true" alt="drawing" width="600" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-*Image from Tom Swinnen on [Pexels](https://www.pexels.com/photo/seashore-under-blue-sky-and-white-clouds-view-946351/).*
+_Image from Tom Swinnen on [Pexels](https://www.pexels.com/photo/seashore-under-blue-sky-and-white-clouds-view-946351/)._
 
 ## GPU wave equation simulation
 
 The `gpu_finite_difference` crate has a finite-difference wave equation solver implemented on the
-GPU using a Wgpu compute shader.
+GPU using a Wgpu compute shader. The basic version of this has been integrated into the "solver"
+mode of the Grapher.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/wave_eqn.gif?raw=true" alt="drawing" width="400" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-Eventually I want to merge this into the Grapher, so that it will use the user's input function as
+Eventually I want to merge this into the graph mode, so that it will use the user's input function as
 an initial condition and update the graph with each timestep of the wave equation solution. There
 is a version of this in the old `wgpu_grapher` crate, but that version does the solving on the CPU
 and does a lot of work to copy the vertex data to the GPU for rendering. This version will be much
@@ -58,22 +59,22 @@ more efficient.
 
 ## Mouse controls
 
-| Input                    | Action            |
-| ------------------------ | ----------------- |
-| `click + drag`           | rotate graph      |
-| `control + click + drag` | translate graph   |
-| `mouse wheel`            | zoom graph        |
+| Input                    | Action          |
+| ------------------------ | --------------- |
+| `click + drag`           | rotate graph    |
+| `control + click + drag` | translate graph |
+| `mouse wheel`            | zoom graph      |
 
 ## Key controls
 
-| key     | action       | key     | action       |
-| :------ | :------:     | :------ | :------:     |
-| `left`  | rotate left  | `t` | translate up |
-| `right` | rotate right | `g` | translate down |
-| `up`    | rotate up    | `f` | translate left |
-| `down`  | rotate down  | `h` | translate right |
-| `z`     | zoom in      | `esc` | exit |
-| `x`     | zoom out     | `shift` + \_\_ | increase speed |
+| key     |    action    | key            |     action      |
+| :------ | :----------: | :------------- | :-------------: |
+| `left`  | rotate left  | `t`            |  translate up   |
+| `right` | rotate right | `g`            | translate down  |
+| `up`    |  rotate up   | `f`            | translate left  |
+| `down`  | rotate down  | `h`            | translate right |
+| `z`     |   zoom in    | `esc`          |      exit       |
+| `x`     |   zoom out   | `shift` + \_\_ | increase speed  |
 
 ## Licenses and credits
 

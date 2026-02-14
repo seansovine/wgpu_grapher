@@ -98,7 +98,7 @@ impl App {
         )
         .await;
 
-        // egui docs: gracefully handle redundant... Resumed events
+        // egui docs: Gracefully handle redundant Resumed events.
         if self.window.is_none() {
             self.window.replace(window);
             self.state.replace(state);
@@ -119,32 +119,20 @@ impl App {
         {
             return;
         }
-
         let state = self.state.as_mut().unwrap();
 
-        let screen_descriptor = ScreenDescriptor {
-            size_in_pixels: [state.surface_config.width, state.surface_config.height],
-            pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
-                * state.ui_data.scale_factor,
-        };
-
         let surface_texture = state.surface.get_current_texture();
-
         match surface_texture {
             Err(SurfaceError::Outdated) => {
-                // template authors: for resizing and minimization handling
                 return;
             }
             Err(_) => {
-                // panic on other errors (for now)
-                surface_texture.expect("Failed to acquire next swap chain texture");
+                surface_texture.expect("Failed to acquire next swap chain texture.");
                 return;
             }
             Ok(_) => {}
         };
-
         let surface_texture = surface_texture.unwrap();
-
         let surface_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -153,8 +141,10 @@ impl App {
             .device
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        // Render graphics scene.
         if state.grapher_scene.is_some() {
+            // Run any compute passes using same command encoder.
+            state.grapher_scene.compute(&state.device, &state.queue);
+            // Render grapher scene.
             state
                 .grapher_scene
                 .render(&surface_view, &mut encoder, &state.grapher_state);
@@ -162,6 +152,11 @@ impl App {
 
         // Render GUI.
         {
+            let screen_descriptor = ScreenDescriptor {
+                size_in_pixels: [state.surface_config.width, state.surface_config.height],
+                pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
+                    * state.ui_data.scale_factor,
+            };
             let window = self.window.as_ref().unwrap();
             state.egui_renderer.begin_frame(window);
             Self::build_gui(state);
@@ -315,13 +310,8 @@ impl ApplicationHandler for App {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                // Request continuous redraw events and throttle with timers.
                 window.request_redraw();
-
-                // Accumulate time for render timeout.
-                self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
-                self.last_update_time = time::Instant::now();
-                // Throttle rendering for efficiency.
-                let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
                 // Let scene run any of its own internal updates.
                 if !state.scene_updates_paused && state.grapher_scene.is_some() {
@@ -342,6 +332,11 @@ impl ApplicationHandler for App {
                     state.ui_data.render_ui_state.needs_prefs_uniform_write = false;
                 }
 
+                // Accumulate time for render timeout.
+                self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
+                self.last_update_time = time::Instant::now();
+                // Throttle rendering for efficiency.
+                let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
                 // Re-render the scene.
                 if do_render {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;

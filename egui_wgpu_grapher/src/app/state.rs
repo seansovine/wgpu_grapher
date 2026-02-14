@@ -1,10 +1,7 @@
 use crate::{
     egui::{egui_tools::EguiRenderer, ui::UiState},
     grapher::{
-        self,
-        math::FunctionHolder,
-        render::MultisampleData,
-        scene::{solid::graph::GraphScene, two_d::TwoDScene},
+        self, math::FunctionHolder, render::MultisampleData, scene::solid::graph::GraphScene,
     },
     grapher_egui::{
         GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
@@ -15,20 +12,8 @@ use egui_file_dialog::FileDialog;
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
 
-pub enum FileInputState {
-    Hidden,
-    NeedsInput,
-    #[allow(unused)]
-    BadPath,
-    InvalidFile,
-    NeedsChecked,
-}
-
-pub enum SceneLoadingState {
-    NoData,
-    NeedsLoaded,
-    Loaded,
-}
+// ---------------------------------------------------------
+// Structure for global renderer data and application state.
 
 pub struct AppState {
     // Wgpu and egui state.
@@ -55,6 +40,24 @@ pub struct AppState {
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
 }
+
+pub enum FileInputState {
+    Hidden,
+    NeedsInput,
+    #[allow(unused)]
+    BadPath,
+    InvalidFile,
+    NeedsChecked,
+}
+
+pub enum SceneLoadingState {
+    NoData,
+    NeedsLoaded,
+    Loaded,
+}
+
+// ------------
+// Constructor.
 
 impl AppState {
     pub async fn new(
@@ -141,7 +144,12 @@ impl AppState {
             grapher_scene: GrapherScene::None,
         }
     }
+}
 
+// -----------------------------
+// General state update methods.
+
+impl AppState {
     pub fn resize_surface(&mut self, width: u32, height: u32) {
         self.surface_config.width = width;
         self.surface_config.height = height;
@@ -188,7 +196,12 @@ impl AppState {
         self.ui_data.show_file_input = false;
         self.file_dialog.pick_file();
     }
+}
 
+// ---------------------
+// Mode change handlers.
+
+impl AppState {
     pub fn handle_scene_changes(&mut self) {
         if self.ui_data.show_file_input {
             self.show_file_input();
@@ -346,10 +359,14 @@ impl AppState {
     }
 
     fn scene_change_solver(&mut self) {
-        self.hide_file_input();
-        self.grapher_scene = GrapherScene::Solver(SolverSceneData {
-            scene: TwoDScene::new(&self.device, &self.queue, &self.surface_config),
-        });
-        self.scene_loading_state = SceneLoadingState::Loaded;
+        if matches!(self.grapher_scene, GrapherScene::Changed) {
+            self.hide_file_input();
+            self.grapher_scene = GrapherScene::Solver(SolverSceneData::new(
+                &self.device,
+                &self.queue,
+                &self.surface_config,
+            ));
+            self.scene_loading_state = SceneLoadingState::Loaded;
+        }
     }
 }

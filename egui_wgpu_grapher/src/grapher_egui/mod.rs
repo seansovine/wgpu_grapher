@@ -136,6 +136,12 @@ impl GrapherScene {
         }
     }
 
+    pub fn compute(&mut self, device: &Device, queue: &Queue) {
+        if let GrapherScene::Solver(data) = self {
+            data.run_solver(device, queue);
+        }
+    }
+
     pub fn update(
         &mut self,
         device: &Device,
@@ -159,8 +165,8 @@ impl GrapherScene {
             GrapherScene::ImageViewer(data) => {
                 data.image_viewer_scene.update(queue, state);
             }
-            GrapherScene::Solver(..) => {
-                // TODO: Run next N compute passes for equation solver timesteps.
+            GrapherScene::Solver(data) => {
+                data.update(queue);
             }
             _ => unimplemented!(),
         }

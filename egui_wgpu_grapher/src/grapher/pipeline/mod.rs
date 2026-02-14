@@ -7,7 +7,10 @@ pub mod texture;
 use super::scene::Bufferable;
 use texture::DepthBuffer;
 
-use egui_wgpu::wgpu::{self, BindGroupLayout, Device, RenderPipeline, SurfaceConfiguration};
+use egui_wgpu::wgpu::{
+    self, BindGroupLayout, ComputePipeline, Device, PipelineLayoutDescriptor, RenderPipeline,
+    ShaderSource, SurfaceConfiguration,
+};
 
 // -------------------------------
 // Include shaders as static data.
@@ -24,8 +27,12 @@ pub fn get_textured_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/textured_shader.wgsl").into())
 }
 
-pub fn get_2d_shader() -> wgpu::ShaderSource<'static> {
-    wgpu::ShaderSource::Wgsl(include_str!("shaders/2d_shader.wgsl").into())
+pub fn get_solver_shader() -> wgpu::ShaderSource<'static> {
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/solver_shader.wgsl").into())
+}
+
+pub fn get_solver_compute_shader() -> wgpu::ShaderSource<'static> {
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/solver.wgsl").into())
 }
 
 // -------------------------
@@ -162,7 +169,7 @@ pub fn create_2d_pipeline(
 ) -> RenderPipeline {
     let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("a shader"),
-        source: get_2d_shader(),
+        source: get_solver_shader(),
     });
 
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
@@ -205,6 +212,33 @@ pub fn create_2d_pipeline(
             ..Default::default()
         },
         multiview: None,
+        cache: None,
+    })
+}
+
+// --------------------------
+// Create a compute pipeline.
+
+pub fn create_compute_pipeline(
+    device: &Device,
+    shader_source: ShaderSource,
+    bind_group_layouts: &[&BindGroupLayout],
+) -> ComputePipeline {
+    let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
+        label: None,
+        bind_group_layouts,
+        push_constant_ranges: &[],
+    });
+    let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+        label: Some("A Compute Shader"),
+        source: shader_source,
+    });
+    device.create_compute_pipeline(&wgpu::ComputePipelineDescriptor {
+        label: None,
+        layout: Some(&pipeline_layout),
+        module: &module,
+        entry_point: Some("run"),
+        compilation_options: wgpu::PipelineCompilationOptions::default(),
         cache: None,
     })
 }

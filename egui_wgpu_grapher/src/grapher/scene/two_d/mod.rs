@@ -7,25 +7,28 @@ use std::sync::OnceLock;
 
 use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu::{
-    self, BindGroup, BindGroupLayout, Buffer, Device, Extent3d, Origin3d, Queue, RenderPipeline,
-    SurfaceConfiguration, TexelCopyBufferLayout, TexelCopyTextureInfo, Texture, util::DeviceExt,
+    self, BindGroup, BindGroupLayout, Buffer, CommandEncoder, ComputePipeline, Device, Extent3d,
+    Origin3d, Queue, RenderPipeline, SurfaceConfiguration, TexelCopyBufferLayout,
+    TexelCopyTextureInfo, Texture, util::DeviceExt,
 };
 
-use crate::grapher::pipeline::create_2d_pipeline;
+use crate::grapher::pipeline::{
+    create_2d_pipeline, create_compute_pipeline, get_solver_compute_shader,
+};
 
 // --------------------------
 // Solver scene uniform data.
 
 #[repr(C)]
 #[derive(Default, Copy, Clone, Pod, Zeroable)]
-struct UniformData {
-    timestep: u32,
+pub struct UniformData {
+    pub timestep: u32,
     aspect_ratio: f32,
 }
 
 #[allow(dead_code)]
 pub struct Uniform {
-    data: UniformData,
+    pub data: UniformData,
     buffer: Buffer,
     pub compute_bind_group: BindGroup,
     pub compute_bind_group_layout: BindGroupLayout,
@@ -253,7 +256,8 @@ fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
 // Top-level scene structure.
 
 pub struct TwoDScene {
-    pub pipeline: RenderPipeline,
+    pub compute_pipeline: ComputePipeline,
+    pub render_pipeline: RenderPipeline,
     pub index_buffer: Buffer,
     pub uniform: Uniform,
     pub data_texture: DataTexture,
@@ -271,18 +275,52 @@ impl TwoDScene {
         let uniform = Uniform::new(device, surface_config);
         let data_texture = DataTexture::new(device, queue);
 
+        let compute_pipeline = create_compute_pipeline(
+            device,
+            get_solver_compute_shader(),
+            &[
+                &data_texture.compute_bind_group_layout,
+                &uniform.compute_bind_group_layout,
+            ],
+        );
+        let render_pipeline = create_2d_pipeline(
+            device,
+            surface_config,
+            &[
+                &uniform.render_bind_group_layout,
+                &data_texture.render_bind_group_layout,
+            ],
+        );
+
         Self {
-            pipeline: create_2d_pipeline(
-                device,
-                surface_config,
-                &[
-                    &uniform.render_bind_group_layout,
-                    &data_texture.render_bind_group_layout,
-                ],
-            ),
+            compute_pipeline,
+            render_pipeline,
             index_buffer,
             uniform,
             data_texture,
         }
+    }
+
+    pub fn increment_timestep(&mut self, queue: &Queue) {
+        self.uniform.data.timestep += 1;
+        queue.write_buffer(
+            &self.uniform.buffer,
+            0,
+            bytemuck::bytes_of(&self.uniform.data),
+        );
+    }
+
+    pub fn solver_timestep(&self, encoder: &mut CommandEncoder) {
+        let mut compute_pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+            label: None,
+            timestamp_writes: None,
+        });
+        compute_pass.set_pipeline(&self.compute_pipeline);
+        compute_pass.set_bind_group(0, &self.data_texture.compute_bind_group, &[]);
+        compute_pass.set_bind_group(1, &self.uniform.compute_bind_group, &[]);
+
+        let workgroup_count_x = TEXTURE_WIDTH.div_ceil(8);
+        let workgroup_count_y = TEXTURE_HEIGHT.div_ceil(8);
+        compute_pass.dispatch_workgroups(workgroup_count_x, workgroup_count_y, 1);
     }
 }
