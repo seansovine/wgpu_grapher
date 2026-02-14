@@ -192,6 +192,8 @@ pub fn render_2d(
         timestamp_writes: None,
     });
     render_pass.set_pipeline(&scene.pipeline);
+    render_pass.set_bind_group(0, &scene.uniform.render_bind_group, &[]);
+    render_pass.set_bind_group(1, &scene.data_texture.render_bind_group, &[]);
     render_pass.set_index_buffer(scene.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
     render_pass.draw_indexed(0..6, 0, 0..1);
 }

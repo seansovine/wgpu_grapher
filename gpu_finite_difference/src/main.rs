@@ -37,9 +37,7 @@ fn main() -> Result<(), ()> {
 
     let Ok((device, queue)) = pollster::block_on(adapter.request_device(&wgpu::DeviceDescriptor {
         label: None,
-        required_features: wgpu::Features::TEXTURE_BINDING_ARRAY
-            | wgpu::Features::STORAGE_RESOURCE_BINDING_ARRAY
-            | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
+        required_features: wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES,
         required_limits: wgpu::Limits::downlevel_defaults(),
         experimental_features: wgpu::ExperimentalFeatures::disabled(),
         memory_hints: wgpu::MemoryHints::MemoryUsage,
@@ -49,13 +47,12 @@ fn main() -> Result<(), ()> {
         return Err(());
     };
 
-    // ---------------------------------------------------------
-    // Create textures to hold solution data at three timesteps.
+    // --------------------------------------------------------
+    // Create texture to hold solution data at three timesteps.
 
     let texture_size = wgpu::Extent3d {
         width: TEXTURE_WIDTH,
         height: TEXTURE_HEIGHT,
-        // Layer for timesteps t, t-1, t-2.
         depth_or_array_layers: 1,
     };
 

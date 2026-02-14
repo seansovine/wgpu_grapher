@@ -75,7 +75,9 @@ impl AppState {
             .await
             .expect("Failed to find an appropriate adapter");
 
-        let features = wgpu::Features::POLYGON_MODE_LINE;
+        let features = wgpu::Features::POLYGON_MODE_LINE
+            | wgpu::Features::FLOAT32_FILTERABLE
+            | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: None,
@@ -346,7 +348,7 @@ impl AppState {
     fn scene_change_solver(&mut self) {
         self.hide_file_input();
         self.grapher_scene = GrapherScene::Solver(SolverSceneData {
-            scene: TwoDScene::new(&self.device, &self.surface_config),
+            scene: TwoDScene::new(&self.device, &self.queue, &self.surface_config),
         });
         self.scene_loading_state = SceneLoadingState::Loaded;
     }
