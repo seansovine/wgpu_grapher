@@ -1,5 +1,6 @@
 //! Scene to render equation solver on 2d canvas.
 
+use egui::Ui;
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
 use crate::grapher::scene::solver::SolverScene;
@@ -13,7 +14,7 @@ impl SolverSceneData {
     pub fn new(device: &Device, queue: &Queue, surface_config: &SurfaceConfiguration) -> Self {
         Self {
             scene: SolverScene::new(device, queue, surface_config),
-            updates_paused: false,
+            updates_paused: true,
         }
     }
 
@@ -38,5 +39,21 @@ impl SolverSceneData {
                 queue.submit(Some(encoder.finish()));
             }
         }
+    }
+
+    pub fn parameter_ui(&mut self, ui: &mut Ui) {
+        let clicked: bool;
+        if !self.updates_paused {
+            clicked = ui.button("Pause").clicked();
+        } else if self.scene.timestep() == 0 {
+            clicked = ui.button("Start").clicked();
+        } else {
+            clicked = ui.button("Resume").clicked();
+        }
+        if clicked {
+            self.updates_paused = !self.updates_paused;
+        }
+        ui.add_space(2.5);
+        ui.label(format!("Timestep: {}", self.scene.timestep()));
     }
 }

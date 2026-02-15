@@ -26,7 +26,6 @@ pub struct UniformData {
     aspect_ratio: f32,
 }
 
-#[allow(dead_code)]
 pub struct Uniform {
     pub data: UniformData,
     buffer: Buffer,
@@ -169,7 +168,11 @@ impl DataTexture {
             }],
         });
 
-        let sampler = device.create_sampler(&wgpu::SamplerDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            ..Default::default()
+        });
         let render_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
                 label: Some("Solver Data Render Group Layout"),
@@ -299,6 +302,10 @@ impl SolverScene {
             uniform,
             data_texture,
         }
+    }
+
+    pub fn timestep(&self) -> u32 {
+        self.uniform.data.timestep
     }
 
     pub fn increment_timestep(&mut self, queue: &Queue) {

@@ -183,6 +183,9 @@ impl GrapherScene {
             GrapherScene::ImageViewer(data) => {
                 parameter_ui_image_viewer(data, ui, ui_state);
             }
+            GrapherScene::Solver(data) => {
+                data.parameter_ui(ui);
+            }
             _ => {}
         }
     }

@@ -25,6 +25,9 @@ use winit::{
     window::{Window, WindowAttributes, WindowId},
 };
 
+// ---------------------------------------
+// Top-level structure of the application.
+
 pub struct App {
     instance: wgpu::Instance,
     state: Option<AppState>,
@@ -209,7 +212,7 @@ impl App {
 
         let context = &state.egui_renderer.context();
 
-        // main settings window
+        // Main settings window.
         egui::Window::new("Settings")
             .resizable(true)
             .default_size([200.0, 225.0])
@@ -227,7 +230,7 @@ impl App {
                 );
             });
 
-        // show function input in graph mode
+        // Show function input in graph mode.
         if matches!(state.scene_mode, GrapherSceneMode::Graph) {
             let mut is_valid = state.ui_data.function_valid;
             let mut function = None;
@@ -252,6 +255,9 @@ impl App {
     }
 }
 
+// ------------------------------------------------
+// Trait that winit uses to pass events to the app.
+
 impl ApplicationHandler for App {
     /// Handles startup and resume from system suspsend. See:
     /// https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability
@@ -264,8 +270,8 @@ impl ApplicationHandler for App {
 
     fn device_event(
         &mut self,
-        _event_loop: &ActiveEventLoop,
-        _device_id: winit::event::DeviceId,
+        _: &ActiveEventLoop,
+        _: winit::event::DeviceId,
         event: winit::event::DeviceEvent,
     ) {
         if let Some(state) = self.state.as_mut() {
@@ -283,8 +289,9 @@ impl ApplicationHandler for App {
 
         // Let egui process event first.
         state.egui_renderer.handle_input(window, &event);
-        let context = state.egui_renderer.context();
+
         // Only process event if GUI does not have focus.
+        let context = state.egui_renderer.context();
         if !(context.wants_keyboard_input() || context.wants_pointer_input())
             && state.grapher_state.handle_user_input(&event)
         {
@@ -298,6 +305,7 @@ impl ApplicationHandler for App {
             WindowEvent::Resized(new_size) => {
                 self.handle_resized(new_size.width, new_size.height);
             }
+
             WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
@@ -309,6 +317,7 @@ impl ApplicationHandler for App {
             } => {
                 event_loop.exit();
             }
+
             WindowEvent::RedrawRequested => {
                 // Request continuous redraw events and throttle with timers.
                 window.request_redraw();
@@ -332,11 +341,11 @@ impl ApplicationHandler for App {
                     state.ui_data.render_ui_state.needs_prefs_uniform_write = false;
                 }
 
-                // Accumulate time for render timeout.
+                // Throttle rendering for efficiency.
                 self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
                 self.last_update_time = time::Instant::now();
-                // Throttle rendering for efficiency.
                 let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
+
                 // Re-render the scene.
                 if do_render {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;
@@ -353,7 +362,7 @@ impl ApplicationHandler for App {
                     }
                 }
 
-                // Also throttle event-handling.
+                // Delays entire event loop.
                 thread::sleep(Self::RENDER_TIMEOUT);
             }
             _ => (),
