@@ -1,9 +1,4 @@
-mod app;
-mod egui;
-mod grapher;
-
-#[allow(unreachable_patterns)]
-mod grapher_egui;
+use egui_wgpu_grapher::{app, grapher_egui};
 
 use clap::Parser;
 use winit::event_loop::{ControlFlow, EventLoop};

@@ -1,6 +1,6 @@
 use crate::{
     egui::{egui_tools::EguiRenderer, ui::UiState},
-    grapher::{self, math::FunctionHolder, scene::solid::graph::GraphScene},
+    grapher::{self, scene::solid::graph::GraphScene},
     grapher_egui::{
         GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
         solver_scene::SolverSceneData,
@@ -161,17 +161,6 @@ impl AppState {
         // update camera aspect ratio
         self.grapher_state.camera_state.camera.aspect = width as f32 / height as f32;
         self.grapher_state.update_camera(&mut self.queue);
-    }
-
-    pub fn update_graph(&mut self, function: FunctionHolder) {
-        if let GrapherScene::Graph(graph_scene_data) = &mut self.grapher_scene {
-            graph_scene_data.graph_scene.function = Some(function);
-            graph_scene_data.graph_scene.try_rebuild_scene(
-                &self.device,
-                &self.surface_config,
-                &self.grapher_state,
-            );
-        }
     }
 
     pub fn hide_file_input(&mut self) {

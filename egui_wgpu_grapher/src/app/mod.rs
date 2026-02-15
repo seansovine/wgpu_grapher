@@ -216,7 +216,7 @@ impl App {
         // Main controls window.
         egui::Window::new("Settings")
             .resizable(true)
-            .default_size([200.0, 225.0])
+            .default_size([200.0, 275.0])
             .default_pos([15.0, 15.0])
             .vscroll(true)
             .default_open(true)
@@ -249,7 +249,12 @@ impl App {
                 );
             }
             if let Some(func) = function {
-                state.update_graph(func);
+                state.grapher_scene.update_graph(
+                    &state.device,
+                    &state.surface_config,
+                    &state.grapher_state,
+                    func,
+                );
             }
             state.ui_data.function_valid = is_valid;
         }

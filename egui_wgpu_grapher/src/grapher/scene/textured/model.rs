@@ -19,9 +19,13 @@ use gltf::mesh::Mode;
 const DEFAULT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 const DEFAULT_COLOR_U8: [u8; 4] = [255, 0, 0, 255];
 
-pub fn load_model(device: &Device, queue: &Queue, file: &str) -> Result<Vec<TexturedMeshData>, ()> {
+pub fn load_model(
+    device: &Device,
+    queue: &Queue,
+    file: &str,
+) -> Result<Vec<TexturedMeshData>, String> {
     let Ok((gltf, buffers, _)) = gltf::import(file) else {
-        return Err(());
+        return Err("Failed to import glTF data from file.".into());
     };
 
     let mut meshes = vec![];

@@ -10,6 +10,7 @@ pub mod solver_scene;
 use crate::{
     egui::ui::UiState,
     grapher::{
+        math::FunctionHolder,
         pipeline::render_preferences::RenderPreferences,
         render::{ShadowState, render_2d},
         scene::{GpuVertex, RenderScene, solid::graph::GraphScene},
@@ -153,8 +154,12 @@ impl GrapherScene {
             GrapherScene::Graph(data) => {
                 // Rebuild scene if non-uniform parameters changed.
                 if data.graph_scene.needs_rebuild {
-                    data.graph_scene
-                        .try_rebuild_scene(device, surface_config, state);
+                    data.graph_scene.try_rebuild_scene(
+                        device,
+                        surface_config,
+                        state,
+                        data.smoothing_scale,
+                    );
                     data.graph_scene.needs_rebuild = false;
                 }
                 data.graph_scene.update(queue, state);
@@ -169,6 +174,20 @@ impl GrapherScene {
                 data.update(queue);
             }
             _ => unimplemented!(),
+        }
+    }
+
+    pub fn update_graph(
+        &mut self,
+        device: &Device,
+        surface_config: &SurfaceConfiguration,
+        state: &RenderState,
+        function: FunctionHolder,
+    ) {
+        if let GrapherScene::Graph(data) = self {
+            data.graph_scene.function = Some(function);
+            data.graph_scene
+                .try_rebuild_scene(device, surface_config, state, data.smoothing_scale);
         }
     }
 

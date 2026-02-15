@@ -18,6 +18,7 @@ pub struct GraphSceneUiData {
 pub struct GraphSceneData {
     pub graph_scene: GraphScene,
     pub ui_data: GraphSceneUiData,
+    pub smoothing_scale: Option<f64>,
 }
 
 impl GraphSceneData {
@@ -41,6 +42,7 @@ impl GraphSceneData {
                 shift_z_text,
                 shift_y_text,
             },
+            smoothing_scale: None,
         }
     }
 }
@@ -94,4 +96,27 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
             ui.end_row();
         });
     }
+
+    let mut smoothing = data.smoothing_scale.unwrap_or_default();
+    ui.label("Smoothing scale:");
+    ui.add_space(2.5);
+
+    if ui
+        .add(egui::Slider::new(&mut smoothing, 0.0..=40.0))
+        .changed()
+    {
+        if smoothing == 0.0 {
+            data.smoothing_scale = None;
+        } else {
+            data.smoothing_scale = Some(smoothing);
+        }
+    }
+
+    // TODO: Need to store function string for reuse;
+    //       then we can implement this version.
+    //
+    // ui.add_space(5.0);
+    // if ui.button("Update graph").clicked() {
+    //     *needs_update = true;
+    // }
 }

@@ -47,7 +47,7 @@ impl RenderScene for Scene {
 // ----------------------------------------------------------
 // Trait for structs that can provide a vertex buffer layout.
 
-pub(crate) trait Bufferable {
+pub trait Bufferable {
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static>;
 }
 

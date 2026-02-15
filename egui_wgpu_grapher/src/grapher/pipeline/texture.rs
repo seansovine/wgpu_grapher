@@ -9,12 +9,12 @@ pub struct Image {
 }
 
 impl Image {
-    pub fn from_file(filepath: &str) -> Result<Self, ()> {
+    pub fn from_file(filepath: &str) -> Result<Self, String> {
         let Ok(image_bytes) = std::fs::read(filepath) else {
-            return Err(());
+            return Err("Failed to read file.".into());
         };
         let Ok(image) = image::load_from_memory(&image_bytes) else {
-            return Err(());
+            return Err("Failed to create image from file data.".into());
         };
         let image = image.to_rgba8();
         let dimensions = image.dimensions();
