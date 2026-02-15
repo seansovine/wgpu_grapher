@@ -34,23 +34,23 @@ pub struct App {
     window: Option<Arc<Window>>,
     window_attributes: WindowAttributes,
 
-    // timing variables
+    // Timing variables.
     last_update_time: Instant,
     last_render_time: Instant,
     accumulated_secs: f32,
     render_count: usize,
     avg_framerate: f32,
 
-    // initial_scene
+    // Allows user to pass scene at startup.
     initial_scene: GrapherSceneMode,
 }
 
 impl App {
-    // time between state updates; helps control CPU usage and simulation timing
+    // Pause at end of redraw handler.
     const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(20);
-    // only render after this much time has elapsed; for accumulator
+    // Target 60 fps.
     const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
-    // after how many frame renders to update the framerate estimate
+    // How often to update average framerate.
     const REPORT_FRAMES_INTERVAL: usize = 100;
 
     pub fn new(initial_scene: Option<GrapherSceneMode>) -> Self {
@@ -115,7 +115,6 @@ impl App {
     }
 
     fn handle_redraw(&mut self) {
-        // if minimized don't redraw
         if let Some(window) = self.window.as_ref()
             && let Some(min) = window.is_minimized()
             && min
@@ -145,7 +144,7 @@ impl App {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
         if state.grapher_scene.is_some() {
-            // Run any compute passes using same command encoder.
+            // Run any compute passes.
             state.grapher_scene.compute(&state.device, &state.queue);
             // Render grapher scene.
             state
@@ -153,8 +152,8 @@ impl App {
                 .render(&surface_view, &mut encoder, &state.grapher_state);
         }
 
-        // Render GUI.
         {
+            // Render GUI.
             let screen_descriptor = ScreenDescriptor {
                 size_in_pixels: [state.surface_config.width, state.surface_config.height],
                 pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
@@ -182,6 +181,7 @@ impl App {
             FileInputState::NeedsInput => {
                 let context = &state.egui_renderer.context();
                 state.file_dialog.update(context);
+
                 // Check if the user picked a file.
                 if let Some(path) = state.file_dialog.take_picked() {
                     state.ui_data.filename = path.to_string_lossy().to_string();
@@ -191,6 +191,7 @@ impl App {
                     state.hide_file_input();
                 }
             }
+
             FileInputState::InvalidFile => {
                 let context = state.egui_renderer.context();
                 let modal = egui::containers::Modal::new("file_load_failed_modal".into());
@@ -212,7 +213,7 @@ impl App {
 
         let context = &state.egui_renderer.context();
 
-        // Main settings window.
+        // Main controls window.
         egui::Window::new("Settings")
             .resizable(true)
             .default_size([200.0, 225.0])
@@ -259,8 +260,10 @@ impl App {
 // Trait that winit uses to pass events to the app.
 
 impl ApplicationHandler for App {
-    /// Handles startup and resume from system suspsend. See:
-    /// https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability
+    /// Handles startup and resume from system suspend. See:
+    ///
+    ///  [winit docs](https://docs.rs/winit/latest/winit/application/trait.ApplicationHandler.html#portability)
+    ///
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window = event_loop
             .create_window(self.window_attributes.clone())
@@ -319,7 +322,7 @@ impl ApplicationHandler for App {
             }
 
             WindowEvent::RedrawRequested => {
-                // Request continuous redraw events and throttle with timers.
+                // Request continuous redraw events.
                 window.request_redraw();
 
                 // Let scene run any of its own internal updates.
@@ -341,20 +344,20 @@ impl ApplicationHandler for App {
                     state.ui_data.render_ui_state.needs_prefs_uniform_write = false;
                 }
 
-                // Throttle rendering for efficiency.
+                // Target 60 fps.
                 self.accumulated_secs += self.last_update_time.elapsed().as_secs_f32();
                 self.last_update_time = time::Instant::now();
-                let do_render = self.accumulated_secs >= Self::RENDER_TIME_INCR;
 
-                // Re-render the scene.
-                if do_render {
+                // Redraw the scene.
+                if self.accumulated_secs >= Self::RENDER_TIME_INCR {
                     self.accumulated_secs -= Self::RENDER_TIME_INCR;
-                    state.grapher_state.update_camera(&mut state.queue);
-                    self.state.as_mut().unwrap().handle_scene_changes();
-                    self.handle_redraw();
                     self.render_count += 1;
 
-                    if self.render_count == Self::REPORT_FRAMES_INTERVAL {
+                    state.grapher_state.update_camera(&mut state.queue);
+                    state.handle_scene_changes();
+                    self.handle_redraw();
+
+                    if self.render_count >= Self::REPORT_FRAMES_INTERVAL {
                         self.avg_framerate = Self::REPORT_FRAMES_INTERVAL as f32
                             / self.last_render_time.elapsed().as_secs_f32();
                         self.render_count = 0;
@@ -362,7 +365,7 @@ impl ApplicationHandler for App {
                     }
                 }
 
-                // Delays entire event loop.
+                // Delay event loop, including internal updates.
                 thread::sleep(Self::RENDER_TIMEOUT);
             }
             _ => (),

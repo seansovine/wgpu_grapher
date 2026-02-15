@@ -15,20 +15,15 @@ struct Args {
 }
 
 fn main() {
-    #[cfg(not(target_arch = "wasm32"))]
-    {
-        pollster::block_on(run());
-    }
+    pollster::block_on(run());
 }
 
 async fn run() {
     let args = Args::parse();
-
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Wait);
 
     let mut app = app::App::new(args.scene);
-
     event_loop
         .run_app(&mut app)
         .expect("Winit event loop failed to start.");
