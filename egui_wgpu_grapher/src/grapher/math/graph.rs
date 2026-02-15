@@ -2,7 +2,7 @@
 //
 // This includes:
 //
-//  - a function that tesselates an (x, z) square with uniform subsquares
+//  - a function that tessellates an (x, z) square with uniform subsquares
 //  - a function to generate the vertex and index sets from squares
 //  - a function to update the vertex sets above from an (x, z) -> y closure
 //     (note we're working in OpenGL coordinate system)
@@ -67,6 +67,17 @@ fn triangle_normal(v_1: &Vertex, v_2: &Vertex, v_3: &Vertex, reflect: bool) -> [
     [normal[0] / norm, normal[1] / norm, normal[2] / norm]
 }
 
+#[inline(always)]
+fn normal_from_function<F: GraphableFunc>(v: &Vertex, f: &F) -> [f32; 3] {
+    const H: f64 = 1e-6;
+    let dydx: f64 =
+        (f.eval(v[0] as f64 + H, v[2] as f64) - f.eval(v[0] as f64 - H, v[2] as f64)) / (2.0 * H);
+    let dzdx: f64 =
+        (f.eval(v[0] as f64, v[2] as f64 + H) - f.eval(v[0] as f64, v[2] as f64 - H)) / (2.0 * H);
+    let mag = (dydx.powi(2) + 1.0 + dydx.powi(2)).sqrt();
+    [(-dydx / mag) as f32, 1.0 / mag as f32, (-dzdx / mag) as f32]
+}
+
 pub struct Square {
     // vertex indices of corners CW from back-left
     corner_indices: [u32; 4],
@@ -126,7 +137,7 @@ impl SquareTesselation {
     ];
 
     // color to use for function mesh
-    pub const FUNCT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
+    pub const FUNC_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
     /// Build tesselation of \[0, width\] x \[0, width\] square
     /// in \(x, z\) coordinate system by smaller squares.
@@ -206,6 +217,40 @@ impl SquareTesselation {
                 }
             }
         }
+
+        for (i, vertex) in self.vertices.iter().enumerate() {
+            vertices.push(scene::GpuVertex {
+                position: *vertex,
+                color,
+                normal: normals[i].take().unwrap(),
+                ..Default::default()
+            });
+        }
+
+        MeshData { vertices, indices }
+    }
+
+    pub fn mesh_data_direct_normals<F: GraphableFunc>(&self, color: [f32; 3], f: &F) -> MeshData {
+        let mut indices: Vec<u32> = vec![];
+        let mut normals: Vec<Option<[f32; 3]>> = vec![None; self.vertices.len()];
+        let mut vertices: Vec<scene::GpuVertex> = vec![];
+
+        for square in &self.squares {
+            let diag_1 = (self.vertices[square.corner_indices[0] as usize][1]
+                - self.vertices[square.corner_indices[2] as usize][1])
+                .abs();
+            let diag_2 = (self.vertices[square.corner_indices[1] as usize][1]
+                - self.vertices[square.corner_indices[3] as usize][1])
+                .abs();
+            let flip = diag_1 > diag_2;
+            for t in square.triangles(flip) {
+                indices.extend_from_slice(&t.vertex_indices);
+            }
+        }
+
+        self.vertices.iter().enumerate().for_each(|(i, vert)| {
+            normals[i] = Some(normal_from_function(vert, f));
+        });
 
         for (i, vertex) in self.vertices.iter().enumerate() {
             vertices.push(scene::GpuVertex {

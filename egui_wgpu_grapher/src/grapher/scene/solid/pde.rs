@@ -32,7 +32,7 @@ pub fn wave_eqn_scene(
 
     let func_mesh =
         SquareTesselation::generate(SUBDIVISIONS, WIDTH, &FunctionHolder::from(|_, _| 0.0));
-    let mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
+    let mesh_data = func_mesh.mesh_data(SquareTesselation::FUNC_COLOR);
     let matrix = MatrixUniform::translation(&[
         (-WIDTH / 2.0_f64) as f32,
         0.1_f32,
@@ -125,7 +125,7 @@ pub fn heat_eqn_scene(
 
     let func_mesh =
         SquareTesselation::generate(subdivisions, WIDTH, &FunctionHolder::from(|_, _| 0.0));
-    let mut mesh_data = func_mesh.mesh_data(SquareTesselation::FUNCT_COLOR);
+    let mut mesh_data = func_mesh.mesh_data(SquareTesselation::FUNC_COLOR);
 
     func_mesh.update_normals(&mut mesh_data);
 

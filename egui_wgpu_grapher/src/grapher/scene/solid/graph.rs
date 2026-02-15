@@ -107,6 +107,7 @@ impl GraphScene {
             state,
             self.width,
             &f,
+            smoothing_scale.is_none(),
         ));
         self.function = Some(f);
     }
@@ -118,18 +119,27 @@ pub fn build_scene_for_graph(
     state: &RenderState,
     width: f64,
     f: &impl GraphableFunc,
+    direct_normals: bool,
 ) -> Scene {
-    let matrix = MatrixUniform::identity();
-
     // TODO: Add GUI parameter for floor mesh.
     //
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
     //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
 
-    let func_mesh = graph::SquareTesselation::generate(GRAPH_SUBDIVISIONS, width, f)
-        .mesh_data(graph::SquareTesselation::FUNCT_COLOR);
+    let grid = graph::SquareTesselation::generate(GRAPH_SUBDIVISIONS, width, f);
 
-    build_scene(device, surface_config, state, vec![(func_mesh, matrix)])
+    let func_mesh = if direct_normals {
+        grid.mesh_data_direct_normals(graph::SquareTesselation::FUNC_COLOR, f)
+    } else {
+        grid.mesh_data(graph::SquareTesselation::FUNC_COLOR)
+    };
+
+    build_scene(
+        device,
+        surface_config,
+        state,
+        vec![(func_mesh, MatrixUniform::identity())],
+    )
 }
 
 #[allow(dead_code)]
@@ -181,6 +191,7 @@ pub fn demo_graph_scene(
             state,
             WIDTH,
             f,
+            false,
         ));
     }
 
