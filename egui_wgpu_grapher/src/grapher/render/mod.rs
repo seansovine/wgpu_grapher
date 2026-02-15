@@ -4,7 +4,7 @@ mod state;
 pub use state::*;
 
 use super::scene::Scene;
-use crate::grapher::scene::two_d::TwoDScene;
+use crate::grapher::scene::solver::SolverScene;
 
 use egui_wgpu::wgpu::{
     self, BindGroup, BufferSlice, Color, CommandEncoder, RenderPass, TextureView,
@@ -172,7 +172,7 @@ fn draw_mesh(
 pub fn render_2d(
     view: &TextureView,
     encoder: &mut CommandEncoder,
-    scene: &TwoDScene,
+    scene: &SolverScene,
     render_state: &RenderState,
 ) {
     let color_attachment = wgpu::RenderPassColorAttachment {

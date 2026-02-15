@@ -2,17 +2,17 @@
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
-use crate::grapher::scene::two_d::TwoDScene;
+use crate::grapher::scene::solver::SolverScene;
 
 pub struct SolverSceneData {
-    pub scene: TwoDScene,
+    pub scene: SolverScene,
     pub updates_paused: bool,
 }
 
 impl SolverSceneData {
     pub fn new(device: &Device, queue: &Queue, surface_config: &SurfaceConfiguration) -> Self {
         Self {
-            scene: TwoDScene::new(device, queue, surface_config),
+            scene: SolverScene::new(device, queue, surface_config),
             updates_paused: false,
         }
     }

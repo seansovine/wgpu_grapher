@@ -1,5 +1,5 @@
 pub mod solid;
-pub mod two_d;
+pub mod solver;
 
 #[allow(dead_code)]
 pub mod textured;
@@ -23,6 +23,7 @@ pub struct Scene {
     pub shadow: Option<ShadowState>,
 }
 
+// ------------------------------------------------
 // Trait to abstract scene behavior in render loop.
 
 pub trait RenderScene {
@@ -43,13 +44,15 @@ impl RenderScene for Scene {
     }
 }
 
+// ----------------------------------------------------------
 // Trait for structs that can provide a vertex buffer layout.
 
 pub(crate) trait Bufferable {
     fn buffer_layout() -> wgpu::VertexBufferLayout<'static>;
 }
 
-// Vertex passed to GPU in buffer.
+// --------------------------------------------------
+// Vertex mapped to GPU buffer in 3D scene framework.
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

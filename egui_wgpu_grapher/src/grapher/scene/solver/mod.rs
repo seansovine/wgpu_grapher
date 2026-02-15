@@ -13,7 +13,7 @@ use egui_wgpu::wgpu::{
 };
 
 use crate::grapher::pipeline::{
-    create_2d_pipeline, create_compute_pipeline, get_solver_compute_shader,
+    create_compute_pipeline, create_solver_pipeline, get_solver_compute_shader,
 };
 
 // --------------------------
@@ -255,7 +255,7 @@ fn init_texture(queue: &Queue, texture: &Texture, texture_size: Extent3d) {
 // --------------------------
 // Top-level scene structure.
 
-pub struct TwoDScene {
+pub struct SolverScene {
     pub compute_pipeline: ComputePipeline,
     pub render_pipeline: RenderPipeline,
     pub index_buffer: Buffer,
@@ -265,7 +265,7 @@ pub struct TwoDScene {
 
 const CANVAS_QUAD_INDICES: [u32; 6] = [0, 1, 2, 0, 2, 3];
 
-impl TwoDScene {
+impl SolverScene {
     pub fn new(device: &Device, queue: &Queue, surface_config: &SurfaceConfiguration) -> Self {
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
@@ -283,7 +283,7 @@ impl TwoDScene {
                 &uniform.compute_bind_group_layout,
             ],
         );
-        let render_pipeline = create_2d_pipeline(
+        let render_pipeline = create_solver_pipeline(
             device,
             surface_config,
             &[

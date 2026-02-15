@@ -162,7 +162,7 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
 // ---------------------------------------
 // Create pipeline setup for 2D rendering.
 
-pub fn create_2d_pipeline(
+pub fn create_solver_pipeline(
     device: &Device,
     config: &SurfaceConfiguration,
     bind_group_layouts: &[&BindGroupLayout],
