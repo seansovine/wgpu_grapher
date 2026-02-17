@@ -1,7 +1,7 @@
+//! This module has code for building and representing scenes that we render.
+
 pub mod solid;
 pub mod solver;
-
-#[allow(dead_code)]
 pub mod textured;
 
 use super::render::RenderState;
@@ -9,7 +9,10 @@ use crate::grapher::{pipeline::light::LightState, render::ShadowState};
 
 use egui_wgpu::wgpu::{self, Queue, RenderPipeline};
 
-pub struct Scene {
+// -----------------------------------------
+// Pipelines and render data for a 3D scene.
+
+pub struct Scene3D {
     // solid and textured render pipelines
     pub pipeline: Option<RenderPipeline>,
     pub textured_pipeline: Option<RenderPipeline>,
@@ -28,14 +31,14 @@ pub struct Scene {
 
 pub trait RenderScene {
     /// get associated Scene reference
-    fn scene(&self) -> &Scene;
+    fn scene(&self) -> &Scene3D;
 
     /// perform any timestep state updates
     fn update(&mut self, queue: &Queue, state: &RenderState);
 }
 
-impl RenderScene for Scene {
-    fn scene(&self) -> &Scene {
+impl RenderScene for Scene3D {
+    fn scene(&self) -> &Scene3D {
         self
     }
 

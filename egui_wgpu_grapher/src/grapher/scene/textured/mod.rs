@@ -1,14 +1,12 @@
 // Structures and functions for building textured mesh scenes.
 
-pub mod gltf_loader;
 pub mod image_viewer;
-// #[allow(dead_code)]
 pub mod model;
-pub mod pde;
+pub mod pde_2d_cpu;
 
-use super::{GpuVertex, Scene};
+use super::{GpuVertex, Scene3D};
 use crate::grapher::{
-    matrix::{self, MatrixState, MatrixUniform},
+    matrix::{self, Matrix, MatrixUniform},
     pipeline::{self, light, texture::TextureData},
     render::RenderState,
 };
@@ -30,7 +28,7 @@ pub struct TexturedMeshRenderData {
     pub index_buffer: wgpu::Buffer,
     pub num_indices: u32,
 
-    pub matrix: MatrixState,
+    pub matrix: MatrixUniform,
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 
@@ -41,7 +39,7 @@ impl TexturedMeshRenderData {
     fn from_mesh_data(
         device: &wgpu::Device,
         mesh_data: TexturedMeshData,
-        matrix_uniform: MatrixUniform,
+        matrix_uniform: Matrix,
     ) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("vertex buffer"),
@@ -90,8 +88,8 @@ pub fn build_scene(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
-    mesh_data: Vec<(TexturedMeshData, MatrixUniform)>,
-) -> Scene {
+    mesh_data: Vec<(TexturedMeshData, Matrix)>,
+) -> Scene3D {
     let mut textured_meshes = vec![];
 
     for (mesh, matrix) in mesh_data {
@@ -116,7 +114,7 @@ pub fn build_scene(
         wgpu::PolygonMode::Fill,
     );
 
-    Scene {
+    Scene3D {
         pipeline: None,
         textured_pipeline: Some(pipeline),
 

@@ -1,5 +1,4 @@
-//! Read info from a glTF file using the document and buffers returned
-//! by the `import` function of the glTF crate (its higher-level API).
+//! Read scene data from a glTF file using the `gltf` crate.
 
 use core::f32;
 use std::{cell::RefCell, error::Error, path::Path};
@@ -11,13 +10,12 @@ use gltf::{
 };
 
 use crate::grapher::{
-    matrix::MatrixUniform,
+    matrix::Matrix,
     pipeline::texture::{Image, TextureData},
     scene::{GpuVertex, textured::TexturedMeshData},
 };
 
 const DEFAULT_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
-const DEFAULT_COLOR_U8: [u8; 4] = [255, 0, 0, 255];
 
 const DEV_LOGGING: bool = false;
 
@@ -26,7 +24,7 @@ const DEV_LOGGING: bool = false;
 
 pub struct RenderMesh {
     pub data: TexturedMeshData,
-    pub matrix: MatrixUniform,
+    pub matrix: Matrix,
 }
 
 pub struct RenderScene {
@@ -88,7 +86,7 @@ impl RenderScene {
 // ------------
 // glTF loader.
 
-fn node_matrix(node: &Node) -> MatrixUniform {
+fn node_matrix(node: &Node) -> Matrix {
     match node.transform() {
         Transform::Matrix { matrix } => matrix.into(),
 
@@ -122,7 +120,7 @@ fn node_matrix(node: &Node) -> MatrixUniform {
                 }
                 transform.into()
             } else {
-                MatrixUniform::identity()
+                Matrix::identity()
             }
         }
     }
@@ -161,7 +159,7 @@ impl<'a> GltfLoader<'a> {
 
 impl GltfLoader<'_> {
     pub fn traverse(self) -> Result<RenderScene, Box<dyn Error>> {
-        let root_matrix = MatrixUniform::identity();
+        let root_matrix = Matrix::identity();
         for scene in self.document.scenes() {
             // Traverse root nodes of scene.
             for node in scene.nodes() {
@@ -184,7 +182,7 @@ impl GltfLoader<'_> {
         &self,
         node: &Node,
         depth: usize,
-        parent_matrix: &MatrixUniform,
+        parent_matrix: &Matrix,
     ) -> Result<(), Box<dyn Error>> {
         for child in node.children() {
             let matrix = *parent_matrix * node_matrix(&child);
@@ -199,12 +197,7 @@ impl GltfLoader<'_> {
         print!("{}", " ".repeat(depth * INDENT));
     }
 
-    fn add_node(
-        &self,
-        node: &Node,
-        depth: usize,
-        matrix: &MatrixUniform,
-    ) -> Result<(), Box<dyn Error>> {
+    fn add_node(&self, node: &Node, depth: usize, matrix: &Matrix) -> Result<(), Box<dyn Error>> {
         if DEV_LOGGING {
             // Some logging.
             Self::log_node(node, depth);
@@ -252,12 +245,7 @@ impl GltfLoader<'_> {
         println!();
     }
 
-    fn add_mesh(
-        &self,
-        mesh: &Mesh,
-        depth: usize,
-        matrix: &MatrixUniform,
-    ) -> Result<(), Box<dyn Error>> {
+    fn add_mesh(&self, mesh: &Mesh, depth: usize, matrix: &Matrix) -> Result<(), Box<dyn Error>> {
         if DEV_LOGGING {
             Self::indent(depth);
             println!("Node has mesh.");
@@ -294,7 +282,7 @@ impl GltfLoader<'_> {
             // Add indices.
             indices = reader
                 .read_indices()
-                .ok_or("The glTF contained a mesh with no indicies.")?
+                .ok_or("The glTF contained a mesh with no indices.")?
                 .into_u32()
                 .collect();
 

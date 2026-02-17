@@ -1,6 +1,6 @@
 pub mod controller;
 
-use super::matrix::{self, MatrixState, MatrixUniform, X_AXIS, Y_AXIS};
+use super::matrix::{self, Matrix, MatrixUniform, X_AXIS, Y_AXIS};
 
 use cgmath::{Euler, Matrix3, Quaternion, Rad, SquareMatrix};
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
@@ -173,7 +173,7 @@ impl Camera {
 
 pub struct CameraState {
     pub camera: Camera,
-    pub matrix: MatrixState,
+    pub matrix: MatrixUniform,
     pub controller: controller::CameraController,
 }
 
@@ -181,7 +181,7 @@ impl CameraState {
     pub fn init(device: &Device, surface_config: &SurfaceConfiguration) -> CameraState {
         let camera = Camera::default(surface_config);
 
-        let uniform = MatrixUniform::from(camera.get_matrix());
+        let uniform = Matrix::from(camera.get_matrix());
         let matrix = matrix::make_matrix_state(device, uniform);
         let controller = controller::CameraController::new(0.00125);
 

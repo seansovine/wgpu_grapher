@@ -93,7 +93,7 @@ impl RenderState {
         self.camera_state
             .matrix
             .uniform
-            .update_matrix(self.camera_state.camera.get_matrix());
+            .update_inner(self.camera_state.camera.get_matrix());
         // we write the uniform every frame
         self.camera_state.update_uniform(queue);
     }

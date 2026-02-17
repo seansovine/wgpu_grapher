@@ -6,7 +6,7 @@ use egui_wgpu::wgpu::{
 
 use crate::grapher::{
     camera,
-    matrix::{self, MatrixState, MatrixUniform},
+    matrix::{self, Matrix, MatrixUniform},
 };
 
 #[repr(C)]
@@ -26,7 +26,7 @@ pub struct LightState {
     pub bind_group: BindGroup,
 
     // light view matrix used for shadow mapping
-    pub camera_matrix: MatrixState,
+    pub camera_matrix: MatrixUniform,
     pub camera_matrix_bind_group_layout: BindGroupLayout,
     pub camera_matrix_bind_group: BindGroup,
 
@@ -86,7 +86,7 @@ impl LightState {
 
         // Create view matrix for use in shadow mapping.
         let matrix = Self::build_shadow_matrix(&uniform.position);
-        let matrix_uniform = MatrixUniform::from(matrix);
+        let matrix_uniform = Matrix::from(matrix);
         let camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
 
         let camera_matrix_bind_group_layout =
@@ -137,7 +137,7 @@ impl LightState {
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }
 
-    pub fn camera_view_matrix(&self) -> &MatrixState {
+    pub fn camera_view_matrix(&self) -> &MatrixUniform {
         &self.camera_matrix
     }
 

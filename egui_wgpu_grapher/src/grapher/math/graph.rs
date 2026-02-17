@@ -1,16 +1,16 @@
-// Code to build mesh(es) for graphing a function y = f(x, z).
-//
-// This includes:
-//
-//  - a function that tessellates an (x, z) square with uniform subsquares
-//  - a function to generate the vertex and index sets from squares
-//  - a function to update the vertex sets above from an (x, z) -> y closure
-//     (note we're working in OpenGL coordinate system)
-//  - mechanisms to decorate function closures to scale and shift inputs and outputs
-//  - functions to compute normal vectors for mesh triangles
-//
-// This will create the MeshData object used by mesh::build_scene.
-//
+//! Code to build mesh(es) for graphing a function y = f(x, z).
+//!
+//! This includes:
+//!
+//!  - a function that tessellates an (x, z) square with uniform subsquares
+//!  - a function to generate the vertex and index sets from squares
+//!  - a function to update the vertex sets above from an (x, z) -> y closure
+//!  - mechanisms to decorate function closures to scale and shift inputs and outputs
+//!  - functions to compute normal vectors for mesh triangles
+//!
+//! Note that we're working in OpenGL coordinate system, so y is "up".
+//!
+//! This will create the MeshData object used by mesh::build_scene.
 
 use crate::grapher::scene::{self, solid::MeshData};
 

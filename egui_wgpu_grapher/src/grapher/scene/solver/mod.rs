@@ -1,7 +1,5 @@
-//! Render data for a two=dimensional scene.
-//!
-//! This will be used as a canvas to display a texture that
-//! is updated by a time-dependent equation-solver pipeline.
+//! A scene that runs a finite-difference compute pipeline to solve a wave
+//! equation and renders the result to a texture on a fixed 2D canvas.
 
 use std::sync::OnceLock;
 

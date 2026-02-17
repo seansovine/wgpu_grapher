@@ -4,9 +4,9 @@ pub mod graph;
 #[allow(dead_code)]
 pub mod pde;
 
-use super::{GpuVertex, Scene};
+use super::{GpuVertex, Scene3D};
 use crate::grapher::{
-    matrix::{self, MatrixState, MatrixUniform},
+    matrix::{self, Matrix, MatrixUniform},
     pipeline::{self, light},
     render::{RenderState, ShadowState},
 };
@@ -35,13 +35,13 @@ pub struct MeshRenderData {
     pub vertex_buffer: Buffer,
     pub index_buffer: Buffer,
     pub num_indices: u32,
-    pub _matrix: MatrixState,
+    pub _matrix: MatrixUniform,
     pub bind_group_layout: BindGroupLayout,
     pub bind_group: BindGroup,
 }
 
 impl MeshRenderData {
-    fn from_mesh_data(device: &Device, mesh_data: MeshData, matrix_uniform: MatrixUniform) -> Self {
+    fn from_mesh_data(device: &Device, mesh_data: MeshData, matrix_uniform: Matrix) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(mesh_data.vertices.as_slice()),
@@ -87,8 +87,8 @@ pub fn build_scene(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
-    mesh_data: Vec<(MeshData, MatrixUniform)>,
-) -> Scene {
+    mesh_data: Vec<(MeshData, Matrix)>,
+) -> Scene3D {
     let mut meshes = vec![];
     for (mesh, matrix) in mesh_data {
         let mesh_render_data = MeshRenderData::from_mesh_data(device, mesh, matrix);
@@ -116,7 +116,7 @@ pub fn build_scene(
         state.render_preferences.polygon_mode,
     );
 
-    Scene {
+    Scene3D {
         pipeline: Some(pipeline),
         textured_pipeline: None,
 
@@ -159,16 +159,16 @@ pub fn test_scene(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
-) -> Scene {
-    let mut meshes: Vec<(MeshData, MatrixUniform)> = vec![];
+) -> Scene3D {
+    let mut meshes: Vec<(MeshData, Matrix)> = vec![];
 
     let mut back_mesh = (*TEST_MESH).clone();
     let gold = [168.0f32 / 255.0f32, 125.0f32 / 255.0f32, 50.0f32 / 255.0f32];
     back_mesh.set_uniform_color(gold);
-    meshes.push((back_mesh, MatrixUniform::translation(&[0.0, -0.5, -0.5])));
+    meshes.push((back_mesh, Matrix::translation(&[0.0, -0.5, -0.5])));
 
     let front_mesh = (*TEST_MESH).clone();
-    meshes.push((front_mesh, MatrixUniform::translation(&[0.0, -0.5, 0.5])));
+    meshes.push((front_mesh, Matrix::translation(&[0.0, -0.5, 0.5])));
 
     build_scene(device, surface_config, state, meshes)
 }

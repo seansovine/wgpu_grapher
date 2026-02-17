@@ -6,9 +6,9 @@ use crate::grapher::{
         FunctionHolder, SmoothingFunctionWrapper,
         graph::{self, GraphableFunc},
     },
-    matrix::MatrixUniform,
+    matrix::Matrix,
     render::RenderState,
-    scene::{RenderScene, Scene},
+    scene::{RenderScene, Scene3D},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
@@ -40,7 +40,7 @@ impl Default for GraphParameters {
 
 pub struct GraphScene {
     // all the data for rendering
-    pub scene: Option<Scene>,
+    pub scene: Option<Scene3D>,
 
     // size of rectangular domain of graph
     pub width: f64,
@@ -120,7 +120,7 @@ pub fn build_scene_for_graph(
     width: f64,
     f: &impl GraphableFunc,
     direct_normals: bool,
-) -> Scene {
+) -> Scene3D {
     // TODO: Add GUI parameter for floor mesh.
     //
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
@@ -138,7 +138,7 @@ pub fn build_scene_for_graph(
         device,
         surface_config,
         state,
-        vec![(func_mesh, MatrixUniform::identity())],
+        vec![(func_mesh, Matrix::identity())],
     )
 }
 
@@ -207,7 +207,7 @@ pub fn demo_graph_scene(
 }
 
 impl RenderScene for GraphScene {
-    fn scene(&self) -> &Scene {
+    fn scene(&self) -> &Scene3D {
         self.scene.as_ref().unwrap()
     }
 

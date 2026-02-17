@@ -1,4 +1,4 @@
-// General code for creating matrix uniforms and associated buffers.
+//! Code for converting between 4x4 matrix types and making matrix uniforms.
 
 use std::ops::Mul;
 
@@ -13,7 +13,7 @@ pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub struct MatrixUniform {
+pub struct Matrix {
     matrix: [[f32; 4]; 4],
     // TODO: We should store a cgmath::Matrix4 here. It also
     //       has repr(c) with the same layout, and that would
@@ -21,25 +21,25 @@ pub struct MatrixUniform {
     //       are done pretty rarely.
 }
 
-impl From<[[f32; 4]; 4]> for MatrixUniform {
+impl From<[[f32; 4]; 4]> for Matrix {
     fn from(value: [[f32; 4]; 4]) -> Self {
         Self { matrix: value }
     }
 }
 
-impl From<MatrixUniform> for cgmath::Matrix4<f32> {
-    fn from(value: MatrixUniform) -> Self {
+impl From<Matrix> for cgmath::Matrix4<f32> {
+    fn from(value: Matrix) -> Self {
         value.matrix.into()
     }
 }
 
-impl Default for MatrixUniform {
+impl Default for Matrix {
     fn default() -> Self {
         Self::identity()
     }
 }
 
-impl Mul for MatrixUniform {
+impl Mul for Matrix {
     type Output = Self;
 
     // For convenience; this is rarely used.
@@ -52,8 +52,7 @@ impl Mul for MatrixUniform {
     }
 }
 
-impl MatrixUniform {
-    #[allow(unused)]
+impl Matrix {
     pub fn identity() -> Self {
         use cgmath::SquareMatrix;
         Self {
@@ -84,7 +83,7 @@ impl MatrixUniform {
         }
     }
 
-    pub fn update_matrix(&mut self, matrix: cgmath::Matrix4<f32>) {
+    pub fn update_inner(&mut self, matrix: cgmath::Matrix4<f32>) {
         self.matrix = matrix.into();
     }
 
@@ -94,20 +93,20 @@ impl MatrixUniform {
     }
 }
 
-pub struct MatrixState {
-    pub uniform: MatrixUniform,
+pub struct MatrixUniform {
+    pub uniform: Matrix,
     pub buffer: Buffer,
     pub bind_group_layout_entry: BindGroupLayoutEntry,
 }
 
-impl MatrixState {
+impl MatrixUniform {
     #[allow(unused)]
     pub fn set_binding_index(&mut self, binding_index: u32) {
         self.bind_group_layout_entry.binding = binding_index;
     }
 }
 
-pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) -> MatrixState {
+pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: Matrix) -> MatrixUniform {
     let buffer = device.create_buffer_init(&BufferInitDescriptor {
         label: Some("camera buffer"),
         contents: bytemuck::cast_slice(&[matrix_uniform]),
@@ -125,7 +124,7 @@ pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: MatrixUniform) 
         count: None,
     };
 
-    MatrixState {
+    MatrixUniform {
         uniform: matrix_uniform,
         buffer,
         bind_group_layout_entry,

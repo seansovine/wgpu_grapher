@@ -1,6 +1,9 @@
-use rand::{Rng, rngs::ThreadRng};
+//! Finite-difference solvers for the wave and heat equations.
+//!
+//! These are currently unused, but there is a GPU version of the
+//! wave equation solver in the `scene::solver` module.
 
-// Finite-difference wave equation solver.
+use rand::{Rng, rngs::ThreadRng};
 
 pub const X_SIZE: usize = 500;
 pub const Y_SIZE: usize = 500;
@@ -141,7 +144,7 @@ impl HeatEquationData {
             d: 1.0,
         };
 
-        // x, z widght
+        // x, z width
         let init_width = 150_usize;
         // y height
         let init_height = 10.0_f32;

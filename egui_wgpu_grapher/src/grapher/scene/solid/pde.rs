@@ -4,16 +4,16 @@
 use super::{MeshData, build_scene};
 use crate::grapher::{
     math::{FunctionHolder, graph::SquareTesselation, pde},
-    matrix::MatrixUniform,
+    matrix::Matrix,
     render::RenderState,
-    scene::{RenderScene, Scene},
+    scene::{RenderScene, Scene3D},
 };
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 
 // scene for simulating the wave equation
 
 pub struct WaveEquationScene {
-    pub scene: Scene,
+    pub scene: Scene3D,
     pub func_mesh: SquareTesselation,
     pub mesh_data: MeshData,
     pub wave_eqn: pde::WaveEquationData,
@@ -33,7 +33,7 @@ pub fn wave_eqn_scene(
     let func_mesh =
         SquareTesselation::generate(SUBDIVISIONS, WIDTH, &FunctionHolder::from(|_, _| 0.0));
     let mesh_data = func_mesh.mesh_data(SquareTesselation::FUNC_COLOR);
-    let matrix = MatrixUniform::translation(&[
+    let matrix = Matrix::translation(&[
         (-WIDTH / 2.0_f64) as f32,
         0.1_f32,
         (-WIDTH / 2.0_f64) as f32,
@@ -64,7 +64,7 @@ pub fn wave_eqn_scene(
 }
 
 impl RenderScene for WaveEquationScene {
-    fn scene(&self) -> &Scene {
+    fn scene(&self) -> &Scene3D {
         &self.scene
     }
 
@@ -100,7 +100,7 @@ impl RenderScene for WaveEquationScene {
 // scene for simulating the heat equation
 
 pub struct HeatEquationScene {
-    pub scene: Scene,
+    pub scene: Scene3D,
     pub func_mesh: SquareTesselation,
     pub mesh_data: MeshData,
     pub heat_eqn: pde::HeatEquationData,
@@ -129,7 +129,7 @@ pub fn heat_eqn_scene(
 
     func_mesh.update_normals(&mut mesh_data);
 
-    let matrix = MatrixUniform::translation(&[
+    let matrix = Matrix::translation(&[
         (-WIDTH / 2.0_f64) as f32,
         0.1_f32,
         (-WIDTH / 2.0_f64) as f32,
@@ -155,7 +155,7 @@ pub fn heat_eqn_scene(
 }
 
 impl RenderScene for HeatEquationScene {
-    fn scene(&self) -> &Scene {
+    fn scene(&self) -> &Scene3D {
         &self.scene
     }
 

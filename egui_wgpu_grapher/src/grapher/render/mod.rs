@@ -3,7 +3,7 @@
 mod state;
 pub use state::*;
 
-use super::scene::Scene;
+use super::scene::Scene3D;
 use crate::grapher::scene::solver::SolverScene;
 
 use egui_wgpu::wgpu::{
@@ -14,7 +14,7 @@ use egui_wgpu::wgpu::{
 // Main 3D scene rendering method.
 
 impl RenderState {
-    pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene) {
+    pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene3D) {
         if let Some(shadow_state) = &scene.shadow
             && scene.pipeline.is_some()
         {

@@ -1,3 +1,6 @@
+//! Code to build scenes containing mathematical objects.
+//! Currently used for building a 3D function graph scene.
+
 pub mod graph;
 
 use graph::GraphableFunc;

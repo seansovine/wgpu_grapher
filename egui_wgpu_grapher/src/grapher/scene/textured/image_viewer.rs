@@ -3,10 +3,10 @@
 use super::{SQUARE_INDICES, SQUARE_VERTICES_VERTICAL, TexturedMeshData, build_scene};
 use crate::grapher::{
     camera::ProjectionType,
-    matrix::MatrixUniform,
+    matrix::Matrix,
     pipeline::texture::{Image, TextureData},
     render::RenderState,
-    scene::{RenderScene, Scene},
+    scene::{RenderScene, Scene3D},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
@@ -43,10 +43,8 @@ pub fn image_viewer_scene(
     };
     update_canvas_aspect_ratio(&mut mesh_data_front, image.dimensions.1, image.dimensions.0);
 
-    let meshes: Vec<(TexturedMeshData, MatrixUniform)> = vec![(
-        mesh_data_front,
-        MatrixUniform::translation(&[0.0, 0.0, 0.5]),
-    )];
+    let meshes: Vec<(TexturedMeshData, Matrix)> =
+        vec![(mesh_data_front, Matrix::translation(&[0.0, 0.0, 0.5]))];
 
     let mut image_scene = ImageViewerScene {
         scene: build_scene(device, surface_config, state, meshes),
@@ -73,11 +71,11 @@ fn update_canvas_aspect_ratio(mesh_data: &mut TexturedMeshData, height: u32, wid
 }
 
 pub struct ImageViewerScene {
-    pub scene: Scene,
+    pub scene: Scene3D,
 }
 
 impl RenderScene for ImageViewerScene {
-    fn scene(&self) -> &Scene {
+    fn scene(&self) -> &Scene3D {
         &self.scene
     }
 

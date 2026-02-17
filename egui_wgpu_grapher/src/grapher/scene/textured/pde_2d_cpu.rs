@@ -1,13 +1,16 @@
-// wave equation rendered into texture
+//! Scene with wave equation rendered into texture.
+//!
+//! This version run equation solver on the CPU, so requires
+//! copying equation data from the host to the device each frame.
 
 use super::{SQUARE_INDICES, SQUARE_VERTICES_FLAT, TexturedMeshData, build_scene};
 
 use crate::grapher::{
     math::pde,
-    matrix::MatrixUniform,
+    matrix::Matrix,
     pipeline::texture::{TextureData, TextureMatrix},
     render::RenderState,
-    scene::{RenderScene, Scene},
+    scene::{RenderScene, Scene3D},
 };
 
 use egui_wgpu::wgpu::{self, Device, Queue, SurfaceConfiguration};
@@ -39,7 +42,7 @@ pub fn wave_eqn_texture_scene(
         texture: texture_data,
     };
 
-    let meshes = vec![(mesh_data, MatrixUniform::x_rotation(90.0))];
+    let meshes = vec![(mesh_data, Matrix::x_rotation(90.0))];
 
     let scene = build_scene(device, surface_config, state, meshes);
     let mut wave_eqn = pde::WaveEquationData::new(1000, 1000);
@@ -59,12 +62,12 @@ pub fn wave_eqn_texture_scene(
 
 pub struct WaveEquationTextureScene {
     texture_matrix: TextureMatrix,
-    scene: Scene,
+    scene: Scene3D,
     pub wave_eqn: pde::WaveEquationData,
 }
 
 impl RenderScene for WaveEquationTextureScene {
-    fn scene(&self) -> &Scene {
+    fn scene(&self) -> &Scene3D {
         &self.scene
     }
 
