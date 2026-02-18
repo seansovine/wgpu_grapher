@@ -48,7 +48,7 @@ pub struct App {
 impl App {
     // Pause at end of redraw handler.
     const RENDER_TIMEOUT: time::Duration = time::Duration::from_millis(20);
-    // Target 60 fps.
+    // Time between redraws; we target 60 fps.
     const RENDER_TIME_INCR: f32 = 1.0 / 60.0;
     // How often to update average framerate.
     const REPORT_FRAMES_INTERVAL: usize = 100;
@@ -123,18 +123,15 @@ impl App {
         }
         let state = self.state.as_mut().unwrap();
 
-        let surface_texture = state.surface.get_current_texture();
-        match surface_texture {
+        let surface_texture = match state.surface.get_current_texture() {
             Err(SurfaceError::Outdated) => {
-                return;
+                panic!("Surface texture outdated in redraw.")
             }
             Err(_) => {
-                surface_texture.expect("Failed to acquire next swap chain texture.");
-                return;
+                panic!("Failed to acquire next swap chain texture.");
             }
-            Ok(_) => {}
+            Ok(surface_texture) => surface_texture,
         };
-        let surface_texture = surface_texture.unwrap();
         let surface_view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -152,31 +149,30 @@ impl App {
                 .render(&surface_view, &mut encoder, &state.grapher_state);
         }
 
-        {
-            // Render GUI.
-            let screen_descriptor = ScreenDescriptor {
-                size_in_pixels: [state.surface_config.width, state.surface_config.height],
-                pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
-                    * state.ui_data.scale_factor,
-            };
-            let window = self.window.as_ref().unwrap();
-            state.egui_renderer.begin_frame(window);
-            Self::build_gui(state);
-            state.egui_renderer.end_frame_and_draw(
-                &state.device,
-                &state.queue,
-                &mut encoder,
-                window,
-                &surface_view,
-                screen_descriptor,
-            );
-        }
+        // Render GUI.
+        let screen_descriptor = ScreenDescriptor {
+            size_in_pixels: [state.surface_config.width, state.surface_config.height],
+            pixels_per_point: self.window.as_ref().unwrap().scale_factor() as f32
+                * state.ui_data.scale_factor,
+        };
+        let window = self.window.as_ref().unwrap();
+        state.egui_renderer.begin_frame(window);
+        Self::build_gui(state);
+        state.egui_renderer.end_frame_and_draw(
+            &state.device,
+            &state.queue,
+            &mut encoder,
+            window,
+            &surface_view,
+            screen_descriptor,
+        );
 
         state.queue.submit(Some(encoder.finish()));
         surface_texture.present();
     }
 
     fn build_gui(state: &mut AppState) {
+        // File chooser.
         match state.file_input_state {
             FileInputState::NeedsInput => {
                 let context = &state.egui_renderer.context();
