@@ -1,7 +1,8 @@
-//! Scene with wave equation rendered into texture.
+//! Currently unused. Scene with wave equation rendered into texture.
 //!
-//! This version run equation solver on the CPU, so requires
-//! copying equation data from the host to the device each frame.
+//! This version runs the equation solver on the CPU, so requires copying
+//! equation data from the host to the device each frame. There is now
+//! a version of this that does runs the equation solver on the GPU.
 
 use super::{SQUARE_INDICES, SQUARE_VERTICES_FLAT, TexturedMeshData, build_scene};
 

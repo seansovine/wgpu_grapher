@@ -1,4 +1,4 @@
-//! Code for meshes with color provided per-vertex; currently only graph mode.
+//! Code for meshes with color provided per-vertex.
 
 pub mod graph;
 #[allow(dead_code)]
@@ -15,7 +15,10 @@ use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
     BindGroupLayoutDescriptor, Buffer, Device, SurfaceConfiguration, util::DeviceExt,
 };
-use std::sync::LazyLock;
+use std::sync::{LazyLock, OnceLock};
+
+// ---------------------------------------------
+// Structures for raw mesh data and render data.
 
 #[derive(Clone)]
 pub struct MeshData {
@@ -35,19 +38,28 @@ pub struct MeshRenderData {
     pub vertex_buffer: Buffer,
     pub index_buffer: Buffer,
     pub num_indices: u32,
-    pub _matrix: MatrixUniform,
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
+
+    pub matrix: MatrixUniform,
+    pub matrix_bind_group: BindGroup,
 }
 
 impl MeshRenderData {
-    fn from_mesh_data(device: &Device, mesh_data: MeshData, matrix_uniform: Matrix) -> Self {
+    pub fn matrix_bgl(device: &Device) -> &'static BindGroupLayout {
+        static BGL: OnceLock<BindGroupLayout> = OnceLock::new();
+        BGL.get_or_init(|| {
+            device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                entries: &[*MatrixUniform::bind_group_layout_entry()],
+                label: Some("solid mesh matrix bind group layout"),
+            })
+        })
+    }
+
+    fn from_mesh_data(device: &Device, mesh_data: MeshData, matrix: Matrix) -> Self {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(mesh_data.vertices.as_slice()),
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
-
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(mesh_data.indices.as_slice()),
@@ -55,14 +67,9 @@ impl MeshRenderData {
         });
         let num_indices = mesh_data.indices.len() as u32;
 
-        let matrix = matrix::make_matrix_state(device, matrix_uniform);
-
-        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[matrix.bind_group_layout_entry],
-            label: Some("solid mesh matrix bind group layout"),
-        });
-        let bind_group = device.create_bind_group(&BindGroupDescriptor {
-            layout: &bind_group_layout,
+        let matrix = matrix::make_matrix_uniform(device, matrix);
+        let matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            layout: Self::matrix_bgl(device),
             entries: &[BindGroupEntry {
                 binding: 0,
                 resource: matrix.buffer.as_entire_binding(),
@@ -74,14 +81,15 @@ impl MeshRenderData {
             vertex_buffer,
             index_buffer,
             num_indices,
-            _matrix: matrix,
-            bind_group_layout,
-            bind_group,
+            //
+            matrix,
+            matrix_bind_group,
         }
     }
 }
 
-// build scene from (mesh, matrix) vector.
+// ---------------------------------------
+// Build scene from (mesh, matrix) vector.
 
 pub fn build_scene(
     device: &Device,
@@ -89,19 +97,15 @@ pub fn build_scene(
     state: &RenderState,
     mesh_data: Vec<(MeshData, Matrix)>,
 ) -> Scene3D {
-    let mut meshes = vec![];
-    for (mesh, matrix) in mesh_data {
-        let mesh_render_data = MeshRenderData::from_mesh_data(device, mesh, matrix);
-        meshes.push(mesh_render_data);
-    }
-    let last_mesh = meshes.last().unwrap();
+    let meshes: Vec<MeshRenderData> = mesh_data
+        .into_iter()
+        .map(|(mesh, matrix)| MeshRenderData::from_mesh_data(device, mesh, matrix))
+        .collect();
+
+    let matrix_bind_group_layout = MeshRenderData::matrix_bgl(device);
     let light = light::LightState::create(device);
-    let shadow = ShadowState::create::<GpuVertex>(
-        surface_config,
-        device,
-        &light,
-        &last_mesh.bind_group_layout,
-    );
+    let shadow =
+        ShadowState::create::<GpuVertex>(surface_config, device, &light, matrix_bind_group_layout);
 
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
@@ -109,7 +113,7 @@ pub fn build_scene(
         pipeline::get_shader(),
         &[
             &state.bind_group_layout,
-            &last_mesh.bind_group_layout,
+            matrix_bind_group_layout,
             &light.bind_group_layout,
             &shadow.render_pass_bind_group_layout,
         ],
@@ -119,15 +123,16 @@ pub fn build_scene(
     Scene3D {
         pipeline: Some(pipeline),
         textured_pipeline: None,
-
+        //
         meshes,
         textured_meshes: vec![],
-
+        //
         light,
         shadow: Some(shadow),
     }
 }
 
+// --------------------------------------
 // Simple test scene for development use.
 
 static TEST_MESH: LazyLock<MeshData> = LazyLock::new(|| MeshData {

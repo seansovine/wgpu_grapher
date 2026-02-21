@@ -37,7 +37,7 @@ impl RenderState {
 
             // Shadows are currently drawn for solid scene objects only.
             for mesh in &scene.meshes {
-                pass.set_bind_group(1, &mesh.bind_group, &[]);
+                pass.set_bind_group(1, &mesh.matrix_bind_group, &[]);
                 pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
                 pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 pass.draw_indexed(0..mesh.num_indices, 0, 0..1);
@@ -94,7 +94,7 @@ impl RenderState {
                     mesh.num_indices,
                     &[
                         &self.bind_group,
-                        &mesh.bind_group,
+                        &mesh.matrix_bind_group,
                         &scene.light.bind_group,
                         &shadow.render_pass_bind_group,
                     ],
@@ -141,7 +141,7 @@ impl RenderState {
                     mesh.num_indices,
                     &[
                         &self.bind_group,
-                        &mesh.bind_group,
+                        &mesh.matrix_bind_group,
                         &scene.light.bind_group,
                         &mesh.texture.bind_group,
                     ],

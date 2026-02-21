@@ -182,7 +182,7 @@ impl CameraState {
         let camera = Camera::default(surface_config);
 
         let uniform = Matrix::from(camera.get_matrix());
-        let matrix = matrix::make_matrix_state(device, uniform);
+        let matrix = matrix::make_matrix_uniform(device, uniform);
         let controller = controller::CameraController::new(0.00125);
 
         CameraState {

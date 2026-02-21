@@ -13,7 +13,10 @@ use crate::{
         math::FunctionHolder,
         pipeline::render_preferences::RenderPreferences,
         render::{ShadowState, render_2d},
-        scene::{GpuVertex, RenderScene, solid::graph::GraphScene},
+        scene::{
+            GpuVertex, RenderScene,
+            solid::{MeshRenderData, graph::GraphScene},
+        },
     },
     grapher_egui::{
         image_scene::{ImageViewerSceneData, parameter_ui_image_viewer},
@@ -241,12 +244,11 @@ impl GrapherScene {
             && let Some(scene) = &mut data.graph_scene.scene
             && !scene.meshes.is_empty()
         {
-            let last_mesh = scene.meshes.last().unwrap();
             let shadow = ShadowState::create::<GpuVertex>(
                 surface_config,
                 device,
                 &scene.light,
-                &last_mesh.bind_group_layout,
+                MeshRenderData::matrix_bgl(device),
             );
             scene.shadow = Some(shadow);
         }

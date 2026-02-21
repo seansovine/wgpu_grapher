@@ -19,6 +19,7 @@ pub fn model_scene(
     let Ok(loader) = gltf_loader::GltfLoader::create(device, queue, path) else {
         return None;
     };
+
     let mut mesh_data = vec![];
     match loader.traverse() {
         Ok(render_scene) => {

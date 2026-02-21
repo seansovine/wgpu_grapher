@@ -1,6 +1,6 @@
 //! Code for converting between 4x4 matrix types and making matrix uniforms.
 
-use std::ops::Mul;
+use std::{ops::Mul, sync::OnceLock};
 
 use egui_wgpu::wgpu::{
     BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
@@ -8,8 +8,8 @@ use egui_wgpu::wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
 };
 
-pub const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
-pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
+// ----------------
+// 4x4 matrix type.
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
@@ -52,6 +52,9 @@ impl Mul for Matrix {
     }
 }
 
+pub const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
+pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
+
 impl Matrix {
     pub fn identity() -> Self {
         use cgmath::SquareMatrix;
@@ -93,40 +96,39 @@ impl Matrix {
     }
 }
 
+// ----------------------------
+// Uniform data for 4x4 matrix.
+
 pub struct MatrixUniform {
     pub uniform: Matrix,
     pub buffer: Buffer,
-    pub bind_group_layout_entry: BindGroupLayoutEntry,
 }
 
 impl MatrixUniform {
-    #[allow(unused)]
-    pub fn set_binding_index(&mut self, binding_index: u32) {
-        self.bind_group_layout_entry.binding = binding_index;
+    pub fn bind_group_layout_entry() -> &'static BindGroupLayoutEntry {
+        static BGL_ENTRY: OnceLock<BindGroupLayoutEntry> = OnceLock::new();
+        BGL_ENTRY.get_or_init(|| BindGroupLayoutEntry {
+            binding: 0,
+            visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
+            ty: BindingType::Buffer {
+                ty: BufferBindingType::Uniform,
+                has_dynamic_offset: false,
+                min_binding_size: None,
+            },
+            count: None,
+        })
     }
 }
 
-pub(crate) fn make_matrix_state(device: &Device, matrix_uniform: Matrix) -> MatrixUniform {
+pub(crate) fn make_matrix_uniform(device: &Device, matrix_uniform: Matrix) -> MatrixUniform {
     let buffer = device.create_buffer_init(&BufferInitDescriptor {
         label: Some("camera buffer"),
         contents: bytemuck::cast_slice(&[matrix_uniform]),
         usage: BufferUsages::UNIFORM | BufferUsages::COPY_DST,
     });
 
-    let bind_group_layout_entry = BindGroupLayoutEntry {
-        binding: 0,
-        visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
-        ty: BindingType::Buffer {
-            ty: BufferBindingType::Uniform,
-            has_dynamic_offset: false,
-            min_binding_size: None,
-        },
-        count: None,
-    };
-
     MatrixUniform {
         uniform: matrix_uniform,
         buffer,
-        bind_group_layout_entry,
     }
 }

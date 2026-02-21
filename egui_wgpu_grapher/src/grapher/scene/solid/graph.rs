@@ -1,4 +1,4 @@
-// make scene for function graph
+//! Structures and functions to build a 3D scene for a function graph.
 
 use super::build_scene;
 use crate::grapher::{
@@ -13,6 +13,9 @@ use crate::grapher::{
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
 use meval::Expr;
+
+// -------------------------------------------
+// Function domain scale and shift parameters.
 
 pub struct GraphParameters {
     pub scale_x: f64,
@@ -37,6 +40,9 @@ impl Default for GraphParameters {
         }
     }
 }
+
+// -----------------------------------
+// Structure to hold graph scene data.
 
 pub struct GraphScene {
     // all the data for rendering
@@ -67,6 +73,14 @@ impl Default for GraphScene {
     }
 }
 
+impl RenderScene for GraphScene {
+    fn scene(&self) -> &Scene3D {
+        self.scene.as_ref().unwrap()
+    }
+
+    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
+}
+
 const GRAPH_SUBDIVISIONS: u32 = 750;
 
 impl GraphScene {
@@ -77,10 +91,10 @@ impl GraphScene {
         state: &RenderState,
         smoothing_scale: Option<f64>,
     ) {
-        if self.function.is_none() {
+        let Some(FunctionHolder { f }) = self.function.take() else {
             self.scene = None;
-        }
-        let f = self.function.take().unwrap().f;
+            return;
+        };
 
         // TODO: This is currently disabled until we get
         //       an updated UI that works better for it.
@@ -113,7 +127,7 @@ impl GraphScene {
     }
 }
 
-pub fn build_scene_for_graph(
+fn build_scene_for_graph(
     device: &Device,
     surface_config: &SurfaceConfiguration,
     state: &RenderState,
@@ -141,6 +155,9 @@ pub fn build_scene_for_graph(
         vec![(func_mesh, Matrix::identity())],
     )
 }
+
+// ---------------
+// Usage examples.
 
 #[allow(dead_code)]
 pub fn get_example_function(parameters: &GraphParameters) -> FunctionHolder {
@@ -195,21 +212,11 @@ pub fn demo_graph_scene(
         ));
     }
 
-    let needs_update = false;
-
     GraphScene {
         scene,
         width: WIDTH,
-        needs_rebuild: needs_update,
         parameters,
         function,
+        ..Default::default()
     }
-}
-
-impl RenderScene for GraphScene {
-    fn scene(&self) -> &Scene3D {
-        self.scene.as_ref().unwrap()
-    }
-
-    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
 }

@@ -1,4 +1,4 @@
-// Structures and functions for building textured mesh scenes.
+//! Code for building textured mesh scenes.
 
 pub mod image_viewer;
 pub mod model;
@@ -15,7 +15,10 @@ use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
     BindGroupLayoutDescriptor, Device, SurfaceConfiguration, util::DeviceExt,
 };
-use std::sync::LazyLock;
+use std::sync::{LazyLock, OnceLock};
+
+// ------------------------------------------------------
+// Structures for raw textured mesh data and render data.
 
 pub struct TexturedMeshData {
     pub vertices: Vec<GpuVertex>,
@@ -29,13 +32,22 @@ pub struct TexturedMeshRenderData {
     pub num_indices: u32,
 
     pub matrix: MatrixUniform,
-    pub bind_group_layout: BindGroupLayout,
-    pub bind_group: BindGroup,
+    pub matrix_bind_group: BindGroup,
 
     pub texture: TextureData,
 }
 
 impl TexturedMeshRenderData {
+    fn matrix_bgl(device: &Device) -> &'static BindGroupLayout {
+        static BGL: OnceLock<BindGroupLayout> = OnceLock::new();
+        BGL.get_or_init(|| {
+            device.create_bind_group_layout(&BindGroupLayoutDescriptor {
+                entries: &[*MatrixUniform::bind_group_layout_entry()],
+                label: Some("solid mesh matrix bind group layout"),
+            })
+        })
+    }
+
     fn from_mesh_data(
         device: &wgpu::Device,
         mesh_data: TexturedMeshData,
@@ -53,14 +65,9 @@ impl TexturedMeshRenderData {
         });
         let num_indices = mesh_data.indices.len() as u32;
 
-        let matrix = matrix::make_matrix_state(device, matrix_uniform);
-
-        let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            entries: &[matrix.bind_group_layout_entry],
-            label: Some("solid mesh matrix bind group layout"),
-        });
+        let matrix = matrix::make_matrix_uniform(device, matrix_uniform);
         let bind_group = device.create_bind_group(&BindGroupDescriptor {
-            layout: &bind_group_layout,
+            layout: Self::matrix_bgl(device),
             entries: &[BindGroupEntry {
                 binding: 0,
                 resource: matrix.buffer.as_entire_binding(),
@@ -72,17 +79,17 @@ impl TexturedMeshRenderData {
             vertex_buffer,
             index_buffer,
             num_indices,
-
+            //
             matrix,
-            bind_group_layout,
-            bind_group,
-
+            matrix_bind_group: bind_group,
+            //
             texture: mesh_data.texture,
         }
     }
 }
 
-// build scene from (mesh, matrix) vector
+// ---------------------------------------
+// Build scene from (mesh, matrix) vector.
 
 pub fn build_scene(
     device: &Device,
@@ -90,26 +97,22 @@ pub fn build_scene(
     state: &RenderState,
     mesh_data: Vec<(TexturedMeshData, Matrix)>,
 ) -> Scene3D {
-    let mut textured_meshes = vec![];
-
-    for (mesh, matrix) in mesh_data {
-        let mesh_render_data = TexturedMeshRenderData::from_mesh_data(device, mesh, matrix);
-        textured_meshes.push(mesh_render_data);
-    }
-    // use the matrix and texture layouts from the last mesh
-    let last_mesh = textured_meshes.last().unwrap();
+    let textured_meshes: Vec<TexturedMeshRenderData> = mesh_data
+        .into_iter()
+        .map(|(mesh, matrix)| TexturedMeshRenderData::from_mesh_data(device, mesh, matrix))
+        .collect();
 
     let light = light::LightState::create(device);
-    // we'll try to get away with just one textured render pipeline
+
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
         surface_config,
         pipeline::get_textured_shader(),
         &[
             &state.bind_group_layout,
-            &last_mesh.bind_group_layout,
+            TexturedMeshRenderData::matrix_bgl(device),
             &light.bind_group_layout,
-            &last_mesh.texture.bind_group_layout,
+            TextureData::bind_group_layout(device),
         ],
         wgpu::PolygonMode::Fill,
     );
@@ -117,16 +120,17 @@ pub fn build_scene(
     Scene3D {
         pipeline: None,
         textured_pipeline: Some(pipeline),
-
+        //
         meshes: vec![],
         textured_meshes,
-
+        //
         light,
         shadow: None,
     }
 }
 
-// mesh data to render two-sided square
+// -------------------------------------
+// Mesh data for simple square canvases.
 
 static SQUARE_VERTICES_VERTICAL: LazyLock<Vec<GpuVertex>> = LazyLock::new(|| {
     vec![

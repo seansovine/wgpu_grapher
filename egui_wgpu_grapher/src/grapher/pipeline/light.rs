@@ -87,11 +87,11 @@ impl LightState {
         // Create view matrix for use in shadow mapping.
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = Matrix::from(matrix);
-        let camera_matrix = matrix::make_matrix_state(device, matrix_uniform);
+        let camera_matrix = matrix::make_matrix_uniform(device, matrix_uniform);
 
         let camera_matrix_bind_group_layout =
             device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-                entries: &[camera_matrix.bind_group_layout_entry],
+                entries: &[*MatrixUniform::bind_group_layout_entry()],
                 label: Some("solid mesh matrix bind group layout"),
             });
         let camera_matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {

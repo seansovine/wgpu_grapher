@@ -1,5 +1,6 @@
 use crate::grapher::{
     camera::CameraState,
+    matrix::MatrixUniform,
     pipeline::{
         self, light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer,
     },
@@ -40,7 +41,7 @@ impl RenderState {
 
         let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[
-                camera_state.matrix.bind_group_layout_entry,
+                *MatrixUniform::bind_group_layout_entry(),
                 shader_preferences.bind_group_layout_entry,
             ],
             label: Some("shared resources bind group layout"),
@@ -214,7 +215,7 @@ impl ShadowState {
         });
 
         let camera_view_matrix = light.camera_view_matrix();
-        let mut camera_view_bgl_entry = camera_view_matrix.bind_group_layout_entry;
+        let mut camera_view_bgl_entry = *MatrixUniform::bind_group_layout_entry();
         camera_view_bgl_entry.binding = 2;
 
         let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {

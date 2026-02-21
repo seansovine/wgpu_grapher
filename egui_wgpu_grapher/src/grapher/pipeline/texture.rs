@@ -1,7 +1,14 @@
-use egui_wgpu::wgpu::{self, Device, Queue, SurfaceConfiguration, Texture, TextureView};
+//! Code for building and representing textures and related data.
+
+use std::sync::OnceLock;
+
+use egui_wgpu::wgpu::{
+    self, BindGroupLayout, Device, Queue, SurfaceConfiguration, Texture, TextureView,
+};
 use image::{ImageBuffer, Rgba};
 
-// Image data
+// -----------
+// Image data.
 
 pub struct Image {
     pub image: ImageBuffer<Rgba<u8>, Vec<u8>>,
@@ -23,15 +30,42 @@ impl Image {
     }
 }
 
-// Texture device data
+// --------------------
+// Texture device data.
 
 pub struct TextureData {
-    pub bind_group_layout: wgpu::BindGroupLayout,
     pub bind_group: wgpu::BindGroup,
     pub texture: wgpu::Texture,
 }
 
 impl TextureData {
+    pub fn bind_group_layout(device: &Device) -> &BindGroupLayout {
+        static BGL: OnceLock<BindGroupLayout> = OnceLock::new();
+        BGL.get_or_init(|| {
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                            sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
+                        count: None,
+                    },
+                ],
+                label: Some("texture bind group layout"),
+            })
+        })
+    }
+
     pub fn from_texture(texture: Texture, device: &Device) -> Self {
         let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
@@ -45,30 +79,8 @@ impl TextureData {
             ..Default::default()
         });
 
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        multisampled: false,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Filtering),
-                    count: None,
-                },
-            ],
-            label: Some("texture bind group layout"),
-        });
-
         let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &bind_group_layout,
+            layout: Self::bind_group_layout(device),
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -83,7 +95,6 @@ impl TextureData {
         });
 
         Self {
-            bind_group_layout,
             bind_group,
             texture,
         }
@@ -159,7 +170,8 @@ pub fn texture_from_image(image: &Image, device: &Device, queue: &Queue) -> wgpu
     texture_from_data_and_dims(&image.image, image.dimensions, device, queue)
 }
 
-// Texture matrix device data
+// ---------------------------
+// Texture matrix device data.
 
 /// Represents texture data as a matrix of RGBA bytes.
 #[derive(Clone)]
@@ -193,10 +205,11 @@ pub fn texture_from_matrix(
     texture_from_data_and_dims(&matrix.data, matrix.dimensions, device, queue)
 }
 
-// Depth buffer device data
+// -------------------------
+// Depth buffer device data.
 
 pub struct DepthBuffer {
-    pub _texture: Texture,
+    pub texture: Texture,
     pub view: TextureView,
 }
 
@@ -220,10 +233,10 @@ impl DepthBuffer {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         };
-        let _texture = device.create_texture(&desc);
+        let texture = device.create_texture(&desc);
 
-        let view = _texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-        Self { _texture, view }
+        Self { texture, view }
     }
 }
