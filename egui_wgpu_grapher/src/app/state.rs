@@ -1,11 +1,15 @@
+use std::sync::atomic::Ordering;
+
 use crate::{
     egui::{egui_tools::EguiRenderer, ui::UiState},
     grapher::{self, scene::solid::graph::GraphScene},
     grapher_egui::{
+        BACKGROUND_TASK_NONE, BACKGROUND_TASK_READY, BACKGROUND_TASK_RUNNING, BackgroundTask,
         GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
         solver_scene::SolverSceneData,
     },
 };
+
 use egui_file_dialog::FileDialog;
 use egui_wgpu::wgpu::{self, Limits};
 use winit::window::Window;
@@ -37,6 +41,9 @@ pub struct AppState {
     // Graphics scene state.
     pub grapher_state: grapher::render::RenderState,
     pub grapher_scene: GrapherScene,
+
+    // State of any background task.
+    pub background_task_state: BackgroundTask,
 }
 
 pub enum FileInputState {
@@ -51,6 +58,7 @@ pub enum FileInputState {
 pub enum SceneLoadingState {
     NoData,
     NeedsLoaded,
+    Processing,
     Loaded,
 }
 
@@ -140,6 +148,8 @@ impl AppState {
             //
             grapher_state,
             grapher_scene: GrapherScene::None,
+            //
+            background_task_state: Default::default(),
         }
     }
 }
@@ -223,16 +233,43 @@ impl AppState {
                 let graph_scene = GraphScene::default();
                 self.grapher_scene =
                     GrapherScene::Graph(Box::from(graph_scene::GraphSceneData::new(graph_scene)));
+                // We default to loading an empty, but valid scene.
                 self.scene_loading_state = SceneLoadingState::Loaded;
             }
 
-            SceneLoadingState::NeedsLoaded => {
-                // Nothing to do here.
+            SceneLoadingState::Processing => {
+                // Update state when background work is done or cancelled. The
+                // background task will only update its state to none or cancelled.
+                match self
+                    .background_task_state
+                    .task_state
+                    .load(Ordering::Relaxed)
+                {
+                    BACKGROUND_TASK_NONE => {
+                        self.scene_loading_state = SceneLoadingState::NoData;
+                    }
+                    BACKGROUND_TASK_RUNNING => {
+                        if self.background_task_state.check_for_crash() {
+                            self.background_task_state.reset();
+                            self.scene_loading_state = SceneLoadingState::NoData;
+                            println!("Background thread panicked.");
+                            // TODO: Report error in GUI.
+                        }
+                    }
+                    BACKGROUND_TASK_READY => {
+                        self.grapher_scene.finish_update_graph(
+                            &self.device,
+                            &self.surface_config,
+                            &self.grapher_state,
+                        );
+                        self.background_task_state.reset();
+                        self.scene_loading_state = SceneLoadingState::Loaded;
+                    }
+                    _ => {}
+                }
             }
 
-            SceneLoadingState::Loaded => {
-                // Nothing to do here.
-            }
+            _ => {}
         }
     }
 
@@ -286,6 +323,8 @@ impl AppState {
                 }
                 _ => {}
             },
+
+            _ => {}
         }
     }
 
@@ -338,6 +377,8 @@ impl AppState {
                 }
                 _ => {}
             },
+
+            _ => {}
         }
     }
 

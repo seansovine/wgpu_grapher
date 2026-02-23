@@ -1,9 +1,10 @@
 //! UI specific to the grapher mode.
 
 use super::GraphScene;
-use crate::egui::components::float_edit_line;
+use crate::{egui::components::float_edit, grapher::scene::solid::MeshData};
 
-use egui::{Grid, Ui};
+use egui::{Grid, Ui, mutex::Mutex};
+use std::sync::Arc;
 
 pub struct GraphSceneUiData {
     scale_x_text: String,
@@ -19,6 +20,8 @@ pub struct GraphSceneData {
     pub graph_scene: GraphScene,
     pub ui_data: GraphSceneUiData,
     pub smoothing_scale: Option<f64>,
+    pub mesh_data: Arc<Mutex<Option<MeshData>>>,
+    pub function_string: String,
 }
 
 impl GraphSceneData {
@@ -43,6 +46,8 @@ impl GraphSceneData {
                 shift_y_text,
             },
             smoothing_scale: None,
+            mesh_data: Arc::new(Mutex::new(None)),
+            function_string: String::new(),
         }
     }
 }
@@ -64,18 +69,18 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
 
     if !CLOSED_FOR_RENOVATION {
         Grid::new("graph parameter input").show(ui, |ui| {
-            *needs_update = float_edit_line("x scale", &mut data.ui_data.scale_x_text, scale_x, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("x scale", &mut data.ui_data.scale_x_text, scale_x, ui) || *needs_update;
             ui.end_row();
 
             // scale parameter edits
 
-            *needs_update = float_edit_line("z scale", &mut data.ui_data.scale_z_text, scale_z, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("z scale", &mut data.ui_data.scale_z_text, scale_z, ui) || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line("y scale", &mut data.ui_data.scale_y_text, scale_y, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("y scale", &mut data.ui_data.scale_y_text, scale_y, ui) || *needs_update;
             ui.end_row();
 
             ui.separator();
@@ -83,16 +88,16 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
 
             // shift parameter edits
 
-            *needs_update = float_edit_line("x shift", &mut data.ui_data.shift_x_text, shift_x, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("x shift", &mut data.ui_data.shift_x_text, shift_x, ui) || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line("z shift", &mut data.ui_data.shift_z_text, shift_z, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("z shift", &mut data.ui_data.shift_z_text, shift_z, ui) || *needs_update;
             ui.end_row();
 
-            *needs_update = float_edit_line("y shift", &mut data.ui_data.shift_y_text, shift_y, ui)
-                || *needs_update;
+            *needs_update =
+                float_edit("y shift", &mut data.ui_data.shift_y_text, shift_y, ui) || *needs_update;
             ui.end_row();
         });
     }
@@ -112,11 +117,8 @@ pub fn parameter_ui_graph(data: &mut GraphSceneData, ui: &mut Ui) {
         }
     }
 
-    // TODO: Need to store function string for reuse;
-    //       then we can implement this version.
-    //
-    // ui.add_space(5.0);
-    // if ui.button("Update graph").clicked() {
-    //     *needs_update = true;
-    // }
+    ui.add_space(5.0);
+    if ui.button("Update graph").clicked() {
+        *needs_update = true;
+    }
 }

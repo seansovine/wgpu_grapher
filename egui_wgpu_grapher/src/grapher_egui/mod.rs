@@ -7,15 +7,25 @@ pub mod image_scene;
 pub mod model_scene;
 pub mod solver_scene;
 
+use std::{
+    sync::{
+        Arc,
+        atomic::{AtomicU16, Ordering},
+    },
+    thread::JoinHandle,
+};
+
 use crate::{
     egui::ui::UiState,
     grapher::{
-        math::FunctionHolder,
         pipeline::render_preferences::RenderPreferences,
         render::{ShadowState, render_2d},
         scene::{
             GpuVertex, RenderScene,
-            solid::{MeshRenderData, graph::GraphScene},
+            solid::{
+                MeshRenderData,
+                graph::{GraphScene, try_build_mesh_from_string},
+            },
         },
     },
     grapher_egui::{
@@ -95,6 +105,57 @@ pub fn scene_selection_ui(
     }
 }
 
+// -------------------------------------------
+// Structures to manage background task state.
+
+pub struct BackgroundTask {
+    // State of any background task.
+    // - 0 = no background task
+    // - 1 = background task running
+    // - 2 = background task ready
+    // - 3 = background task cancelled
+    pub task_state: Arc<AtomicU16>,
+    pub thread_handle: Option<JoinHandle<()>>,
+}
+
+pub const BACKGROUND_TASK_NONE: u16 = 0;
+pub const BACKGROUND_TASK_RUNNING: u16 = 1;
+pub const BACKGROUND_TASK_READY: u16 = 2;
+pub const BACKGROUND_TASK_CANCELLED: u16 = 3;
+
+impl BackgroundTask {
+    pub fn reset(&mut self) {
+        self.task_state
+            .store(BACKGROUND_TASK_NONE, Ordering::Relaxed);
+        let thread = self.thread_handle.take();
+        if let Some(handle) = thread {
+            handle.join().expect("Background thread panicked.");
+        }
+    }
+
+    pub fn check_for_crash(&mut self) -> bool {
+        if self.thread_handle.is_none() {
+            return false;
+        }
+        if let Some(handle) = &self.thread_handle
+            && !handle.is_finished()
+        {
+            return false;
+        }
+        let handle = self.thread_handle.take().unwrap();
+        return handle.join().is_err();
+    }
+}
+
+impl Default for BackgroundTask {
+    fn default() -> Self {
+        Self {
+            task_state: AtomicU16::new(BACKGROUND_TASK_NONE).into(),
+            thread_handle: None,
+        }
+    }
+}
+
 // ----------------------------------
 // Grapher mode and associated state.
 
@@ -146,26 +207,31 @@ impl GrapherScene {
         }
     }
 
+    /// Returns true if a background task was launched.
     pub fn update(
         &mut self,
-        device: &Device,
-        surface_config: &SurfaceConfiguration,
+        _: &Device,
+        _: &SurfaceConfiguration,
         queue: &Queue,
         state: &RenderState,
-    ) {
+        background_task: &BackgroundTask,
+    ) -> bool {
         match self {
             GrapherScene::Graph(data) => {
                 // Rebuild scene if non-uniform parameters changed.
-                if data.graph_scene.needs_rebuild {
-                    data.graph_scene.try_rebuild_scene(
-                        device,
-                        surface_config,
-                        state,
-                        data.smoothing_scale,
-                    );
+                if data.graph_scene.needs_rebuild && !data.function_string.is_empty() {
+                    let function_string = data.function_string.clone();
+                    self.start_update_graph(function_string, background_task.task_state.clone());
+                    // Re-borrow here so we can use self to update graph.
+                    if let GrapherScene::Graph(data) = self {
+                        data.graph_scene.update(queue, state);
+                    }
+                }
+                // Have to re-borrow again.
+                if let GrapherScene::Graph(data) = self {
                     data.graph_scene.needs_rebuild = false;
                 }
-                data.graph_scene.update(queue, state);
+                return true;
             }
             GrapherScene::Model(data) => {
                 data.model_scene.update(queue, state);
@@ -178,19 +244,52 @@ impl GrapherScene {
             }
             _ => unimplemented!(),
         }
+        false
     }
 
-    pub fn update_graph(
+    pub fn start_update_graph(
+        &mut self,
+        function_string: String,
+        background_task_state: Arc<AtomicU16>,
+    ) -> Option<JoinHandle<()>> {
+        if let GrapherScene::Graph(data) = self {
+            data.function_string = function_string.clone();
+            background_task_state.store(BACKGROUND_TASK_RUNNING, Ordering::Relaxed);
+
+            // We copy these so the thread can take ownership.
+            let smoothing_scale = data.smoothing_scale;
+            let width = data.graph_scene.width;
+            let mesh_data = data.mesh_data.clone();
+            let handle = std::thread::spawn(move || {
+                // We rebuild from the string here because our function parsing
+                // and evaluation library produces objects that don't have Rust's
+                // thread-safety marker traits.
+                let Some(mesh) =
+                    try_build_mesh_from_string(&function_string, smoothing_scale, width)
+                else {
+                    background_task_state.store(BACKGROUND_TASK_NONE, Ordering::Relaxed);
+                    return;
+                };
+                *mesh_data.lock() = Some(mesh);
+                background_task_state.store(BACKGROUND_TASK_READY, Ordering::Relaxed);
+            });
+            Some(handle)
+        } else {
+            None
+        }
+    }
+
+    pub fn finish_update_graph(
         &mut self,
         device: &Device,
         surface_config: &SurfaceConfiguration,
         state: &RenderState,
-        function: FunctionHolder,
     ) {
-        if let GrapherScene::Graph(data) = self {
-            data.graph_scene.function = Some(function);
+        if let GrapherScene::Graph(data) = self
+            && let Some(mesh_data) = data.mesh_data.lock().take()
+        {
             data.graph_scene
-                .try_rebuild_scene(device, surface_config, state, data.smoothing_scale);
+                .rebuild_scene_from_mesh(device, surface_config, state, mesh_data);
         }
     }
 

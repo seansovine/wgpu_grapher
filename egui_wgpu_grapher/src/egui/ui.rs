@@ -15,8 +15,20 @@ pub struct UiState {
     pub scale_factor: f32,
     pub filename: String,
     pub function_string: String,
+    pub function_string_prev: String,
     pub function_valid: bool,
     pub show_file_input: bool,
+}
+
+impl UiState {
+    pub fn function_changed(&self) -> bool {
+        let stripped: String = self
+            .function_string
+            .chars()
+            .filter(|c| !c.is_whitespace())
+            .collect();
+        stripped != self.function_string_prev
+    }
 }
 
 // -----------------------------------
@@ -30,8 +42,12 @@ pub fn create_gui(
     render_state: &mut RenderState,
     ui_state: &mut UiState,
     scene_mode: &mut GrapherSceneMode,
+    disabled: bool,
 ) {
     const AFTER_LABEL_SPACE: f32 = 5.0;
+    if disabled {
+        ui.disable();
+    }
 
     ui.label(RichText::new("Select scene").strong());
     ui.add_space(AFTER_LABEL_SPACE);

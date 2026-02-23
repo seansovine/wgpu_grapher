@@ -5,10 +5,11 @@ use crate::grapher::{
     math::{
         FunctionHolder, SmoothingFunctionWrapper,
         graph::{self, GraphableFunc},
+        try_parse_function_string,
     },
     matrix::Matrix,
     render::RenderState,
-    scene::{RenderScene, Scene3D},
+    scene::{RenderScene, Scene3D, solid::MeshData},
 };
 
 use egui_wgpu::wgpu::{Device, Queue, SurfaceConfiguration};
@@ -125,6 +126,38 @@ impl GraphScene {
         ));
         self.function = Some(f);
     }
+
+    pub fn rebuild_scene_from_mesh(
+        &mut self,
+        device: &Device,
+        surface_config: &SurfaceConfiguration,
+        state: &RenderState,
+        mesh_data: MeshData,
+    ) {
+        self.scene = Some(build_scene(
+            device,
+            surface_config,
+            state,
+            vec![(mesh_data, Matrix::identity())],
+        ))
+    }
+}
+
+pub fn try_build_mesh_from_string(
+    function_string: &str,
+    smoothing_scale: Option<f64>,
+    width: f64,
+) -> Option<MeshData> {
+    let func = try_parse_function_string(function_string)?;
+    if let Some(scale) = smoothing_scale {
+        let f = SmoothingFunctionWrapper::from(func.f, scale / GRAPH_SUBDIVISIONS as f64);
+        let f = FunctionHolder::from(move |x: f64, z: f64| f.eval(x, z));
+        let grid = graph::SquareTesselation::generate(GRAPH_SUBDIVISIONS, width, &f);
+        Some(grid.mesh_data(graph::SquareTesselation::FUNC_COLOR))
+    } else {
+        let grid = graph::SquareTesselation::generate(GRAPH_SUBDIVISIONS, width, &func);
+        Some(grid.mesh_data_direct_normals(graph::SquareTesselation::FUNC_COLOR, &func))
+    }
 }
 
 fn build_scene_for_graph(
@@ -141,7 +174,6 @@ fn build_scene_for_graph(
     //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
 
     let grid = graph::SquareTesselation::generate(GRAPH_SUBDIVISIONS, width, f);
-
     let func_mesh = if direct_normals {
         grid.mesh_data_direct_normals(graph::SquareTesselation::FUNC_COLOR, f)
     } else {

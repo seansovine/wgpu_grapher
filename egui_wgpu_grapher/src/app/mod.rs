@@ -68,13 +68,13 @@ impl App {
             state: None,
             window: None,
             window_attributes,
-
+            //
             last_update_time,
             last_render_time,
             accumulated_secs,
             render_count,
             avg_framerate,
-
+            //
             initial_scene: initial_scene.unwrap_or_default(),
         }
     }
@@ -208,11 +208,12 @@ impl App {
         }
 
         let context = &state.egui_renderer.context();
+        let disabled = matches!(state.scene_loading_state, SceneLoadingState::Processing);
 
         // Main controls window.
         egui::Window::new("Settings")
             .resizable(true)
-            .default_size([200.0, 275.0])
+            .default_size([200.0, 295.0])
             .default_pos([15.0, 15.0])
             .vscroll(true)
             .default_open(true)
@@ -224,6 +225,7 @@ impl App {
                     &mut state.grapher_state,
                     &mut state.ui_data,
                     &mut state.scene_mode,
+                    disabled,
                 );
             });
 
@@ -242,15 +244,20 @@ impl App {
                         *is_valid_ref = function.is_some();
                     },
                     state.ui_data.function_valid,
+                    disabled,
                 );
             }
-            if let Some(func) = function {
-                state.grapher_scene.update_graph(
-                    &state.device,
-                    &state.surface_config,
-                    &state.grapher_state,
-                    func,
+            if function.is_some() && state.ui_data.function_changed() {
+                state.scene_loading_state = SceneLoadingState::Processing;
+                state.grapher_scene.start_update_graph(
+                    state.ui_data.function_string.clone(),
+                    state.background_task_state.task_state.clone(),
                 );
+                state.ui_data.function_string_prev = state.ui_data.function_string.clone();
+                state
+                    .ui_data
+                    .function_string_prev
+                    .retain(|c| !c.is_whitespace());
             }
             state.ui_data.function_valid = is_valid;
         }
@@ -327,13 +334,18 @@ impl ApplicationHandler for App {
                 window.request_redraw();
 
                 // Let scene run any of its own internal updates.
-                if !state.scene_updates_paused && state.grapher_scene.is_some() {
-                    state.grapher_scene.update(
+                if !state.scene_updates_paused
+                    && state.grapher_scene.is_some()
+                    && state.grapher_scene.update(
                         &state.device,
                         &state.surface_config,
                         &state.queue,
                         &state.grapher_state,
-                    );
+                        &state.background_task_state,
+                    )
+                {
+                    // The update launched a background task.
+                    state.scene_loading_state = SceneLoadingState::Processing;
                 }
 
                 // Update preference uniform if needed.

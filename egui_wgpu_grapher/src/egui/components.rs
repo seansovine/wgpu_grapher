@@ -1,7 +1,5 @@
 //! A few reusable higher-level egui components.
 
-#![allow(dead_code)]
-
 use std::f32;
 
 use egui::{Color32, Context, Ui};
@@ -20,14 +18,17 @@ pub fn validated_text_input_window(
     input: &mut String,
     mut validate: impl FnMut(&String),
     is_valid: bool,
+    disabled: bool,
 ) -> HasFocus {
-    let mut text_has_focus = false;
-    egui::Window::new(title)
+    let response = egui::Window::new(title)
         .default_width(300.0)
         .default_pos([250.0, 15.0])
         .resizable([true, false])
         .collapsible(false)
         .show(context, |ui| {
+            if disabled {
+                ui.disable();
+            }
             let response = ui.add(
                 egui::TextEdit::singleline(input)
                     .text_color({
@@ -44,27 +45,17 @@ pub fn validated_text_input_window(
             if response.lost_focus() || ui.input(|i| i.key_pressed(egui::Key::Enter)) {
                 validate(input);
             }
-            text_has_focus = response.has_focus();
         });
 
-    HasFocus(text_has_focus)
+    HasFocus(response.unwrap().response.has_focus())
 }
 
-pub fn float_edit_line(
-    label: &str,
-    edit_text: &mut String,
-    edit_value: &mut f64,
-    ui: &mut Ui,
-) -> bool {
+pub fn float_edit(label: &str, edit_text: &mut String, edit_value: &mut f64, ui: &mut Ui) -> bool {
     let mut changed = false;
-
     ui.horizontal(|ui| {
         ui.label(format!("{label}: "));
-
-        let response = ui.add(egui::TextEdit::singleline(edit_text));
-
-        if response.lost_focus() {
-            // parse text and update value if valid
+        if ui.add(egui::TextEdit::singleline(edit_text)).lost_focus() {
+            // Parse text and update value if valid.
             if let Ok(f_val) = edit_text.parse::<f64>() {
                 *edit_value = f_val;
                 changed = true;
@@ -73,6 +64,5 @@ pub fn float_edit_line(
             }
         }
     });
-
     changed
 }
