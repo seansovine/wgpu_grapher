@@ -246,6 +246,8 @@ impl AppState {
                     .load(Ordering::Relaxed)
                 {
                     BACKGROUND_TASK_NONE => {
+                        // Joins any recently finished thread.
+                        let _ = self.background_task_state.check_for_crash();
                         self.scene_loading_state = SceneLoadingState::NoData;
                     }
                     BACKGROUND_TASK_RUNNING => {

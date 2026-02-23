@@ -253,11 +253,7 @@ impl App {
                     state.ui_data.function_string.clone(),
                     state.background_task_state.task_state.clone(),
                 );
-                state.ui_data.function_string_prev = state.ui_data.function_string.clone();
-                state
-                    .ui_data
-                    .function_string_prev
-                    .retain(|c| !c.is_whitespace());
+                state.ui_data.update_previous_fn_string();
             }
             state.ui_data.function_valid = is_valid;
         }

@@ -29,6 +29,11 @@ impl UiState {
             .collect();
         stripped != self.function_string_prev
     }
+
+    pub fn update_previous_fn_string(&mut self) {
+        self.function_string_prev = self.function_string.clone();
+        self.function_string_prev.retain(|c| !c.is_whitespace());
+    }
 }
 
 // -----------------------------------

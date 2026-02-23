@@ -224,14 +224,12 @@ impl GrapherScene {
                     self.start_update_graph(function_string, background_task.task_state.clone());
                     // Re-borrow here so we can use self to update graph.
                     if let GrapherScene::Graph(data) = self {
-                        data.graph_scene.update(queue, state);
+                        data.graph_scene.needs_rebuild = false;
                     }
+                    return true;
                 }
-                // Have to re-borrow again.
-                if let GrapherScene::Graph(data) = self {
-                    data.graph_scene.needs_rebuild = false;
-                }
-                return true;
+                data.graph_scene.needs_rebuild = false;
+                data.graph_scene.update(queue, state);
             }
             GrapherScene::Model(data) => {
                 data.model_scene.update(queue, state);
