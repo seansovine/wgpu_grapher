@@ -5,7 +5,7 @@ use state::*;
 use crate::{
     egui::{components, ui::create_gui},
     grapher,
-    grapher_egui::GrapherSceneMode,
+    grapher_egui::{GrapherSceneMode, UpdateEffect},
 };
 use egui_wgpu::{
     ScreenDescriptor,
@@ -330,18 +330,19 @@ impl ApplicationHandler for App {
                 window.request_redraw();
 
                 // Let scene run any of its own internal updates.
-                if !state.scene_updates_paused
-                    && state.grapher_scene.is_some()
-                    && state.grapher_scene.update(
+                if !state.scene_updates_paused && state.grapher_scene.is_some() {
+                    match state.grapher_scene.update(
                         &state.device,
                         &state.surface_config,
                         &state.queue,
                         &state.grapher_state,
                         &state.background_task_state,
-                    )
-                {
-                    // The update launched a background task.
-                    state.scene_loading_state = SceneLoadingState::Processing;
+                    ) {
+                        UpdateEffect::BackgroundTaskStarted => {
+                            state.scene_loading_state = SceneLoadingState::Processing;
+                        }
+                        UpdateEffect::None => {}
+                    }
                 }
 
                 // Update preference uniform if needed.

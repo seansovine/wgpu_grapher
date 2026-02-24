@@ -171,6 +171,11 @@ pub enum GrapherScene {
     Solver(SolverSceneData),
 }
 
+pub enum UpdateEffect {
+    None,
+    BackgroundTaskStarted,
+}
+
 impl GrapherScene {
     pub fn is_some(&self) -> bool {
         !matches!(self, GrapherScene::None | GrapherScene::Changed)
@@ -207,7 +212,6 @@ impl GrapherScene {
         }
     }
 
-    /// Returns true if a background task was launched.
     pub fn update(
         &mut self,
         _: &Device,
@@ -215,7 +219,7 @@ impl GrapherScene {
         queue: &Queue,
         state: &RenderState,
         background_task: &BackgroundTask,
-    ) -> bool {
+    ) -> UpdateEffect {
         match self {
             GrapherScene::Graph(data) => {
                 // Rebuild scene if non-uniform parameters changed.
@@ -226,7 +230,7 @@ impl GrapherScene {
                     if let GrapherScene::Graph(data) = self {
                         data.graph_scene.needs_rebuild = false;
                     }
-                    return true;
+                    return UpdateEffect::BackgroundTaskStarted;
                 }
                 data.graph_scene.needs_rebuild = false;
                 data.graph_scene.update(queue, state);
@@ -242,7 +246,7 @@ impl GrapherScene {
             }
             _ => unimplemented!(),
         }
-        false
+        UpdateEffect::None
     }
 
     pub fn start_update_graph(

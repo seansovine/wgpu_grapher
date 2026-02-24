@@ -5,8 +5,8 @@ use crate::{
     grapher::{self, scene::solid::graph::GraphScene},
     grapher_egui::{
         BACKGROUND_TASK_NONE, BACKGROUND_TASK_READY, BACKGROUND_TASK_RUNNING, BackgroundTask,
-        GrapherScene, GrapherSceneMode, RenderUiState, graph_scene, image_scene, model_scene,
-        solver_scene::SolverSceneData,
+        GrapherScene, GrapherSceneMode, RenderState, RenderUiState, graph_scene, image_scene,
+        model_scene, solver_scene::SolverSceneData,
     },
 };
 
@@ -39,7 +39,7 @@ pub struct AppState {
     pub scene_loading_state: SceneLoadingState,
 
     // Graphics scene state.
-    pub grapher_state: grapher::render::RenderState,
+    pub grapher_state: RenderState,
     pub grapher_scene: GrapherScene,
 
     // State of any background task.
