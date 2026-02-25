@@ -1,5 +1,7 @@
 pub mod controller;
 
+use crate::grapher::matrix::Z_AXIS;
+
 use super::matrix::{self, Matrix, MatrixUniform, X_AXIS, Y_AXIS};
 
 use cgmath::{Euler, Matrix3, Quaternion, Rad, SquareMatrix};
@@ -26,9 +28,9 @@ pub struct Camera {
 
     // for perspective matrix
     pub aspect: f32,
-    pub fovy: f32,
-    pub znear: f32,
-    pub zfar: f32,
+    pub fov_y: f32,
+    pub z_near: f32,
+    pub z_far: f32,
 
     // for orthographic matrix
     pub left: f32,
@@ -74,8 +76,8 @@ impl Camera {
                 self.right * self.aspect / self.ortho_scale,
                 self.bottom / self.ortho_scale,
                 self.top / self.ortho_scale,
-                2.0, // znear
-                self.zfar,
+                2.0, // z_near
+                self.z_far,
             ),
         };
 
@@ -89,7 +91,12 @@ impl Camera {
     }
 
     pub fn get_perspective_proj(&self) -> cgmath::Matrix4<f32> {
-        cgmath::perspective(cgmath::Deg(self.fovy), self.aspect, self.znear, self.zfar)
+        cgmath::perspective(
+            cgmath::Deg(self.fov_y),
+            self.aspect,
+            self.z_near,
+            self.z_far,
+        )
     }
 
     pub fn default(surface_config: &SurfaceConfiguration) -> Self {
@@ -101,9 +108,9 @@ impl Camera {
             projection_type: ProjectionType::Perspective,
             //
             aspect: surface_config.width as f32 / surface_config.height as f32,
-            fovy: 45.0,
-            znear: 0.1,
-            zfar: 100.0,
+            fov_y: 45.0,
+            z_near: 0.1,
+            z_far: 100.0,
             //
             left: -0.5,
             right: 0.5,
@@ -159,14 +166,16 @@ impl Camera {
         quaternion.into()
     }
 
-    pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32) {
+    pub fn increment_user_rotation(&mut self, alpha: f32, gamma: f32, beta: f32) {
         if self.relative_rotation {
             let alpha_rot = cgmath::Matrix4::from_axis_angle(Y_AXIS, cgmath::Rad(alpha));
             let gamma_rot = cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Rad(gamma));
-            self.user_rotation = alpha_rot * gamma_rot * self.user_rotation;
+            let beta_rot = cgmath::Matrix4::from_axis_angle(Z_AXIS, cgmath::Rad(beta));
+            self.user_rotation = beta_rot * alpha_rot * gamma_rot * self.user_rotation;
         } else {
             self.euler_y = (self.euler_y + alpha).rem_euclid(2.0 * PI);
             self.euler_x = (self.euler_x + gamma).rem_euclid(2.0 * PI);
+            self.euler_z = (self.euler_z + beta).rem_euclid(2.0 * PI);
         }
     }
 }

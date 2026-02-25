@@ -69,7 +69,7 @@ impl CameraController {
                 }
             }
             ProjectionType::Orthographic => {
-                const INCR_ADJUSTMENT: f32 = 50.0;
+                const INCR_ADJUSTMENT: f32 = 20.0;
                 if self.z_pressed {
                     camera.ortho_scale *= 1.0 + zoom_incr / INCR_ADJUSTMENT;
                 }
@@ -84,18 +84,38 @@ impl CameraController {
         }
 
         if let Some(incr) = self.last_drag.take() {
-            const MOUSE_ROTATION_RATE: f32 = 0.0125;
-            const MOUSE_TRANSLATION_RATE: f32 = 0.03125;
+            const MOUSE_ROTATION_RATE: f32 = 0.01;
+            const MOUSE_TRANSLATION_RATE: f32 = 0.03;
             if !self.ctrl_pressed {
-                camera.increment_user_rotation(
-                    incr[0] as f32 * MOUSE_ROTATION_RATE,
-                    incr[1] as f32 * MOUSE_ROTATION_RATE,
-                );
+                match camera.projection_type {
+                    ProjectionType::Orthographic => {
+                        camera.increment_user_rotation(
+                            0.0,
+                            0.0,
+                            (-incr[0] + incr[1]) as f32 * 0.5 * MOUSE_ROTATION_RATE,
+                        );
+                    }
+                    ProjectionType::Perspective => {
+                        camera.increment_user_rotation(
+                            incr[0] as f32 * MOUSE_ROTATION_RATE,
+                            incr[1] as f32 * MOUSE_ROTATION_RATE,
+                            0.0,
+                        );
+                    }
+                }
             } else {
-                camera.translation_x +=
-                    incr[0] as f32 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
-                camera.translation_y -=
-                    incr[1] as f32 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
+                match camera.projection_type {
+                    ProjectionType::Orthographic => {
+                        camera.translation_x +=
+                            incr[0] as f32 * 0.1 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
+                        camera.translation_y -=
+                            incr[1] as f32 * 0.1 * MOUSE_TRANSLATION_RATE / camera.ortho_scale;
+                    }
+                    ProjectionType::Perspective => {
+                        camera.translation_x += incr[0] as f32 * MOUSE_TRANSLATION_RATE;
+                        camera.translation_y -= incr[1] as f32 * MOUSE_TRANSLATION_RATE;
+                    }
+                }
             }
         }
 
@@ -103,16 +123,16 @@ impl CameraController {
             let angle_incr = self.speed * PI / 4.0;
 
             if self.right_pressed {
-                camera.increment_user_rotation(angle_incr, 0.0);
+                camera.increment_user_rotation(angle_incr, 0.0, 0.0);
             }
             if self.left_pressed {
-                camera.increment_user_rotation(-angle_incr, 0.0);
+                camera.increment_user_rotation(-angle_incr, 0.0, 0.0);
             }
             if self.up_pressed {
-                camera.increment_user_rotation(0.0, angle_incr);
+                camera.increment_user_rotation(0.0, angle_incr, 0.0);
             }
             if self.down_pressed {
-                camera.increment_user_rotation(0.0, -angle_incr);
+                camera.increment_user_rotation(0.0, -angle_incr, 0.0);
             }
         }
 

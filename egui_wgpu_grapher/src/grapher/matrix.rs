@@ -54,6 +54,7 @@ impl Mul for Matrix {
 
 pub const X_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(1.0, 0.0, 0.0);
 pub const Y_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 1.0, 0.0);
+pub const Z_AXIS: cgmath::Vector3<f32> = cgmath::Vector3::new(0.0, 0.0, 1.0);
 
 impl Matrix {
     pub fn identity() -> Self {
