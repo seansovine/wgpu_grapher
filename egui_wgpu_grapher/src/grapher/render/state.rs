@@ -155,7 +155,7 @@ impl ShadowState {
     const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
     pub fn create<Vertex: Bufferable>(
-        surface_config: &SurfaceConfiguration,
+        _surface_config: &SurfaceConfiguration,
         device: &Device,
         light: &LightState,
         model_matrix_bind_group_layout: &BindGroupLayout,
@@ -168,28 +168,11 @@ impl ShadowState {
             ],
         );
 
-        let surface_width = surface_config.width.max(1);
-        let surface_height = surface_config.height.max(1);
         let max_tex_size = device.limits().max_texture_dimension_2d;
-        let mut texture_size_multiplier = 4;
-        // We use a shadow texture larger than the render surface to reduce aliasing.
-
-        // set texture size factor
-        #[allow(clippy::ifs_same_cond)]
-        if surface_width * texture_size_multiplier > max_tex_size
-            || surface_height * texture_size_multiplier > max_tex_size
-        {
-            texture_size_multiplier = 2;
-        } else if surface_width * texture_size_multiplier > max_tex_size
-            || surface_height * texture_size_multiplier > max_tex_size
-        {
-            texture_size_multiplier = 1;
-        }
-
         let _texture = device.create_texture(&TextureDescriptor {
             size: Extent3d {
-                width: surface_config.width.max(1) * texture_size_multiplier,
-                height: surface_config.height.max(1) * texture_size_multiplier,
+                width: max_tex_size,
+                height: max_tex_size,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,

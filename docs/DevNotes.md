@@ -1,9 +1,51 @@
 # Developer Notes
 
+## Example functions
+
+These are interesting and/or highlight things we want to understand or improve.
+
+- `0.5*e^(-sin(x^2 + 2*z^2))`
+
+This is a good example for shadow mapping quality. Increasing the coordinate coefficients
+produces places where the curvature is high enough to start causing artifacts.
+
+- `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
+
+Just interesting; also good shadow demonstration.
+
+## Things of interest
+
+### Curved contours and areas of high curvature
+
+Similar issues are discussed in the Vulkan Grapher notes. The problem is that when the curvature
+of the surface is high, the mesh badly approximates the surface unless the mesh triangles are small
+relative to the curvature. This also has an affect on lighting, because the normals tend to oscillate
+in these areas due to the changing orientation of the triangles. The lighting issue isn't as
+pronounced with the Phong lighting scheme used here as with the metallic-roughness PBR lighting.
+
+### Surfaces with very fine details
+
+This is definitely in part a fundamental limitations of any computer renderer. There are a few things
+that go wrong when you have features of the object that change significantly on small scales in device
+coordinate space.
+
+For example: Changes happen on scales finer than the mesh; but shrinking the mesh size overloads the
+hardware with memory and processing demands. Things that change significantly on a fine scale make higher
+demands on the precision of the numerical computations. These and other factors result in the object
+and the mesh both being rendered inaccurately.
+
+But there a likely good ways to handle these issues, or at least reasonable compromises and workarounds
+available.
+
+### Maybe shadow artifacts
+
+There are some cases where there seem to be spurious shadows. But it could be that they are correct
+but unexpected. We should find a way to debug this.
+
+## Old Notes (pre-2026-07-25)
+
 This is a work in progress. There are a few known issues and some improvements
 I'm planning to make in the near future.
-
-## Known issues and TODOs
 
 Next steps:
 
@@ -39,8 +81,8 @@ There are some edge cases where shadow artifacts appear.
 
 _Example:_
 
-+ Function: `2.0*e^(5.0*(-(x-2.0)^2 - (z)^2))`
-+ Light position: `[3.0, 4.0, 0.0]`
+- Function: `2.0*e^(5.0*(-(x-2.0)^2 - (z)^2))`
+- Light position: `[3.0, 4.0, 0.0]`
 
 It seems this is mostly caused by a combination of shadow aliasing
 and the shape of our mesh not being optimal for certain parts of curved surfaces.
@@ -48,8 +90,8 @@ These effects are brought out more in a few cases.
 
 _Example 2:_
 
-+ Function: `2.0*e^(5.0*(-(x)^2 - (z)^2))`
-+ Light position: `[0.0, 4.0, 0.0]`
+- Function: `2.0*e^(5.0*(-(x)^2 - (z)^2))`
+- Light position: `[0.0, 4.0, 0.0]`
 
 This can be used to sanity check basic lighting and coordinate handling. As of now
 everything seems to be working correctly in these areas.
@@ -58,8 +100,8 @@ _Example 3:_
 
 This should be useful for debugging the geometry of shadow mapping.
 
-+ Function: `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
-+ Light position: `[3.0, 4.0, 0.0]`
+- Function: `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
+- Light position: `[3.0, 4.0, 0.0]`
 
 As the bumps move in the z-direction, we can see how the shadow varies.
 
@@ -73,8 +115,8 @@ I believe this example shows the effects of aliasing (and other factors) at some
 the shadow boundaries, especially where the shadow is created by our mesh's approximation
 of a curved surface.
 
-+ Function: `0.5*e^(-sin(4.0*(x^2 + z^2)))`
-+ Light position: `[3.0, 4.0, 0.0]`
+- Function: `0.5*e^(-sin(4.0*(x^2 + z^2)))`
+- Light position: `[3.0, 4.0, 0.0]`
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/radial_e_sin_square_2026-01-11.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
@@ -90,8 +132,8 @@ TODO: Look into ways to improve shadow mapping in the difficult cases.
 
 _Example a:_
 
-+ Functon: `max(0.0, sqrt(1.0 - x^2 + z^2))`
-+ Light position: `[3.0, 4.0, 0.0]`
+- Functon: `max(0.0, sqrt(1.0 - x^2 + z^2))`
+- Light position: `[3.0, 4.0, 0.0]`
 
 This example shows some lighting artifacts at the boundary where the shape gets
 truncated to the `y = 0` plane. This is probably not surprising, as nearby triangles
@@ -109,7 +151,7 @@ handing things like this.
 We currently represent normals in world coordinates and use them directly
 in lighting calculations. In the glTF model normals are represented in
 the tangent space at each vertex, so each vertex also needs to have tangent and bitangent
-vectors. We have implemented this approach  in the [Vulkan Grapher](https://github.com/seansovine/vulkan_grapher)
+vectors. We have implemented this approach in the [Vulkan Grapher](https://github.com/seansovine/vulkan_grapher)
 project. We could port some parts of the mesh generation and shader code from there to
 this project.
 

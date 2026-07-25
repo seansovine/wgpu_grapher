@@ -1,0 +1,12 @@
+[workspace]
+resolver = "2"
+members = ["egui_wgpu_grapher", "wgpu_grapher", "gpu_finite_difference"]
+default-members = ["egui_wgpu_grapher"]
+
+[workspace.dependencies]
+egui = "0.33.3"
+egui-wgpu = { version = "0.33.3", features = ["winit"] }
+egui-winit = "0.33.3"
+winit = "0.30.12"
+pollster = "0.4.0"
+bytemuck = "1.23.2"
