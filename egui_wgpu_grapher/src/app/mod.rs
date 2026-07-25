@@ -238,6 +238,7 @@ impl App {
                 let _ = components::validated_text_input_window(
                     context,
                     "Function",
+                    Some("Enter function f(x, z):"),
                     &mut state.ui_data.function_string,
                     |func_str| {
                         function = grapher::math::try_parse_function_string(func_str);

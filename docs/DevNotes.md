@@ -13,6 +13,15 @@ produces places where the curvature is high enough to start causing artifacts.
 
 Just interesting; also good shadow demonstration.
 
+- `2.5*sin(15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) / (15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) + 0.5`
+
+This is the radial sinc example used in the Vulkan Grapher repo.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/sinc_shadow_wireframe.png?raw=true"
+		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
 ## Things of interest
 
 ### Curved contours and areas of high curvature

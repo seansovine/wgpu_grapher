@@ -4,6 +4,8 @@ use std::f32;
 
 use egui::{Color32, Context, Ui};
 
+const AFTER_LABEL_SPACE: f32 = 5.0;
+
 pub struct HasFocus(pub bool);
 
 impl HasFocus {
@@ -15,6 +17,7 @@ impl HasFocus {
 pub fn validated_text_input_window(
     context: &Context,
     title: &str,
+    caption: Option<&str>,
     input: &mut String,
     mut validate: impl FnMut(&String),
     is_valid: bool,
@@ -28,6 +31,10 @@ pub fn validated_text_input_window(
         .show(context, |ui| {
             if disabled {
                 ui.disable();
+            }
+            if let Some(caption) = caption {
+                ui.label(caption);
+                ui.add_space(AFTER_LABEL_SPACE);
             }
             let response = ui.add(
                 egui::TextEdit::singleline(input)
