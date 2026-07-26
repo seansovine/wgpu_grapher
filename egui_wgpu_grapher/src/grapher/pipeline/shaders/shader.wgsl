@@ -45,7 +45,11 @@ struct VertexOutput {
     @location(2) normal: vec3<f32>,
     @location(3) reflected_light: vec3<f32>,
     @location(4) world_position: vec4<f32>,
+    @location(5) is_selected: u32,
 }
+
+const SELECTED_POINT = vec2<f32>(0.0, 0.0);
+const SELECTION_RADIUS: f32 = 0.025;
 
 // Vertex shader.
 
@@ -66,6 +70,8 @@ fn vs_main(vertex: VertexInput) -> VertexOutput {
     out.light_direction = normalize(light.position - out.world_position.xyz);
     // Light reflected across normal for specular lighting.
     out.reflected_light = reflect(-out.light_direction, out.normal);
+
+    out.is_selected = u32(distance(SELECTED_POINT, out.view_position.xy / out.view_position.w) <= SELECTION_RADIUS);
 
     return out;
 }
@@ -114,24 +120,30 @@ fn get_shadow(world_position: vec4<f32>) -> f32 {
 const LIGHT_BIT: u32 = 1u;
 const SHADOW_BIT: u32 = 4u;
 
-@fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & LIGHT_BIT) > 0;
+// We aren't currently depth sorting, but convenient for debugging.
+const DEFAULT_ALPHA: f32 = 0.5;
 
-    if use_light {
+// TEST primitive highlighting.
+const SELECTED_TRI: u32 = 0x7fffffffu;
+const SELECTED_COLOR = vec4<f32>(0.0, 1.0, 0.0, DEFAULT_ALPHA);
+
+@fragment
+fn fs_main(@builtin(primitive_index) prim_index: u32, in: VertexOutput) -> @location(0) vec4<f32> {
+    let selected_t: f32 = select(0.0, 1.0, bool(in.is_selected) || abs(prim_index - SELECTED_TRI) < 100);
+
+    if (preferences.flags & LIGHT_BIT) > 0 {
         let shadow = select(get_shadow(light_view.matrix * in.world_position), 1.0, (preferences.flags & SHADOW_BIT) == 0);
         let diffuse_strength = shadow *
             LIGHT_SETTINGS.diffuse_v * max(0.0, dot(in.light_direction, in.normal));
         let specular_strength = shadow *
             LIGHT_SETTINGS.speculr_v * pow(max(0.0, dot(in.reflected_light, in.normal)), LIGHT_SETTINGS.shininess);
 
-        let out_color = light.color * in.color;
+        let out_color = vec4<f32>((LIGHT_SETTINGS.ambient_v + diffuse_strength + specular_strength) * (light.color * in.color), DEFAULT_ALPHA);
 
         // Apply Phong illumination model.
-        return vec4<f32>((LIGHT_SETTINGS.ambient_v + diffuse_strength + specular_strength) * out_color, 1.0);
+        return selected_t * SELECTED_COLOR + (1.0 - selected_t) * out_color;
     } else {
-
         // We're use alpha transparency when lighting is disabled; this is experimental.
-        return vec4<f32>(in.color, 0.8);
+        return selected_t * SELECTED_COLOR + (1.0 - selected_t) * vec4<f32>(in.color, 0.8);
     }
 }

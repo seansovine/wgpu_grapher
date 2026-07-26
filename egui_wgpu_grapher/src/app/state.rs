@@ -86,7 +86,8 @@ impl AppState {
 
         let features = wgpu::Features::POLYGON_MODE_LINE
             | wgpu::Features::FLOAT32_FILTERABLE
-            | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES;
+            | wgpu::Features::TEXTURE_ADAPTER_SPECIFIC_FORMAT_FEATURES
+            | wgpu::Features::SHADER_PRIMITIVE_INDEX;
         let (device, queue) = adapter
             .request_device(&wgpu::DeviceDescriptor {
                 label: None,
