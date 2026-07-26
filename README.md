@@ -16,6 +16,8 @@ The `wgpu_grapher` crate in this repository has an older version of the app with
 some features that haven't been ported to the GUI version. Some of those are discussed
 [here](./GrapherCaps.md).
 
+[Dev Notes](docs/DevNotes.md) has some interesting example functions.
+
 ## glTF viewer
 
 The model viewer mode loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)

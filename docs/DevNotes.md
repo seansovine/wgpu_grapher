@@ -22,6 +22,21 @@ This is the radial sinc example used in the Vulkan Grapher repo.
 		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
+_These are all interesting:_
+
+- `1.0 - 0.25*sqrt(sin(8.0*sqrt(x^2+z^2)) + 1.0)`
+
+- `((sin(2*x))^2)^(3+2*(z*x+1.5))`
+
+- `(cos(4*(x^2 + z^2)/2))^5 / (x*z)`
+
+The last one is cool in an Escher-like way.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/escher.png?raw=true"
+		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
 ## Things of interest
 
 ### Curved contours and areas of high curvature
