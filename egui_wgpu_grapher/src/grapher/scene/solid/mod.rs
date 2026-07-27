@@ -7,8 +7,12 @@ pub mod pde;
 use super::{GpuVertex, Scene3D};
 use crate::grapher::{
     matrix::{self, Matrix, MatrixUniform},
-    pipeline::{self, light},
+    pipeline::{
+        self,
+        light::{self},
+    },
     render::{RenderState, ShadowState},
+    scene::debug_data,
 };
 
 use egui_wgpu::wgpu::{
@@ -126,6 +130,8 @@ pub fn build_scene(
         //
         meshes,
         textured_meshes: vec![],
+        //
+        debug_pipeline: debug_data(device, surface_config, &light, &state.bind_group_layout),
         //
         light,
         shadow: Some(shadow),

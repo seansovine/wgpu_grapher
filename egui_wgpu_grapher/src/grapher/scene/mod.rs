@@ -5,9 +5,12 @@ pub mod solver;
 pub mod textured;
 
 use super::render::RenderState;
-use crate::grapher::{pipeline::light::LightState, render::ShadowState};
+use crate::grapher::{
+    pipeline::{self, light::LightState},
+    render::ShadowState,
+};
 
-use egui_wgpu::wgpu::{self, Queue, RenderPipeline};
+use egui_wgpu::wgpu::{self, BindGroupLayout, Device, Queue, RenderPipeline, SurfaceConfiguration};
 
 // -----------------------------------------
 // Pipelines and render data for a 3D scene.
@@ -20,10 +23,28 @@ pub struct Scene3D {
     pub meshes: Vec<solid::MeshRenderData>,
     pub textured_meshes: Vec<textured::TexturedMeshRenderData>,
 
+    // For drawing debug items in the scene.
+    pub debug_pipeline: RenderPipeline,
+
     // light
     pub light: LightState,
     // shadow
     pub shadow: Option<ShadowState>,
+}
+
+fn debug_data(
+    device: &Device,
+    surface_config: &SurfaceConfiguration,
+    light: &LightState,
+    camera_layout: &BindGroupLayout,
+) -> RenderPipeline {
+    pipeline::create_render_pipeline::<GpuVertex>(
+        device,
+        surface_config,
+        pipeline::get_debug_shader(),
+        &[camera_layout, &light.bind_group_layout],
+        wgpu::PolygonMode::Fill,
+    )
 }
 
 // ------------------------------------------------

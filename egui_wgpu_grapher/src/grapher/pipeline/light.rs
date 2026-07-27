@@ -40,6 +40,11 @@ impl LightState {
         self.uniform.position = new_position;
     }
 
+    #[allow(unused)]
+    pub fn position(&self) -> [f32; 3] {
+        self.uniform.position
+    }
+
     pub fn update_uniform(&mut self, queue: &Queue) {
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }

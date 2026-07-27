@@ -19,6 +19,10 @@ pub fn get_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/shader.wgsl").into())
 }
 
+pub fn get_debug_shader() -> wgpu::ShaderSource<'static> {
+    wgpu::ShaderSource::Wgsl(include_str!("shaders/debug_shader.wgsl").into())
+}
+
 pub fn get_shadow_shader() -> wgpu::ShaderSource<'static> {
     wgpu::ShaderSource::Wgsl(include_str!("shaders/shadow_shader.wgsl").into())
 }

@@ -48,13 +48,14 @@ struct VertexOutput {
     @location(5) is_selected: u32,
 }
 
+const SHOW_SELECTION: bool = false;
 const SELECTED_POINT = vec2<f32>(0.0, 0.0);
-const SELECTION_RADIUS: f32 = 0.025;
+const SELECTION_RADIUS: f32 = 0.01;
 
 // Vertex shader.
 
 @vertex
-fn vs_main(vertex: VertexInput) -> VertexOutput {
+fn vs_main(vertex: VertexInput, @builtin(vertex_index) vert_ind: u32) -> VertexOutput {
     var out: VertexOutput;
     out.color = vertex.color;
 
@@ -71,7 +72,12 @@ fn vs_main(vertex: VertexInput) -> VertexOutput {
     // Light reflected across normal for specular lighting.
     out.reflected_light = reflect(-out.light_direction, out.normal);
 
-    out.is_selected = u32(distance(SELECTED_POINT, out.view_position.xy / out.view_position.w) <= SELECTION_RADIUS);
+    if SHOW_SELECTION {
+        out.is_selected = u32(distance(SELECTED_POINT, out.view_position.xy / out.view_position.w) <= SELECTION_RADIUS);
+    } else {
+        out.is_selected = 0;
+    }
+    // out.is_selected = u32(vert_ind % 7 == 0);
 
     return out;
 }

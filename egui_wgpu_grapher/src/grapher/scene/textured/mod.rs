@@ -9,6 +9,7 @@ use crate::grapher::{
     matrix::{self, Matrix, MatrixUniform},
     pipeline::{self, light, texture::TextureData},
     render::RenderState,
+    scene::debug_data,
 };
 
 use egui_wgpu::wgpu::{
@@ -123,6 +124,8 @@ pub fn build_scene(
         //
         meshes: vec![],
         textured_meshes,
+        //
+        debug_pipeline: debug_data(device, surface_config, &light, &state.bind_group_layout),
         //
         light,
         shadow: None,

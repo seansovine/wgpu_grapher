@@ -2,18 +2,29 @@
 
 ## Example functions
 
-These are interesting and/or highlight things we want to understand or improve.
+These examples are interesting and/or highlight things that we want to understand or improve.
 
-- `0.5*e^(-sin(x^2 + 2*z^2))`
+### Example
+
+> `0.5*e^(-sin(x^2 + 2*z^2))`
 
 This is a good example for shadow mapping quality. Increasing the coordinate coefficients
-produces places where the curvature is high enough to start causing artifacts.
+produces places where the curvature is high enough to start causing artifacts to appear.
 
-- `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
+### Example
 
-Just interesting; also good shadow demonstration.
+> `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
 
-- `2.5*sin(15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) / (15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) + 0.5`
+Interesting, and also a good shadow demonstration. The image shows the light position rendered as a small cube.
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_debug.png?raw=true"
+		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
+### Example
+
+> `2.5*sin(15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) / (15.0*sqrt((x + 0.01)*(x + 0.01) + (z + 0.01)*(z + 0.01))) + 0.5`
 
 This is the radial sinc example used in the Vulkan Grapher repo.
 
@@ -22,13 +33,13 @@ This is the radial sinc example used in the Vulkan Grapher repo.
 		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-_These are all interesting:_
+### These are all interesting:
 
-- `1.0 - 0.25*sqrt(sin(8.0*sqrt(x^2+z^2)) + 1.0)`
+1. `1.0 - 0.25*sqrt(sin(8.0*sqrt(x^2+z^2)) + 1.0)`
 
-- `((sin(2*x))^2)^(3+2*(z*x+1.5))`
+2. `((sin(2*x))^2)^(3+2*(z*x+1.5))`
 
-- `(cos(4*(x^2 + z^2)/2))^5 / (x*z)`
+3. `(cos(2*(x^2 + z^2)))^5/(x*z)`
 
 The last one is cool in an Escher-like way.
 
@@ -42,29 +53,34 @@ The last one is cool in an Escher-like way.
 ### Curved contours and areas of high curvature
 
 Similar issues are discussed in the Vulkan Grapher notes. The problem is that when the curvature
-of the surface is high, the mesh badly approximates the surface unless the mesh triangles are small
+of the surface is high, the mesh badly approximates the surface, unless the mesh triangles are small
 relative to the curvature. This also has an affect on lighting, because the normals tend to oscillate
-in these areas due to the changing orientation of the triangles. The lighting issue isn't as
-pronounced with the Phong lighting scheme used here as with the metallic-roughness PBR lighting.
+in these areas due to the changing orientation of the triangles. However, this lighting issue isn't
+as pronounced with the Phong lighting scheme used here as with the metallic-roughness PBR lighting
+used in Vulkan Grapher.
 
 ### Surfaces with very fine details
 
-This is definitely in part a fundamental limitations of any computer renderer. There are a few things
-that go wrong when you have features of the object that change significantly on small scales in device
-coordinate space.
+There are a few things that go wrong when you have features of the object that change significantly
+on small scales in device coordinate space. This is in part a fundamental limitation of any
+computer renderer.
 
-For example: Changes happen on scales finer than the mesh; but shrinking the mesh size overloads the
-hardware with memory and processing demands. Things that change significantly on a fine scale make higher
-demands on the precision of the numerical computations. These and other factors result in the object
-and the mesh both being rendered inaccurately.
+For example: If changes happen on scales finer than the mesh then they won't be rendered. But shrinking
+the mesh size overloads the hardware with memory and processing demands. And, things that change on fine
+spatial scales make higher demands on the precision of the numerical computations. These and other factors
+result in the object and the mesh both being rendered inaccurately when there are fine details of the
+object that change a significant amount.
 
-But there a likely good ways to handle these issues, or at least reasonable compromises and workarounds
-available.
+There a likely good ways to handle these issues, or at least reasonable compromises and workarounds
+that people have developed. We have tried some approaches to _smoothing out_ finer details after the
+initial mesh is constructed.
 
-### Maybe shadow artifacts
+### Possible shadow artifacts
 
-There are some cases where there seem to be spurious shadows. But it could be that they are correct
-but unexpected. We should find a way to debug this.
+There are some cases where there seem to be spurious shadows. It could be that they are correct but
+unexpected based on the angles of the scene. We've added the ability to render the light as an object
+in the scene, so that its position can be used to aid in debugging shadows and other lighting geometry
+issues.
 
 ## Old Notes (pre-2026-07-25)
 

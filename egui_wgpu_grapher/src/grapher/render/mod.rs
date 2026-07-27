@@ -103,6 +103,14 @@ impl RenderState {
 
             load_op = wgpu::LoadOp::Load;
             depth_load_op = wgpu::LoadOp::Load;
+
+            // TODO: Add scene parameer.
+            if true {
+                render_pass.set_pipeline(&scene.debug_pipeline);
+                render_pass.set_bind_group(0, &self.bind_group, &[]);
+                render_pass.set_bind_group(1, &scene.light.bind_group, &[]);
+                render_pass.draw(0..36, 0..1);
+            }
         }
 
         // render textured meshes if configured
