@@ -6,7 +6,7 @@ These examples are interesting and/or highlight things that we want to understan
 
 ### Example
 
-> `0.5*e^(-sin(x^2 + 2*z^2))`
+> `0.5*e^(-sin(x^2 + 4*z^2))`
 
 This is a good example for shadow mapping quality. Increasing the coordinate coefficients
 produces places where the curvature is high enough to start causing artifacts to appear.
@@ -71,7 +71,7 @@ spatial scales make higher demands on the precision of the numerical computation
 result in the object and the mesh both being rendered inaccurately when there are fine details of the
 object that change a significant amount.
 
-There a likely good ways to handle these issues, or at least reasonable compromises and workarounds
+There are likely good ways to handle these issues, or at least reasonable compromises and workarounds
 that people have developed. We have tried some approaches to _smoothing out_ finer details after the
 initial mesh is constructed.
 
@@ -81,6 +81,10 @@ There are some cases where there seem to be spurious shadows. It could be that t
 unexpected based on the angles of the scene. We've added the ability to render the light as an object
 in the scene, so that its position can be used to aid in debugging shadows and other lighting geometry
 issues.
+
+**Explanation:** The mesh coordinates go out of bounds of the shadow texture.
+
+> **TODO:** Fix this by adjusting the projection matrix we use for shadow mapping.
 
 ## Old Notes (pre-2026-07-25)
 
