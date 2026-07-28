@@ -43,7 +43,6 @@ impl RenderState {
             pass.set_pipeline(&shadow_state.shadow_pass_pipeline);
             pass.set_bind_group(0, &scene.light.camera_matrix_bind_group, &[]);
 
-            // Shadows are currently drawn for solid scene objects only.
             for mesh in &scene.meshes {
                 pass.set_bind_group(1, &mesh.matrix_bind_group, &[]);
                 pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
@@ -59,7 +58,6 @@ impl RenderState {
             // Render pass ends on drop when it goes out of scope here.
         }
 
-        // want to clear depth & MSAA buffers on first render only
         let load_op = wgpu::LoadOp::Clear(wgpu::Color {
             r: 0.0,
             g: 0.0,
@@ -67,7 +65,6 @@ impl RenderState {
             a: 1.0,
         });
         let depth_load_op = wgpu::LoadOp::Clear(1.0);
-
         let color_attachment = wgpu::RenderPassColorAttachment {
             view: &self.msaa_data.view,
             resolve_target: Some(view),
@@ -93,13 +90,10 @@ impl RenderState {
             timestamp_writes: None,
         });
 
-        // Render solid meshes if configured. Shadow always comes
-        // with solid pipeline: these could be put in one struct.
         if let Some(pipeline) = &scene.pipeline
             && let Some(shadow) = &scene.shadow
         {
             render_pass.set_pipeline(pipeline);
-
             for mesh in &scene.meshes {
                 draw_mesh(
                     &mut render_pass,
@@ -116,12 +110,10 @@ impl RenderState {
             }
         }
 
-        // render textured meshes if configured
         if let Some(pipeline) = &scene.textured_pipeline
             && let Some(shadow) = &scene.shadow
         {
             render_pass.set_pipeline(pipeline);
-
             for mesh in &scene.textured_meshes {
                 draw_mesh(
                     &mut render_pass,
