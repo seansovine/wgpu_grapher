@@ -13,8 +13,6 @@ parsing and evaluation are handled by the [meval](https://docs.rs/meval/latest/m
 [notes](docs/DevNotes.md) have some interesting example functions and discuss some ideas that
 have influenced the implementation.
 
-The current version is in the `egui_wgpu_grapher` crate. The `wgpu_grapher` crate has an older, pre-GUI version with some features that haven't been ported to the GUI version. Some of those are discussed [here](./GrapherCaps.md).
-
 ## glTF viewer
 
 The model viewer mode loads and renders a scene from a file in the [glTF](https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html)
@@ -50,8 +48,7 @@ GPU using a Wgpu compute shader. The `gpu_finite_difference` crate has a standal
 		alt="drawing" width="400" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-Eventually I plan to allow setting the user's input function as an initial condition for the solver. There is a version of this in the
-old `wgpu_grapher` crate, but that version runs the solver on the CPU and does a lot of work to copy the vertex data to the GPU.
+Eventually I plan to allow setting the user's input function as an initial condition for the solver.
 
 ## Mouse controls
 

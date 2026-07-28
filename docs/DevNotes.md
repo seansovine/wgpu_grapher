@@ -48,6 +48,10 @@ The last one is cool in an Escher-like way.
 		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
+## Examples
+
+- `sin(2*x) + cos(3*z)`
+
 ## Things of interest
 
 ### Curved contours and areas of high curvature
