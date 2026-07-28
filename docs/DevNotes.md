@@ -75,79 +75,24 @@ There are likely good ways to handle these issues, or at least reasonable compro
 that people have developed. We have tried some approaches to _smoothing out_ finer details after the
 initial mesh is constructed.
 
-### Possible shadow artifacts
-
-There are some cases where there seem to be spurious shadows. It could be that they are correct but
-unexpected based on the angles of the scene. We've added the ability to render the light as an object
-in the scene, so that its position can be used to aid in debugging shadows and other lighting geometry
-issues.
-
-**Explanation:** The mesh coordinates go out of bounds of the shadow texture.
-
-> **TODO:** Fix this by adjusting the projection matrix we use for shadow mapping.
-
 ## Old Notes (pre-2026-07-25)
 
-This is a work in progress. There are a few known issues and some improvements
-I'm planning to make in the near future.
-
-Next steps:
-
-1. Add option to render lights and coordinate axes as scene objects.
-2. Rework graph parameter GUI input and update handling.
-3. Investigate ways to improve shadow mapping.
-
-Things to do later:
-
-5. Port some mesh generation and lighting code from Vulkan Grapher.
-
-### Coordinate axes and geometry debugging
-
-To help debug lighting and other 3D rendering issues we will add some code to
-optionally render scene objects for lights. It would also be nice to have some
-coordinate axes that can be optionally displayed.
-
-### Graph domain parameter updates
-
-The GUI inputs for graph shift and scale are buggy. The way they're implemented
-now also modifies the function object, so results in the graph being
-regenerated on every change.
-
-_Plan:_
-
-We've currently disabled the function position and scale UI until we get the bugs
-ironed out and decide how we want to handle updates to these. We may add a separate
-window to update them, with an "apply" button.
-
-### Shadow mapping
-
-There are some edge cases where shadow artifacts appear.
+### More examples
 
 _Example:_
 
 - Function: `2.0*e^(5.0*(-(x-2.0)^2 - (z)^2))`
 - Light position: `[3.0, 4.0, 0.0]`
 
-It seems this is mostly caused by a combination of shadow aliasing
-and the shape of our mesh not being optimal for certain parts of curved surfaces.
-These effects are brought out more in a few cases.
-
 _Example 2:_
 
 - Function: `2.0*e^(5.0*(-(x)^2 - (z)^2))`
 - Light position: `[0.0, 4.0, 0.0]`
 
-This can be used to sanity check basic lighting and coordinate handling. As of now
-everything seems to be working correctly in these areas.
-
 _Example 3:_
-
-This should be useful for debugging the geometry of shadow mapping.
 
 - Function: `2.0*e^(-5.0*x^2)*e^(sin(2.0*z^2) - 1.0)`
 - Light position: `[3.0, 4.0, 0.0]`
-
-As the bumps move in the z-direction, we can see how the shadow varies.
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/shadow_mapping_geometry_2026-01-10.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
@@ -155,22 +100,12 @@ As the bumps move in the z-direction, we can see how the shadow varies.
 
 _Example 4:_
 
-I believe this example shows the effects of aliasing (and other factors) at some of
-the shadow boundaries, especially where the shadow is created by our mesh's approximation
-of a curved surface.
-
 - Function: `0.5*e^(-sin(4.0*(x^2 + z^2)))`
 - Light position: `[3.0, 4.0, 0.0]`
 
 <p align="center" margin="20px">
 	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/radial_e_sin_square_2026-01-11.png?raw=true" alt="drawing" width="700" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
-
-_Plan:_
-
-A checkbox for shadow mapping has been added, currently defaulting to off.
-
-TODO: Look into ways to improve shadow mapping in the difficult cases.
 
 ## Lighting artifacts
 

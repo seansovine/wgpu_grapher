@@ -144,9 +144,12 @@ impl App {
             // Run any compute passes.
             state.grapher_scene.compute(&state.device, &state.queue);
             // Render grapher scene.
-            state
-                .grapher_scene
-                .render(&surface_view, &mut encoder, &state.grapher_state);
+            state.grapher_scene.render(
+                &surface_view,
+                &mut encoder,
+                &state.grapher_state,
+                state.ui_data.render_ui_state.debug_enabled,
+            );
         }
 
         // Render GUI.
@@ -213,7 +216,7 @@ impl App {
         // Main controls window.
         egui::Window::new("Settings")
             .resizable(true)
-            .default_size([200.0, 295.0])
+            .default_size([200.0, 310.0])
             .default_pos([15.0, 15.0])
             .vscroll(true)
             .default_open(true)

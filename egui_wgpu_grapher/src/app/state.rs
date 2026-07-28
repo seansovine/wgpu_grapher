@@ -94,6 +94,7 @@ impl AppState {
                 label: None,
                 required_features: features,
                 required_limits: Limits {
+                    max_bind_groups: 5,
                     ..Default::default()
                 },
                 ..Default::default()

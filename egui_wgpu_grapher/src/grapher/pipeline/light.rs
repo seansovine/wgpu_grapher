@@ -137,7 +137,7 @@ impl LightState {
         let view = cgmath::Matrix4::look_at_rh(view_origin, view_target, view_up);
 
         // TODO: This should be the identity matrix. Look at other possible uses.
-        let projection = cgmath::ortho(-1.0_f32, 1.0_f32, -1.0_f32, 1.0_f32, -1.0, 1.0);
+        let projection = cgmath::ortho(-1.5_f32, 1.5_f32, -1.0_f32, 1.0_f32, -1.0, 1.0);
 
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }

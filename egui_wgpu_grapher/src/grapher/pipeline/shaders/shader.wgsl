@@ -127,7 +127,7 @@ const LIGHT_BIT: u32 = 1u;
 const SHADOW_BIT: u32 = 4u;
 
 // We aren't currently depth sorting, but convenient for debugging.
-const DEFAULT_ALPHA: f32 = 0.5;
+const DEFAULT_ALPHA: f32 = 1.0;
 
 // TEST primitive highlighting.
 const SELECTED_TRI: u32 = 0x7fffffffu;

@@ -186,18 +186,19 @@ impl GrapherScene {
         view: &TextureView,
         encoder: &mut CommandEncoder,
         render_state: &RenderState,
+        debug: bool,
     ) {
         match self {
             GrapherScene::Graph(data) => {
                 if data.graph_scene.scene.is_some() {
-                    render_state.render(view, encoder, data.graph_scene.scene());
+                    render_state.render(view, encoder, data.graph_scene.scene(), debug);
                 }
             }
             GrapherScene::Model(data) => {
-                render_state.render(view, encoder, data.model_scene.scene());
+                render_state.render(view, encoder, data.model_scene.scene(), debug);
             }
             GrapherScene::ImageViewer(data) => {
-                render_state.render(view, encoder, data.image_viewer_scene.scene());
+                render_state.render(view, encoder, data.image_viewer_scene.scene(), debug);
             }
             GrapherScene::Solver(data) => {
                 render_2d(view, encoder, &data.scene, render_state);
@@ -364,6 +365,7 @@ pub struct RenderUiState {
     pub lighting_enabled: bool,
     pub use_wireframe: bool,
     pub shadow_enabled: bool,
+    pub debug_enabled: bool,
     pub needs_prefs_uniform_write: bool,
 }
 
@@ -373,6 +375,7 @@ impl From<&RenderPreferences> for RenderUiState {
             lighting_enabled: render_prefs.lighting_enabled(),
             use_wireframe: render_prefs.wireframe_enabled(),
             shadow_enabled: render_prefs.shadow_enabled(),
+            debug_enabled: false,
             needs_prefs_uniform_write: false,
         }
     }
@@ -404,7 +407,10 @@ pub fn render_parameter_ui(
             }
         }
     });
-    if matches!(grapher_scene, GrapherScene::Graph(_)) {
+    if matches!(
+        grapher_scene,
+        GrapherScene::Graph(_) | GrapherScene::Model(_)
+    ) {
         let response = ui.checkbox(&mut render_ui_state.shadow_enabled, "Shadow ");
         if response.changed() {
             render_state
@@ -412,6 +418,7 @@ pub fn render_parameter_ui(
                 .set_shadow_enabled(render_ui_state.shadow_enabled);
             render_ui_state.needs_prefs_uniform_write = true;
         }
+        ui.checkbox(&mut render_ui_state.debug_enabled, "Debug light ");
     }
     let response = ui.checkbox(
         &mut render_state.camera_state.camera.relative_rotation,

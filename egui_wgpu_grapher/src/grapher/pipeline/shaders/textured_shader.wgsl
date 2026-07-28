@@ -42,6 +42,7 @@ struct VertexOutput {
     @location(1) light_direction: vec3<f32>,
     @location(2) normal: vec3<f32>,
     @location(3) tex_coords: vec2<f32>,
+    @location(4) world_position: vec4<f32>,
 }
 
 // vertex shader
@@ -60,10 +61,10 @@ fn vs_main(
     // Rotate normal with body without translating.
     out.normal = normalize((model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz);
     // World coordinates of vertex, after applying model transformation.
-    let world_position = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0));
+    out.world_position = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0));
 
     // Direction from point to light in world space.
-    out.light_direction = normalize(light.position - world_position.xyz);
+    out.light_direction = normalize(light.position - out.world_position.xyz);
 
     return out;
 }
@@ -76,11 +77,40 @@ var diffuse_tex: texture_2d<f32>;
 @group(3) @binding(1)
 var diffuse_samp: sampler;
 
+@group(4) @binding(0)
+var shadow_texture: texture_depth_2d;
+@group(4) @binding(1)
+var shadow_sampler: sampler_comparison;
+@group(4) @binding(2)
+var<uniform> light_view: MatrixUniform;
+
+// Modified from the Wgpu shadow example.
+fn get_shadow(world_position: vec4<f32>) -> f32 {
+    // To convert device coords to texture coords;
+    //  reverse is done automatically when rendering to depth buffer.
+    const flip_correction = vec2<f32>(0.5, -0.5);
+
+    // To normalize homogenous coords so that w = 1.0;
+    //  light view projection may leave them un-normalized.
+    let proj_correction = 1.0 / world_position.w;
+
+    // Coordinates in depth buffer corresponding to this point.
+    let shadow_tex_coords = world_position.xy *
+        proj_correction * flip_correction + vec2<f32>(0.5, 0.5);
+
+    return textureSampleCompare(shadow_texture, shadow_sampler,
+        shadow_tex_coords, world_position.z * proj_correction);
+}
+
+const LIGHT_BIT: u32 = 1u;
+const TEXTURE_BIT: u32 = 2u;
+const SHADOW_BIT: u32 = 4u;
+
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & 1u) > 0u;
+    let use_light = (preferences.flags & LIGHT_BIT) > 0u;
     // TODO: Add correct handling for this in application.
-    let use_texture = (preferences.flags & 2u) > 0u;
+    let use_texture = (preferences.flags & TEXTURE_BIT) > 0u;
 
     var color: vec3<f32>;
     if use_texture {
@@ -90,8 +120,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     }
 
     if use_light {
+        let shadow = select(get_shadow(light_view.matrix * in.world_position), 1.0, (preferences.flags & SHADOW_BIT) == 0);
         let ambient_strength = 0.05;
-        let diffuse_strength = 0.95 * max(0.0, dot(in.light_direction, in.normal));
+        let diffuse_strength = 0.95 * max(0.0, dot(in.light_direction, in.normal)) * shadow;
         let out_color = light.color * color;
 
         // Only ambient and diffuse lighting here for now.

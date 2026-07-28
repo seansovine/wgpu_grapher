@@ -8,8 +8,8 @@ use super::{GpuVertex, Scene3D};
 use crate::grapher::{
     matrix::{self, Matrix, MatrixUniform},
     pipeline::{self, light, texture::TextureData},
-    render::RenderState,
-    scene::debug_data,
+    render::{RenderState, ShadowState},
+    scene::{debug_data, solid::MeshRenderData},
 };
 
 use egui_wgpu::wgpu::{
@@ -104,6 +104,9 @@ pub fn build_scene(
         .collect();
 
     let light = light::LightState::create(device);
+    let matrix_bind_group_layout = MeshRenderData::matrix_bgl(device);
+    let shadow =
+        ShadowState::create::<GpuVertex>(surface_config, device, &light, matrix_bind_group_layout);
 
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
@@ -114,6 +117,7 @@ pub fn build_scene(
             TexturedMeshRenderData::matrix_bgl(device),
             &light.bind_group_layout,
             TextureData::bind_group_layout(device),
+            &shadow.render_pass_bind_group_layout,
         ],
         wgpu::PolygonMode::Fill,
     );
@@ -128,7 +132,7 @@ pub fn build_scene(
         debug_pipeline: debug_data(device, surface_config, &light, &state.bind_group_layout),
         //
         light,
-        shadow: None,
+        shadow: Some(shadow),
     }
 }
 

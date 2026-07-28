@@ -14,10 +14,18 @@ use egui_wgpu::wgpu::{
 // Main 3D scene rendering method.
 
 impl RenderState {
-    pub fn render(&self, view: &TextureView, encoder: &mut CommandEncoder, scene: &Scene3D) {
-        if let Some(shadow_state) = &scene.shadow
-            && scene.pipeline.is_some()
-        {
+    pub fn render(
+        &self,
+        view: &TextureView,
+        encoder: &mut CommandEncoder,
+        scene: &Scene3D,
+        debug: bool,
+    ) {
+        if scene.pipeline.is_none() && scene.textured_pipeline.is_none() {
+            return;
+        }
+
+        if let Some(shadow_state) = &scene.shadow {
             let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("shadow pass"),
                 color_attachments: &[],
@@ -42,48 +50,54 @@ impl RenderState {
                 pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
                 pass.draw_indexed(0..mesh.num_indices, 0, 0..1);
             }
-
+            for mesh in &scene.textured_meshes {
+                pass.set_bind_group(1, &mesh.matrix_bind_group, &[]);
+                pass.set_vertex_buffer(0, mesh.vertex_buffer.slice(..));
+                pass.set_index_buffer(mesh.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
+                pass.draw_indexed(0..mesh.num_indices, 0, 0..1);
+            }
             // Render pass ends on drop when it goes out of scope here.
         }
 
         // want to clear depth & MSAA buffers on first render only
-        let mut load_op = wgpu::LoadOp::Clear(wgpu::Color {
+        let load_op = wgpu::LoadOp::Clear(wgpu::Color {
             r: 0.0,
             g: 0.0,
             b: 0.0,
             a: 1.0,
         });
-        let mut depth_load_op = wgpu::LoadOp::Clear(1.0);
+        let depth_load_op = wgpu::LoadOp::Clear(1.0);
+
+        let color_attachment = wgpu::RenderPassColorAttachment {
+            view: &self.msaa_data.view,
+            resolve_target: Some(view),
+            ops: wgpu::Operations {
+                load: load_op,
+                store: wgpu::StoreOp::Store,
+            },
+            depth_slice: None,
+        };
+
+        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+            label: Some("render pass"),
+            color_attachments: &[Some(color_attachment)],
+            depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
+                view: &self.depth_buffer.view,
+                depth_ops: Some(wgpu::Operations {
+                    load: depth_load_op,
+                    store: wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
+            occlusion_query_set: None,
+            timestamp_writes: None,
+        });
 
         // Render solid meshes if configured. Shadow always comes
         // with solid pipeline: these could be put in one struct.
         if let Some(pipeline) = &scene.pipeline
             && let Some(shadow) = &scene.shadow
         {
-            let color_attachment = wgpu::RenderPassColorAttachment {
-                view: &self.msaa_data.view,
-                resolve_target: Some(view),
-                ops: wgpu::Operations {
-                    load: load_op,
-                    store: wgpu::StoreOp::Store,
-                },
-                depth_slice: None,
-            };
-
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("render pass"),
-                color_attachments: &[Some(color_attachment)],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_buffer.view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: depth_load_op,
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            });
             render_pass.set_pipeline(pipeline);
 
             for mesh in &scene.meshes {
@@ -100,45 +114,12 @@ impl RenderState {
                     ],
                 );
             }
-
-            load_op = wgpu::LoadOp::Load;
-            depth_load_op = wgpu::LoadOp::Load;
-
-            // TODO: Add scene parameer.
-            if true {
-                render_pass.set_pipeline(&scene.debug_pipeline);
-                render_pass.set_bind_group(0, &self.bind_group, &[]);
-                render_pass.set_bind_group(1, &scene.light.bind_group, &[]);
-                render_pass.draw(0..36, 0..1);
-            }
         }
 
         // render textured meshes if configured
-        if let Some(pipeline) = &scene.textured_pipeline {
-            let color_attachment = wgpu::RenderPassColorAttachment {
-                view: &self.msaa_data.view,
-                resolve_target: Some(view),
-                ops: wgpu::Operations {
-                    load: load_op,
-                    store: wgpu::StoreOp::Store,
-                },
-                depth_slice: None,
-            };
-
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some("render pass"),
-                color_attachments: &[Some(color_attachment)],
-                depth_stencil_attachment: Some(wgpu::RenderPassDepthStencilAttachment {
-                    view: &self.depth_buffer.view,
-                    depth_ops: Some(wgpu::Operations {
-                        load: depth_load_op,
-                        store: wgpu::StoreOp::Store,
-                    }),
-                    stencil_ops: None,
-                }),
-                occlusion_query_set: None,
-                timestamp_writes: None,
-            });
+        if let Some(pipeline) = &scene.textured_pipeline
+            && let Some(shadow) = &scene.shadow
+        {
             render_pass.set_pipeline(pipeline);
 
             for mesh in &scene.textured_meshes {
@@ -152,9 +133,17 @@ impl RenderState {
                         &mesh.matrix_bind_group,
                         &scene.light.bind_group,
                         &mesh.texture.bind_group,
+                        &shadow.render_pass_bind_group,
                     ],
                 );
             }
+        }
+
+        if debug {
+            render_pass.set_pipeline(&scene.debug_pipeline);
+            render_pass.set_bind_group(0, &self.bind_group, &[]);
+            render_pass.set_bind_group(1, &scene.light.bind_group, &[]);
+            render_pass.draw(0..36, 0..1);
         }
     }
 }
