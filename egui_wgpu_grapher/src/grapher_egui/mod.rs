@@ -18,8 +18,8 @@ use std::{
 use crate::{
     egui::ui::UiState,
     grapher::{
-        pipeline::render_preferences::RenderPreferences,
-        render::{ShadowState, render_2d},
+        pipeline::{light::ShadowState, render_preferences::RenderPreferences},
+        render::render_2d,
         scene::{
             GpuVertex, RenderScene,
             solid::{

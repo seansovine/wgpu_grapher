@@ -1,16 +1,12 @@
 use crate::grapher::{
     camera::CameraState,
     matrix::MatrixUniform,
-    pipeline::{
-        self, light::LightState, render_preferences::RenderPreferences, texture::DepthBuffer,
-    },
-    scene::Bufferable,
+    pipeline::{render_preferences::RenderPreferences, texture::DepthBuffer},
 };
 
 use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
-    BindGroupLayoutDescriptor, Device, Extent3d, Queue, RenderPipeline, Sampler,
-    SurfaceConfiguration, Texture, TextureDescriptor, TextureDimension, TextureUsages, TextureView,
+    BindGroupLayoutDescriptor, Device, Extent3d, Queue, SurfaceConfiguration, Texture, TextureView,
 };
 use winit::event::{DeviceEvent, WindowEvent};
 
@@ -134,122 +130,6 @@ impl MultisampleData {
         Self {
             _texture: msaa_texture,
             view: msaa_view,
-        }
-    }
-}
-
-// State for shadow map.
-
-pub struct ShadowState {
-    pub shadow_pass_pipeline: RenderPipeline,
-
-    pub _texture: wgpu::Texture,
-    pub view: TextureView,
-    pub _sampler: Sampler,
-
-    pub render_pass_bind_group_layout: BindGroupLayout,
-    pub render_pass_bind_group: BindGroup,
-}
-
-impl ShadowState {
-    const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
-
-    pub fn create<Vertex: Bufferable>(
-        _surface_config: &SurfaceConfiguration,
-        device: &Device,
-        light: &LightState,
-        model_matrix_bind_group_layout: &BindGroupLayout,
-    ) -> Self {
-        let pipeline = pipeline::create_shadow_pipeline::<Vertex>(
-            device,
-            &[
-                &light.camera_matrix_bind_group_layout,
-                model_matrix_bind_group_layout,
-            ],
-        );
-
-        let max_tex_size = device.limits().max_texture_dimension_2d;
-        let _texture = device.create_texture(&TextureDescriptor {
-            size: Extent3d {
-                width: max_tex_size,
-                height: max_tex_size,
-                depth_or_array_layers: 1,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: TextureDimension::D2,
-            format: Self::SHADOW_FORMAT,
-            usage: TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
-            label: None,
-            view_formats: &[],
-        });
-        let view = _texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        let _sampler = device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("shadow"),
-            address_mode_u: wgpu::AddressMode::ClampToBorder,
-            address_mode_v: wgpu::AddressMode::ClampToBorder,
-            address_mode_w: wgpu::AddressMode::ClampToBorder,
-            mag_filter: wgpu::FilterMode::Linear,
-            min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            compare: Some(wgpu::CompareFunction::LessEqual),
-            border_color: Some(wgpu::SamplerBorderColor::OpaqueBlack),
-            ..Default::default()
-        });
-
-        let camera_view_matrix = light.camera_view_matrix();
-        let mut camera_view_bgl_entry = *MatrixUniform::bind_group_layout_entry();
-        camera_view_bgl_entry.binding = 2;
-
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        multisampled: false,
-                        sample_type: wgpu::TextureSampleType::Depth,
-                        view_dimension: wgpu::TextureViewDimension::D2,
-                    },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
-                    count: None,
-                },
-                camera_view_bgl_entry,
-            ],
-            label: None,
-        });
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: wgpu::BindingResource::TextureView(&view),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&_sampler),
-                },
-                wgpu::BindGroupEntry {
-                    binding: 2,
-                    resource: camera_view_matrix.buffer.as_entire_binding(),
-                },
-            ],
-            label: None,
-        });
-
-        Self {
-            shadow_pass_pipeline: pipeline,
-            _texture,
-            view,
-            _sampler,
-            render_pass_bind_group_layout: bind_group_layout,
-            render_pass_bind_group: bind_group,
         }
     }
 }

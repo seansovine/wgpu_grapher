@@ -5,9 +5,9 @@ pub mod solver;
 pub mod textured;
 
 use super::render::RenderState;
-use crate::grapher::{
-    pipeline::{self, light::LightState},
-    render::ShadowState,
+use crate::grapher::pipeline::{
+    self,
+    light::{LightState, ShadowState},
 };
 
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, Queue, RenderPipeline, SurfaceConfiguration};
@@ -35,14 +35,14 @@ pub struct Scene3D {
 fn debug_data(
     device: &Device,
     surface_config: &SurfaceConfiguration,
-    light: &LightState,
+    _light: &LightState,
     camera_layout: &BindGroupLayout,
 ) -> RenderPipeline {
     pipeline::create_render_pipeline::<GpuVertex>(
         device,
         surface_config,
         pipeline::get_debug_shader(),
-        &[camera_layout, &light.bind_group_layout],
+        &[camera_layout, LightState::light_bgl(device)],
         wgpu::PolygonMode::Fill,
     )
 }

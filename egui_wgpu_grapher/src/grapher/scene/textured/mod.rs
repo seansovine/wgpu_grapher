@@ -7,8 +7,12 @@ pub mod pde_2d_cpu;
 use super::{GpuVertex, Scene3D};
 use crate::grapher::{
     matrix::{self, Matrix, MatrixUniform},
-    pipeline::{self, light, texture::TextureData},
-    render::{RenderState, ShadowState},
+    pipeline::{
+        self,
+        light::{self, LightState, ShadowState},
+        texture::TextureData,
+    },
+    render::RenderState,
     scene::{debug_data, solid::MeshRenderData},
 };
 
@@ -115,7 +119,7 @@ pub fn build_scene(
         &[
             &state.bind_group_layout,
             TexturedMeshRenderData::matrix_bgl(device),
-            &light.bind_group_layout,
+            LightState::light_bgl(device),
             TextureData::bind_group_layout(device),
             &shadow.render_pass_bind_group_layout,
         ],

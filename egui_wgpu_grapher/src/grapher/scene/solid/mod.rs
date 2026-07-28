@@ -9,9 +9,9 @@ use crate::grapher::{
     matrix::{self, Matrix, MatrixUniform},
     pipeline::{
         self,
-        light::{self},
+        light::{self, LightState, ShadowState},
     },
-    render::{RenderState, ShadowState},
+    render::RenderState,
     scene::debug_data,
 };
 
@@ -106,10 +106,13 @@ pub fn build_scene(
         .map(|(mesh, matrix)| MeshRenderData::from_mesh_data(device, mesh, matrix))
         .collect();
 
-    let matrix_bind_group_layout = MeshRenderData::matrix_bgl(device);
     let light = light::LightState::create(device);
-    let shadow =
-        ShadowState::create::<GpuVertex>(surface_config, device, &light, matrix_bind_group_layout);
+    let shadow = ShadowState::create::<GpuVertex>(
+        surface_config,
+        device,
+        &light,
+        MeshRenderData::matrix_bgl(device),
+    );
 
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,
@@ -117,8 +120,8 @@ pub fn build_scene(
         pipeline::get_shader(),
         &[
             &state.bind_group_layout,
-            matrix_bind_group_layout,
-            &light.bind_group_layout,
+            MeshRenderData::matrix_bgl(device),
+            LightState::light_bgl(device),
             &shadow.render_pass_bind_group_layout,
         ],
         state.render_preferences.polygon_mode,
