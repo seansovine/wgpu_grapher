@@ -13,8 +13,7 @@ parsing and evaluation are handled by the [meval](https://docs.rs/meval/latest/m
 [notes](docs/DevNotes.md) have some interesting example functions and discuss some ideas that
 have influenced the implementation.
 
-The current version of this project is in the `egui_wgpu_grapher` crate. The `wgpu_grapher` crate has an older version
-of the app with some features that haven't been ported to the GUI version. Some of those are discussed [here](./GrapherCaps.md).
+The current version is in the `egui_wgpu_grapher` crate. The `wgpu_grapher` crate has an older, pre-GUI version with some features that haven't been ported to the GUI version. Some of those are discussed [here](./GrapherCaps.md).
 
 ## glTF viewer
 
@@ -31,7 +30,7 @@ _Model from official glTF sample collection._
 
 ## Image viewer
 
-There is also an image viewer mode that loads and displays an image file. In the future I
+There is also an image viewer mode that loads and displays an image from a file. In the future I
 plan to add some image processing features to this.
 
 <p align="center" margin="20px">
@@ -43,7 +42,7 @@ _Image from Tom Swinnen on [Pexels](https://www.pexels.com/photo/seashore-under-
 
 ## GPU wave equation simulation
 
-The solver mode of has a finite-difference wave equation solver implemented on the
+The solver mode has a finite-difference wave equation simulation implemented on the
 GPU using a Wgpu compute shader. The `gpu_finite_difference` crate has a standalone version of the solver.
 
 <p align="center" margin="20px">
@@ -51,7 +50,7 @@ GPU using a Wgpu compute shader. The `gpu_finite_difference` crate has a standal
 		alt="drawing" width="400" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-Eventually I plan to allow using the user's input function as an initial condition for the solver. There is a version of this in the
+Eventually I plan to allow setting the user's input function as an initial condition for the solver. There is a version of this in the
 old `wgpu_grapher` crate, but that version runs the solver on the CPU and does a lot of work to copy the vertex data to the GPU.
 
 ## Mouse controls
