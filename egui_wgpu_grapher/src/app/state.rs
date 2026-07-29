@@ -338,6 +338,7 @@ impl AppState {
         if matches!(self.grapher_scene, GrapherScene::Changed) {
             self.grapher_scene = GrapherScene::None;
             self.scene_loading_state = SceneLoadingState::NoData;
+            self.grapher_state.light_motion = false;
             self.ui_data.filename = "".into();
             self.show_file_input();
         }
@@ -396,6 +397,7 @@ impl AppState {
                 &self.surface_config,
             ));
             self.scene_loading_state = SceneLoadingState::Loaded;
+            self.grapher_state.light_motion = false;
         }
     }
 }

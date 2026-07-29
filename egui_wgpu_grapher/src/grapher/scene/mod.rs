@@ -40,7 +40,7 @@ fn debug_data(
     _light: &LightState,
     camera_layout: &BindGroupLayout,
 ) -> RenderPipeline {
-    pipeline::create_render_pipeline::<GpuVertex>(
+    pipeline::create_debug_pipeline(
         device,
         surface_config,
         pipeline::get_debug_shader(),
