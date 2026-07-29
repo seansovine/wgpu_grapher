@@ -1,27 +1,28 @@
-// Preferences passed to shaders as a uniform.
+// Preferences for shaders and render pipelines.
 
+use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu::{
     self, BindGroupLayoutEntry, Buffer, Device, PolygonMode, Queue, util::DeviceExt,
 };
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct ShaderPreferencesUniform {
-    // see constants defined below
+    // Bit meanings in constants defined below.
     pub flags: u32,
 }
 
 pub struct RenderPreferences {
-    // data for uniform passed to shader
     pub uniform: ShaderPreferencesUniform,
     pub buffer: Buffer,
     pub bind_group_layout_entry: BindGroupLayoutEntry,
+
     // render pipeline preferences
     pub polygon_mode: PolygonMode,
 }
 
 // Preference bit meanings.
+
 const LIGHTING_BIT: u32 = 1_u32;
 const TEXTURE_BIT: u32 = 2_u32;
 const SHADOW_BIT: u32 = 4_u32;
@@ -71,21 +72,19 @@ impl RenderPreferences {
         }
     }
 
-    pub fn update_uniform(&mut self, queue: &Queue) {
-        // update uniform buffer
+    pub fn write_buffer(&mut self, queue: &Queue) {
         queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
     }
 }
 
 impl RenderPreferences {
     pub fn create(device: &Device) -> Self {
-        // pipeline config
+        // Default preferences for render pipeline.
         let polygon_mode = PolygonMode::Fill;
 
-        // shader preferences
+        // Default preferences for shader.
         let uniform = ShaderPreferencesUniform {
-            // only lighting enabled here by default
-            flags: 1_u32,
+            flags: LIGHTING_BIT,
         };
 
         let buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -93,7 +92,6 @@ impl RenderPreferences {
             contents: bytemuck::cast_slice(&[uniform]),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
-
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
             binding: 0,
             visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
@@ -113,6 +111,7 @@ impl RenderPreferences {
         }
     }
 
+    /// For pipelines that don't want to bind this to default entry 0.
     pub fn set_binding_index(&mut self, binding_index: u32) {
         self.bind_group_layout_entry.binding = binding_index;
     }

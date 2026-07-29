@@ -159,8 +159,6 @@ fn build_scene_for_graph(
     f: &impl GraphableFunc,
     direct_normals: bool,
 ) -> Scene3D {
-    // TODO: Add GUI parameter for floor mesh.
-    //
     // let floor_mesh = graph::SquareTesselation::generate(SUBDIVISIONS, width)
     //     .mesh_data(graph::SquareTesselation::FLOOR_COLOR);
 
@@ -181,21 +179,6 @@ fn build_scene_for_graph(
 
 // ---------------
 // Usage examples.
-
-#[allow(dead_code)]
-pub fn get_example_function(parameters: &GraphParameters) -> FunctionHolder {
-    let f = |x: f64, z: f64| 2.0_f64.powf(-(x.powi(2) + z.powi(2)).sin());
-    let f = graph::shift_scale_input(
-        f,
-        parameters.shift_x,
-        parameters.scale_x,
-        parameters.shift_z,
-        parameters.scale_z,
-    );
-    let f = graph::shift_scale_output(f, parameters.shift_y, parameters.scale_y);
-
-    FunctionHolder { f: Box::from(f) }
-}
 
 #[allow(dead_code)]
 pub fn demo_graph_scene(

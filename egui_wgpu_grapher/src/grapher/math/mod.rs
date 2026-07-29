@@ -81,6 +81,9 @@ impl GraphableFunc for SmoothingFunctionWrapper {
                 let x_e = x + self.increment * (i as isize - dim as isize / 2) as f64;
                 let z_e = z + self.increment * (j as isize - dim as isize / 2) as f64;
                 result += (self.f)(x_e, z_e) * self.coefficients[(i, j)];
+
+                // TODO: We can speed this up by pre-computing function values, but
+                // the implementation will be more complex. Will be worth the effort.
             }
         }
         result

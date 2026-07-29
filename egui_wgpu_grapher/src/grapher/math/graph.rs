@@ -139,8 +139,8 @@ impl SquareTesselation {
     // color to use for function mesh
     pub const FUNC_COLOR: [f32; 3] = [1.0, 0.0, 0.0];
 
-    /// Build tesselation of \[0, width\] x \[0, width\] square
-    /// in \(x, z\) coordinate system by smaller squares.
+    /// Build tesselation of [0, width] x [0, width] square in (x, z)
+    /// coordinate system by smaller squares.
     pub fn generate<F: GraphableFunc>(n: u32, width: f64, f: &F) -> Self {
         let mut ticks: Vec<f64> = vec![];
         let mut vertices: Vec<Vertex> = vec![];
@@ -181,18 +181,6 @@ impl SquareTesselation {
             vertices,
             squares,
         }
-    }
-
-    #[allow(unused)]
-    pub fn apply_function<F: GraphableFunc>(&mut self, f: &F) -> &mut Self
-    where
-        F:,
-    {
-        for vertex in &mut self.vertices {
-            vertex[1] = f.eval(vertex[0] as f64, vertex[2] as f64) as f32
-        }
-
-        self
     }
 
     pub fn mesh_data(&self, color: [f32; 3]) -> MeshData {
@@ -285,28 +273,4 @@ impl SquareTesselation {
             }
         }
     }
-}
-
-// function modification helpers
-
-pub fn shift_scale_input<F>(
-    f: F,
-    x_shift: f64,
-    x_scale: f64,
-    z_shift: f64,
-    z_scale: f64,
-) -> impl Fn(f64, f64) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
-    // new closure takes ownership of old one
-    move |x: f64, z: f64| f((x - x_shift) * x_scale, (z - z_shift) * z_scale)
-}
-
-pub fn shift_scale_output<F>(f: F, y_shift: f64, y_scale: f64) -> impl Fn(f64, f64) -> f64
-where
-    F: Fn(f64, f64) -> f64,
-{
-    // new closure takes ownership of old one
-    move |x: f64, z: f64| f(x, z) * y_scale + y_shift
 }

@@ -26,7 +26,7 @@ pub fn image_viewer_scene(
 
     // tell shader to use texture for color
     state.render_preferences.set_use_texture(true);
-    state.render_preferences.update_uniform(queue);
+    state.render_preferences.write_buffer(queue);
 
     // update camera settings
     state.camera_state.set_from_z(52.0);

@@ -358,7 +358,7 @@ impl ApplicationHandler for App {
                     state
                         .grapher_state
                         .render_preferences
-                        .update_uniform(&state.queue);
+                        .write_buffer(&state.queue);
                     state.ui_data.render_ui_state.needs_prefs_uniform_write = false;
                 }
 

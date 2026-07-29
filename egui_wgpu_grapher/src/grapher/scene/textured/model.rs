@@ -35,7 +35,7 @@ pub fn model_scene(
 
     // Tell shader to use texture for vertex color.
     state.render_preferences.set_use_texture(true);
-    state.render_preferences.update_uniform(queue);
+    state.render_preferences.write_buffer(queue);
 
     Some(ModelScene {
         scene: build_scene(device, surface_config, state, mesh_data),
