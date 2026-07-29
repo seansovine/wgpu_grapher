@@ -54,6 +54,15 @@ The last one is cool in an Escher-like way.
 
 > `2/(2 + cos(x*z))`
 
+> `sin(3*x)*cos(5*x)*e^(-z^2) + sin(3*z)*cos(5*z)*e^(-x^2)`
+
+Showing the effect of moving light in last example:
+
+<p align="center" margin="20px">
+	<img src="https://github.com/seansovine/page_images/blob/main/screenshots/wgpu_grapher/moving_light.gif?raw=true"
+		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
+</p>
+
 ## Things of interest
 
 ### Curved contours and areas of high curvature
