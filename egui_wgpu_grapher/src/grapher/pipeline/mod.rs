@@ -1,4 +1,4 @@
-pub mod render_preferences;
+//! Code to create graphics pipelines for our different scene types.
 
 #[allow(dead_code)]
 pub mod texture;

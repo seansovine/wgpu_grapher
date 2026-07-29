@@ -1,11 +1,12 @@
 use std::sync::OnceLock;
 
+use bytemuck::{Pod, Zeroable};
 use cgmath::Matrix4;
 use egui_wgpu::wgpu::{
     self, BindGroup, BindGroupDescriptor, BindGroupEntry, BindGroupLayout,
     BindGroupLayoutDescriptor, BindGroupLayoutEntry, Buffer, Device, Extent3d, Queue,
-    RenderPipeline, Sampler, SurfaceConfiguration, TextureDescriptor, TextureDimension,
-    TextureUsages, TextureView, util::DeviceExt,
+    RenderPipeline, Sampler, TextureDescriptor, TextureDimension, TextureUsages, TextureView,
+    util::DeviceExt,
 };
 
 use crate::grapher::{
@@ -16,7 +17,7 @@ use crate::grapher::{
 };
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct LightUniform {
     position: [f32; 3],
     _padding_1: u32,
@@ -125,7 +126,17 @@ impl LightState {
         };
         let view = cgmath::Matrix4::look_at_rh(view_origin, view_target, view_up);
 
-        let projection = cgmath::ortho(-1.5_f32, 1.5_f32, -1.5_f32, 1.5_f32, -1.0, 1.0);
+        // Tries to caputre points outside NDC range mapped into it by camera.
+        const PROJECTION_WIDTH: f32 = 5.0;
+
+        let projection = cgmath::ortho(
+            -PROJECTION_WIDTH,
+            PROJECTION_WIDTH,
+            -PROJECTION_WIDTH,
+            PROJECTION_WIDTH,
+            -1.0,
+            1.0,
+        );
 
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }
@@ -156,9 +167,11 @@ impl LightState {
 pub struct ShadowState {
     pub shadow_pass_pipeline: RenderPipeline,
 
-    pub _texture: wgpu::Texture,
     pub view: TextureView,
-    pub _sampler: Sampler,
+    #[allow(unused)]
+    pub texture: wgpu::Texture,
+    #[allow(unused)]
+    pub sampler: Sampler,
 
     pub render_pass_bind_group_layout: BindGroupLayout,
     pub render_pass_bind_group: BindGroup,
@@ -168,12 +181,11 @@ impl ShadowState {
     const SHADOW_FORMAT: wgpu::TextureFormat = wgpu::TextureFormat::Depth32Float;
 
     pub fn create<Vertex: Bufferable>(
-        _surface_config: &SurfaceConfiguration,
         device: &Device,
         light: &LightState,
         model_matrix_bind_group_layout: &BindGroupLayout,
     ) -> Self {
-        let pipeline = create_shadow_pipeline::<Vertex>(
+        let shadow_pass_pipeline = create_shadow_pipeline::<Vertex>(
             device,
             &[
                 &light.light_view_bind_group_layout,
@@ -182,7 +194,7 @@ impl ShadowState {
         );
 
         let max_tex_size = device.limits().max_texture_dimension_2d;
-        let _texture = device.create_texture(&TextureDescriptor {
+        let texture = device.create_texture(&TextureDescriptor {
             size: Extent3d {
                 width: max_tex_size,
                 height: max_tex_size,
@@ -196,9 +208,8 @@ impl ShadowState {
             label: None,
             view_formats: &[],
         });
-        let view = _texture.create_view(&wgpu::TextureViewDescriptor::default());
-
-        let _sampler = device.create_sampler(&wgpu::SamplerDescriptor {
+        let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
+        let sampler = device.create_sampler(&wgpu::SamplerDescriptor {
             label: Some("shadow"),
             address_mode_u: wgpu::AddressMode::ClampToBorder,
             address_mode_v: wgpu::AddressMode::ClampToBorder,
@@ -213,31 +224,31 @@ impl ShadowState {
 
         let mut camera_view_bgl_entry = *MatrixUniform::bind_group_layout_entry();
         camera_view_bgl_entry.binding = 2;
-
-        let bind_group_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-            entries: &[
-                wgpu::BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Texture {
-                        multisampled: false,
-                        sample_type: wgpu::TextureSampleType::Depth,
-                        view_dimension: wgpu::TextureViewDimension::D2,
+        let render_pass_bind_group_layout =
+            device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+                entries: &[
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Texture {
+                            multisampled: false,
+                            sample_type: wgpu::TextureSampleType::Depth,
+                            view_dimension: wgpu::TextureViewDimension::D2,
+                        },
+                        count: None,
                     },
-                    count: None,
-                },
-                wgpu::BindGroupLayoutEntry {
-                    binding: 1,
-                    visibility: wgpu::ShaderStages::FRAGMENT,
-                    ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
-                    count: None,
-                },
-                camera_view_bgl_entry,
-            ],
-            label: None,
-        });
-        let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &bind_group_layout,
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 1,
+                        visibility: wgpu::ShaderStages::FRAGMENT,
+                        ty: wgpu::BindingType::Sampler(wgpu::SamplerBindingType::Comparison),
+                        count: None,
+                    },
+                    camera_view_bgl_entry,
+                ],
+                label: None,
+            });
+        let render_pass_bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &render_pass_bind_group_layout,
             entries: &[
                 wgpu::BindGroupEntry {
                     binding: 0,
@@ -245,7 +256,7 @@ impl ShadowState {
                 },
                 wgpu::BindGroupEntry {
                     binding: 1,
-                    resource: wgpu::BindingResource::Sampler(&_sampler),
+                    resource: wgpu::BindingResource::Sampler(&sampler),
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
@@ -256,12 +267,12 @@ impl ShadowState {
         });
 
         Self {
-            shadow_pass_pipeline: pipeline,
-            _texture,
+            shadow_pass_pipeline,
+            texture,
             view,
-            _sampler,
-            render_pass_bind_group_layout: bind_group_layout,
-            render_pass_bind_group: bind_group,
+            sampler,
+            render_pass_bind_group_layout,
+            render_pass_bind_group,
         }
     }
 }

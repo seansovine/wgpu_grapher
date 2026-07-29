@@ -35,11 +35,11 @@ This is the radial sinc example used in the Vulkan Grapher repo.
 
 ### These are all interesting:
 
-1. `1.0 - 0.25*sqrt(sin(8.0*sqrt(x^2+z^2)) + 1.0)`
+> `1.0 - 0.25*sqrt(sin(8.0*sqrt(x^2+z^2)) + 1.0)`
 
-2. `((sin(2*x))^2)^(3+2*(z*x+1.5))`
+> `((sin(2*x))^2)^(3+2*(z*x+1.5))`
 
-3. `(cos(2*(x^2 + z^2)))^5/(x*z)`
+> `(cos(2*(x^2 + z^2)))^5/(x*z)`
 
 The last one is cool in an Escher-like way.
 
@@ -48,9 +48,11 @@ The last one is cool in an Escher-like way.
 		alt="drawing" width="800" style="padding-top: 10px; padding-bottom: 10px"/>
 </p>
 
-## Examples
+### More examples
 
-- `sin(2*x) + cos(3*z)`
+> `sin(2*x) + cos(3*z)`
+
+> `2/(2 + cos(x*z))`
 
 ## Things of interest
 

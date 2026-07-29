@@ -1,7 +1,6 @@
 use crate::grapher::{
-    camera::CameraState,
-    matrix::MatrixUniform,
-    pipeline::{render_preferences::RenderPreferences, texture::DepthBuffer},
+    camera::CameraState, matrix::MatrixUniform, pipeline::texture::DepthBuffer,
+    render::preferences::RenderPreferences,
 };
 
 use egui_wgpu::wgpu::{
@@ -34,8 +33,7 @@ pub struct RenderState {
 impl RenderState {
     pub async fn new(device: &Device, surface_config: &SurfaceConfiguration) -> Self {
         let camera_state = CameraState::init(device, surface_config);
-        let mut shader_preferences = RenderPreferences::create(device);
-        shader_preferences.set_binding_index(1);
+        let shader_preferences = RenderPreferences::create(device, 1);
 
         let bind_group_layout = device.create_bind_group_layout(&BindGroupLayoutDescriptor {
             entries: &[
@@ -106,7 +104,7 @@ impl RenderState {
     }
 }
 
-// State for MSAA.
+// State for multisampling.
 
 pub struct MultisampleData {
     pub _texture: Texture,

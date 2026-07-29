@@ -3,6 +3,8 @@
 mod state;
 pub use state::*;
 
+pub mod preferences;
+
 use super::scene::Scene3D;
 use crate::grapher::scene::solver::SolverScene;
 

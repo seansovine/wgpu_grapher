@@ -105,12 +105,8 @@ pub fn build_scene(
         .collect();
 
     let light = LightState::create(device);
-    let shadow = ShadowState::create::<GpuVertex>(
-        surface_config,
-        device,
-        &light,
-        MeshRenderData::matrix_bgl(device),
-    );
+    let shadow =
+        ShadowState::create::<GpuVertex>(device, &light, MeshRenderData::matrix_bgl(device));
 
     let pipeline = pipeline::create_render_pipeline::<GpuVertex>(
         device,

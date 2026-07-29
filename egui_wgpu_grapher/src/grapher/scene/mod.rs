@@ -10,6 +10,7 @@ use crate::grapher::{
     pipeline::{self},
 };
 
+use bytemuck::{Pod, Zeroable};
 use cgmath::{Deg, Quaternion, Rotation, Rotation3, Vector3};
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, Queue, RenderPipeline, SurfaceConfiguration};
 
@@ -86,7 +87,7 @@ pub trait Bufferable {
 // Vertex mapped to GPU buffer in 3D scene framework.
 
 #[repr(C)]
-#[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Copy, Clone, Debug, Pod, Zeroable)]
 pub struct GpuVertex {
     pub position: [f32; 3],
     pub color: [f32; 3],

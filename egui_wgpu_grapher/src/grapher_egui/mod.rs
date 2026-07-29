@@ -19,8 +19,7 @@ use crate::{
     egui::ui::UiState,
     grapher::{
         light::ShadowState,
-        pipeline::render_preferences::RenderPreferences,
-        render::render_2d,
+        render::{preferences::RenderPreferences, render_2d},
         scene::{
             GpuVertex, RenderScene,
             solid::{
@@ -342,13 +341,12 @@ impl GrapherScene {
         }
     }
 
-    fn rebuild_shadow_state(&mut self, device: &Device, surface_config: &SurfaceConfiguration) {
+    fn rebuild_shadow_state(&mut self, device: &Device, _surface_config: &SurfaceConfiguration) {
         if let GrapherScene::Graph(data) = self
             && let Some(scene) = &mut data.graph_scene.scene
             && !scene.meshes.is_empty()
         {
             let shadow = ShadowState::create::<GpuVertex>(
-                surface_config,
                 device,
                 &scene.light,
                 MeshRenderData::matrix_bgl(device),

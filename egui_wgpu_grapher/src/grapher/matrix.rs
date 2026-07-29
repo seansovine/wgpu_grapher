@@ -2,6 +2,7 @@
 
 use std::{ops::Mul, sync::OnceLock};
 
+use bytemuck::{Pod, Zeroable};
 use egui_wgpu::wgpu::{
     BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device, Queue,
     ShaderStages,
@@ -12,7 +13,7 @@ use egui_wgpu::wgpu::{
 // 4x4 matrix type.
 
 #[repr(C)]
-#[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+#[derive(Debug, Copy, Clone, Pod, Zeroable)]
 pub struct Matrix {
     data: [[f32; 4]; 4],
     // TODO: We should store a cgmath::Matrix4 here. It also

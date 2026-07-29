@@ -12,6 +12,10 @@ pub struct ShaderPreferencesUniform {
     pub flags: u32,
 }
 
+const LIGHTING_BIT: u32 = 1_u32;
+const TEXTURE_BIT: u32 = 2_u32;
+const SHADOW_BIT: u32 = 4_u32;
+
 pub struct RenderPreferences {
     pub uniform: ShaderPreferencesUniform,
     pub buffer: Buffer,
@@ -20,12 +24,6 @@ pub struct RenderPreferences {
     // render pipeline preferences
     pub polygon_mode: PolygonMode,
 }
-
-// Preference bit meanings.
-
-const LIGHTING_BIT: u32 = 1_u32;
-const TEXTURE_BIT: u32 = 2_u32;
-const SHADOW_BIT: u32 = 4_u32;
 
 impl RenderPreferences {
     pub fn lighting_enabled(&self) -> bool {
@@ -78,7 +76,7 @@ impl RenderPreferences {
 }
 
 impl RenderPreferences {
-    pub fn create(device: &Device) -> Self {
+    pub fn create(device: &Device, binding_index: u32) -> Self {
         // Default preferences for render pipeline.
         let polygon_mode = PolygonMode::Fill;
 
@@ -93,7 +91,7 @@ impl RenderPreferences {
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
         let bind_group_layout_entry = wgpu::BindGroupLayoutEntry {
-            binding: 0,
+            binding: binding_index,
             visibility: wgpu::ShaderStages::VERTEX | wgpu::ShaderStages::FRAGMENT,
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
@@ -109,10 +107,5 @@ impl RenderPreferences {
             bind_group_layout_entry,
             polygon_mode,
         }
-    }
-
-    /// For pipelines that don't want to bind this to default entry 0.
-    pub fn set_binding_index(&mut self, binding_index: u32) {
-        self.bind_group_layout_entry.binding = binding_index;
     }
 }
