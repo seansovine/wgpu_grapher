@@ -18,7 +18,8 @@ use std::{
 use crate::{
     egui::ui::UiState,
     grapher::{
-        pipeline::{light::ShadowState, render_preferences::RenderPreferences},
+        light::ShadowState,
+        pipeline::render_preferences::RenderPreferences,
         render::render_2d,
         scene::{
             GpuVertex, RenderScene,
@@ -419,6 +420,7 @@ pub fn render_parameter_ui(
             render_ui_state.needs_prefs_uniform_write = true;
         }
         ui.checkbox(&mut render_ui_state.debug_enabled, "Debug light ");
+        ui.checkbox(&mut render_state.light_motion, "Light motion ");
     }
     let response = ui.checkbox(
         &mut render_state.camera_state.camera.relative_rotation,

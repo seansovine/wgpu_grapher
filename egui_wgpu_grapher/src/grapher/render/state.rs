@@ -27,6 +27,8 @@ pub struct RenderState {
     pub framerate: f32,
     // multisampling texture
     pub msaa_data: MultisampleData,
+    // does light move with time?
+    pub light_motion: bool,
 }
 
 impl RenderState {
@@ -69,6 +71,7 @@ impl RenderState {
             // we target 60fps
             framerate: 60_f32,
             msaa_data: msaa_texture,
+            light_motion: false,
         }
     }
 
@@ -89,8 +92,8 @@ impl RenderState {
             .update_camera(&mut self.camera_state.camera);
         self.camera_state
             .matrix
-            .uniform
-            .update_inner(self.camera_state.camera.get_matrix());
+            .matrix
+            .update_value(self.camera_state.camera.get_matrix());
         // we write the uniform every frame
         self.camera_state.update_uniform(queue);
     }

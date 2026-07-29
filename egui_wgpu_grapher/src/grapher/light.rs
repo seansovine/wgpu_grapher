@@ -41,34 +41,14 @@ impl LightUniform {
 }
 
 pub struct LightState {
-    // to pass light data to shader as uniform
     pub uniform: LightUniform,
     pub buffer: Buffer,
     pub bind_group: BindGroup,
 
-    // light view matrix used for shadow mapping
-    pub camera_matrix: MatrixUniform,
-    pub camera_matrix_bind_group_layout: BindGroupLayout,
-    pub camera_matrix_bind_group: BindGroup,
-
-    // one-step light state save and restore
-    #[allow(unused)]
-    pub previous_uniform: Option<LightUniform>,
-}
-
-impl LightState {
-    pub fn set_position(&mut self, new_position: [f32; 3]) {
-        self.uniform.position = new_position;
-    }
-
-    #[allow(unused)]
-    pub fn position(&self) -> [f32; 3] {
-        self.uniform.position
-    }
-
-    pub fn update_uniform(&mut self, queue: &Queue) {
-        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
-    }
+    // Light view matrix used for shadow mapping.
+    pub light_view: MatrixUniform,
+    pub light_view_bind_group_layout: BindGroupLayout,
+    pub light_view_bind_group: BindGroup,
 }
 
 impl LightState {
@@ -108,42 +88,36 @@ impl LightState {
         // Create view matrix for use in shadow mapping.
         let matrix = Self::build_shadow_matrix(&uniform.position);
         let matrix_uniform = Matrix::from(matrix);
-        let camera_matrix = matrix::make_matrix_uniform(device, matrix_uniform);
+        let light_view = matrix::make_matrix_uniform(device, matrix_uniform);
 
-        let camera_matrix_bind_group_layout =
+        let light_view_bind_group_layout =
             device.create_bind_group_layout(&BindGroupLayoutDescriptor {
                 entries: &[*MatrixUniform::bind_group_layout_entry()],
                 label: Some("solid mesh matrix bind group layout"),
             });
-        let camera_matrix_bind_group = device.create_bind_group(&BindGroupDescriptor {
-            layout: &camera_matrix_bind_group_layout,
+        let light_view_bind_group = device.create_bind_group(&BindGroupDescriptor {
+            layout: &light_view_bind_group_layout,
             entries: &[BindGroupEntry {
                 binding: 0,
-                resource: camera_matrix.buffer.as_entire_binding(),
+                resource: light_view.buffer.as_entire_binding(),
             }],
             label: Some("solid mesh matrix bind group"),
         });
-
-        // TODO: Later we'll want to be able to update the light
-        // during runtime, which will require updating this matrix.
 
         Self {
             uniform,
             buffer,
             bind_group,
             //
-            camera_matrix,
-            camera_matrix_bind_group_layout,
-            camera_matrix_bind_group,
-            //
-            previous_uniform: None,
+            light_view,
+            light_view_bind_group_layout,
+            light_view_bind_group,
         }
     }
 
     fn build_shadow_matrix(position: &[f32; 3]) -> Matrix4<f32> {
         let view_target = cgmath::Point3::<f32>::from([0.0, 0.0, 0.0]);
         let view_origin = cgmath::Point3::<f32>::from(*position);
-
         let view_up = if position[0] == 0.0 && position[2] == 0.0 {
             cgmath::Vector3::<f32>::from([1.0, 0.0, 0.0])
         } else {
@@ -151,28 +125,29 @@ impl LightState {
         };
         let view = cgmath::Matrix4::look_at_rh(view_origin, view_target, view_up);
 
-        // TODO: This should be the identity matrix. Look at other possible uses.
-        let projection = cgmath::ortho(-1.5_f32, 1.5_f32, -1.0_f32, 1.0_f32, -1.0, 1.0);
+        let projection = cgmath::ortho(-1.5_f32, 1.5_f32, -1.5_f32, 1.5_f32, -1.0, 1.0);
 
         camera::OPENGL_TO_WGPU_MATRIX * projection * view
     }
 
-    pub fn camera_view_matrix(&self) -> &MatrixUniform {
-        &self.camera_matrix
+    pub fn set_position(&mut self, new_position: [f32; 3]) {
+        self.uniform.position = new_position;
+        self.light_view
+            .matrix
+            .update_value(Self::build_shadow_matrix(&new_position));
     }
 
-    #[allow(unused)]
-    pub fn save_light(&mut self) {
-        self.previous_uniform = Some(self.uniform);
+    pub fn position(&self) -> [f32; 3] {
+        self.uniform.position
     }
 
-    // Restores light uniform from previous state if one was saved.
-    #[allow(unused)]
-    pub fn maybe_restore_light(&mut self, queue: &Queue) {
-        if let Some(uniform) = self.previous_uniform.take() {
-            self.uniform = uniform;
-            self.update_uniform(queue);
-        }
+    pub fn update_uniform(&mut self, queue: &Queue) {
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.uniform]));
+        self.light_view.write_buffer(queue);
+    }
+
+    pub fn light_view_matrix(&self) -> &MatrixUniform {
+        &self.light_view
     }
 }
 
@@ -201,7 +176,7 @@ impl ShadowState {
         let pipeline = create_shadow_pipeline::<Vertex>(
             device,
             &[
-                &light.camera_matrix_bind_group_layout,
+                &light.light_view_bind_group_layout,
                 model_matrix_bind_group_layout,
             ],
         );
@@ -236,7 +211,6 @@ impl ShadowState {
             ..Default::default()
         });
 
-        let camera_view_matrix = light.camera_view_matrix();
         let mut camera_view_bgl_entry = *MatrixUniform::bind_group_layout_entry();
         camera_view_bgl_entry.binding = 2;
 
@@ -275,7 +249,7 @@ impl ShadowState {
                 },
                 wgpu::BindGroupEntry {
                     binding: 2,
-                    resource: camera_view_matrix.buffer.as_entire_binding(),
+                    resource: light.light_view_matrix().buffer.as_entire_binding(),
                 },
             ],
             label: None,

@@ -218,7 +218,7 @@ impl CameraState {
         queue.write_buffer(
             &self.matrix.buffer,
             0,
-            bytemuck::cast_slice(&[self.matrix.uniform]),
+            bytemuck::cast_slice(&[self.matrix.matrix]),
         );
     }
 }

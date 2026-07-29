@@ -127,8 +127,12 @@ impl App {
             Err(SurfaceError::Outdated) => {
                 panic!("Surface texture outdated in redraw.")
             }
-            Err(_) => {
-                panic!("Failed to acquire next swap chain texture.");
+            Err(SurfaceError::Other) => {
+                // Sometimes happens when window is in background on Linux.
+                return;
+            }
+            Err(err) => {
+                panic!("Error getting surface swap chain texture: {:#?}", err);
             }
             Ok(surface_texture) => surface_texture,
         };

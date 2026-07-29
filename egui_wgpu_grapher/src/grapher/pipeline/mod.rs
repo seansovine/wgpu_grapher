@@ -1,4 +1,3 @@
-pub mod light;
 pub mod render_preferences;
 
 #[allow(dead_code)]

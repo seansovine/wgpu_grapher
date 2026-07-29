@@ -51,5 +51,7 @@ impl RenderScene for ModelScene {
         &self.scene
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
+    fn update(&mut self, queue: &Queue, state: &RenderState) {
+        self.scene.update(queue, state);
+    }
 }

@@ -41,7 +41,7 @@ impl RenderState {
                 occlusion_query_set: None,
             });
             pass.set_pipeline(&shadow_state.shadow_pass_pipeline);
-            pass.set_bind_group(0, &scene.light.camera_matrix_bind_group, &[]);
+            pass.set_bind_group(0, &scene.light.light_view_bind_group, &[]);
 
             for mesh in &scene.meshes {
                 pass.set_bind_group(1, &mesh.matrix_bind_group, &[]);

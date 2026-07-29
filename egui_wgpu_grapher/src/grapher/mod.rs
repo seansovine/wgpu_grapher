@@ -12,6 +12,7 @@ mod camera;
 mod gltf_loader;
 mod matrix;
 
+pub mod light;
 pub mod math;
 pub mod pipeline;
 pub mod render;

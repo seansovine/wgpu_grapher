@@ -3,7 +3,7 @@
 use std::{ops::Mul, sync::OnceLock};
 
 use egui_wgpu::wgpu::{
-    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device,
+    BindGroupLayoutEntry, BindingType, Buffer, BufferBindingType, BufferUsages, Device, Queue,
     ShaderStages,
     util::{BufferInitDescriptor, DeviceExt},
 };
@@ -14,7 +14,7 @@ use egui_wgpu::wgpu::{
 #[repr(C)]
 #[derive(Debug, Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Matrix {
-    matrix: [[f32; 4]; 4],
+    data: [[f32; 4]; 4],
     // TODO: We should store a cgmath::Matrix4 here. It also
     //       has repr(c) with the same layout, and that would
     //       avoid some converseions, though the conversions
@@ -23,13 +23,13 @@ pub struct Matrix {
 
 impl From<[[f32; 4]; 4]> for Matrix {
     fn from(value: [[f32; 4]; 4]) -> Self {
-        Self { matrix: value }
+        Self { data: value }
     }
 }
 
 impl From<Matrix> for cgmath::Matrix4<f32> {
     fn from(value: Matrix) -> Self {
-        value.matrix.into()
+        value.data.into()
     }
 }
 
@@ -44,10 +44,10 @@ impl Mul for Matrix {
 
     // For convenience; this is rarely used.
     fn mul(self, rhs: Self) -> Self::Output {
-        let cg_self: cgmath::Matrix4<_> = self.matrix.into();
-        let cg_other: cgmath::Matrix4<_> = rhs.matrix.into();
+        let cg_self: cgmath::Matrix4<_> = self.data.into();
+        let cg_other: cgmath::Matrix4<_> = rhs.data.into();
         Self {
-            matrix: (cg_self * cg_other).into(),
+            data: (cg_self * cg_other).into(),
         }
     }
 }
@@ -60,19 +60,19 @@ impl Matrix {
     pub fn identity() -> Self {
         use cgmath::SquareMatrix;
         Self {
-            matrix: cgmath::Matrix4::identity().into(),
+            data: cgmath::Matrix4::identity().into(),
         }
     }
 
     pub fn from(matrix: cgmath::Matrix4<f32>) -> Self {
         Self {
-            matrix: matrix.into(),
+            data: matrix.into(),
         }
     }
 
     pub fn translation(coords: &[f32]) -> Self {
         Self {
-            matrix: cgmath::Matrix4::from_translation(cgmath::Vector3 {
+            data: cgmath::Matrix4::from_translation(cgmath::Vector3 {
                 x: coords[0],
                 y: coords[1],
                 z: coords[2],
@@ -83,17 +83,17 @@ impl Matrix {
 
     pub fn x_rotation(degrees: f32) -> Self {
         Self {
-            matrix: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),
+            data: cgmath::Matrix4::from_axis_angle(X_AXIS, cgmath::Deg(degrees)).into(),
         }
     }
 
-    pub fn update_inner(&mut self, matrix: cgmath::Matrix4<f32>) {
-        self.matrix = matrix.into();
+    pub fn update_value(&mut self, matrix: cgmath::Matrix4<f32>) {
+        self.data = matrix.into();
     }
 
     pub fn mat4_left_mul(&mut self, lhs: &cgmath::Matrix4<f32>) {
-        let matrix_cg: cgmath::Matrix4<_> = self.matrix.into();
-        self.matrix = (lhs * matrix_cg).into();
+        let matrix_cg: cgmath::Matrix4<_> = self.data.into();
+        self.data = (lhs * matrix_cg).into();
     }
 }
 
@@ -101,7 +101,7 @@ impl Matrix {
 // Uniform data for 4x4 matrix.
 
 pub struct MatrixUniform {
-    pub uniform: Matrix,
+    pub matrix: Matrix,
     pub buffer: Buffer,
 }
 
@@ -119,6 +119,10 @@ impl MatrixUniform {
             count: None,
         })
     }
+
+    pub fn write_buffer(&mut self, queue: &Queue) {
+        queue.write_buffer(&self.buffer, 0, bytemuck::cast_slice(&[self.matrix]));
+    }
 }
 
 pub(crate) fn make_matrix_uniform(device: &Device, matrix_uniform: Matrix) -> MatrixUniform {
@@ -129,7 +133,7 @@ pub(crate) fn make_matrix_uniform(device: &Device, matrix_uniform: Matrix) -> Ma
     });
 
     MatrixUniform {
-        uniform: matrix_uniform,
+        matrix: matrix_uniform,
         buffer,
     }
 }

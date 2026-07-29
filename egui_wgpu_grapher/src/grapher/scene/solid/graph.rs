@@ -79,7 +79,11 @@ impl RenderScene for GraphScene {
         self.scene.as_ref().unwrap()
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState) {}
+    fn update(&mut self, queue: &Queue, state: &RenderState) {
+        if let Some(scene) = &mut self.scene {
+            scene.update(queue, state);
+        }
+    }
 }
 
 const GRAPH_SUBDIVISIONS: u32 = 750;
@@ -96,19 +100,6 @@ impl GraphScene {
             self.scene = None;
             return;
         };
-
-        // TODO: This is currently disabled until we get
-        //       an updated UI that works better for it.
-        //
-        // let f = graph::shift_scale_input(
-        //     f,
-        //     self.parameters.shift_x,
-        //     self.parameters.scale_x,
-        //     self.parameters.shift_z,
-        //     self.parameters.scale_z,
-        // );
-        // let f = graph::shift_scale_output(f, self.parameters.shift_y, self.parameters.scale_y);
-
         let f = if let Some(scale) = smoothing_scale {
             let f = SmoothingFunctionWrapper::from(f, scale / GRAPH_SUBDIVISIONS as f64);
             FunctionHolder::from(move |x: f64, z: f64| f.eval(x, z))

@@ -5,11 +5,12 @@ pub mod solver;
 pub mod textured;
 
 use super::render::RenderState;
-use crate::grapher::pipeline::{
-    self,
+use crate::grapher::{
     light::{LightState, ShadowState},
+    pipeline::{self},
 };
 
+use cgmath::{Deg, Quaternion, Rotation, Rotation3, Vector3};
 use egui_wgpu::wgpu::{self, BindGroupLayout, Device, Queue, RenderPipeline, SurfaceConfiguration};
 
 // -----------------------------------------
@@ -63,8 +64,14 @@ impl RenderScene for Scene3D {
         self
     }
 
-    fn update(&mut self, _queue: &Queue, _state: &RenderState) {
-        // no-op; basic scene is static
+    fn update(&mut self, queue: &Queue, state: &RenderState) {
+        if state.light_motion {
+            let rotation = Quaternion::from_axis_angle(Vector3::from([0.0, 1.0, 0.0]), Deg(0.5));
+            let old_position: Vector3<f32> = self.light.position().into();
+            let new_position = rotation.rotate_vector(old_position);
+            self.light.set_position(new_position.into());
+            self.light.update_uniform(queue);
+        }
     }
 }
 

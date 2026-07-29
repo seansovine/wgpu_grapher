@@ -6,11 +6,9 @@ pub mod pde;
 
 use super::{GpuVertex, Scene3D};
 use crate::grapher::{
+    light::{LightState, ShadowState},
     matrix::{self, Matrix, MatrixUniform},
-    pipeline::{
-        self,
-        light::{self, LightState, ShadowState},
-    },
+    pipeline::{self},
     render::RenderState,
     scene::debug_data,
 };
@@ -106,7 +104,7 @@ pub fn build_scene(
         .map(|(mesh, matrix)| MeshRenderData::from_mesh_data(device, mesh, matrix))
         .collect();
 
-    let light = light::LightState::create(device);
+    let light = LightState::create(device);
     let shadow = ShadowState::create::<GpuVertex>(
         surface_config,
         device,
