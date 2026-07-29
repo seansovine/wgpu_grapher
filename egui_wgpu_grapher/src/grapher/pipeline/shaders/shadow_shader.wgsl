@@ -1,4 +1,4 @@
-// A simple shader for filling the shadow map depth buffer.
+// Render positions from camera view into shadow map depth buffer.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,

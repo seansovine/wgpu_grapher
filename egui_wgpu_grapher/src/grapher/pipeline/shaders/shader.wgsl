@@ -1,35 +1,30 @@
-// Shader to render meshes without using a texture sampler.
-// Vertex color is obtained from its color coordinates.
-// Includes Phong illumination and shadow mapping.
-
-// Uniforms.
+// Shader to render meshes with vertex color given by vertex color properties.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,
 }
 
-@group(0) @binding(0)
-var<uniform> camera: MatrixUniform;
-
 struct PreferencesUniform {
     flags: u32,
 }
-
-@group(0) @binding(1)
-var<uniform> preferences: PreferencesUniform;
-
-@group(1) @binding(0)
-var<uniform> model_matrix: MatrixUniform;
 
 struct LightUniform {
     position: vec3<f32>,
     color: vec3<f32>,
 }
 
+// Vertex shader.
+
+@group(0) @binding(0)
+var<uniform> camera: MatrixUniform;
+@group(0) @binding(1)
+var<uniform> preferences: PreferencesUniform;
+
+@group(1) @binding(0)
+var<uniform> model_matrix: MatrixUniform;
+
 @group(2) @binding(0)
 var<uniform> light: LightUniform;
-
-// Input/output buffer structures.
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -48,11 +43,9 @@ struct VertexOutput {
     @location(5) is_selected: u32,
 }
 
-const SHOW_SELECTION: bool = false;
-const SELECTED_POINT = vec2<f32>(0.0, 0.0);
+const SHOW_SELECTION:  bool = false;
+const SELECTED_POINT        = vec2<f32>(0.0, 0.0);
 const SELECTION_RADIUS: f32 = 0.01;
-
-// Vertex shader.
 
 @vertex
 fn vs_main(vertex: VertexInput, @builtin(vertex_index) vert_ind: u32) -> VertexOutput {
@@ -61,7 +54,6 @@ fn vs_main(vertex: VertexInput, @builtin(vertex_index) vert_ind: u32) -> VertexO
 
     // Position modified by camera transformation, for display.
     out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
-
     // Rotate normal with body without translating.
     out.normal = normalize((model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz);
     // World coordinates of vertex, after applying model transformation.
@@ -77,7 +69,6 @@ fn vs_main(vertex: VertexInput, @builtin(vertex_index) vert_ind: u32) -> VertexO
     } else {
         out.is_selected = 0;
     }
-    // out.is_selected = u32(vert_ind % 7 == 0);
 
     return out;
 }
@@ -107,12 +98,12 @@ const LIGHT_SETTINGS = LightSettings(
 
 // Modified from the Wgpu shadow example.
 fn get_shadow(world_position: vec4<f32>) -> f32 {
-    // To convert device coords to texture coords;
-    //  reverse is done automatically when rendering to depth buffer.
+    // To convert device coords to texture coords; reverse is done
+    // automatically when rendering to depth buffer.
     const flip_correction = vec2<f32>(0.5, -0.5);
 
-    // To normalize homogenous coords so that w = 1.0;
-    //  light view projection may leave them un-normalized.
+    // To normalize homogenous coords so that w = 1.0; light view
+    // projection may leave them un-normalized.
     let proj_correction = 1.0 / world_position.w;
 
     // Coordinates in depth buffer corresponding to this point.
@@ -123,15 +114,17 @@ fn get_shadow(world_position: vec4<f32>) -> f32 {
         shadow_tex_coords, world_position.z * proj_correction);
 }
 
-const LIGHT_BIT: u32 = 1u;
-const SHADOW_BIT: u32 = 4u;
-
 // We aren't currently depth sorting, but convenient for debugging.
 const DEFAULT_ALPHA: f32 = 1.0;
 
-// TEST primitive highlighting.
+// To test primitive highlighting.
 const SELECTED_TRI: u32 = 0x7fffffffu;
-const SELECTED_COLOR = vec4<f32>(0.0, 1.0, 0.0, DEFAULT_ALPHA);
+const SELECTED_COLOR    = vec4<f32>(0.0, 1.0, 0.0, DEFAULT_ALPHA);
+
+// Preference bits.
+
+const LIGHT_BIT:  u32 = 1u;
+const SHADOW_BIT: u32 = 4u;
 
 @fragment
 fn fs_main(@builtin(primitive_index) prim_index: u32, in: VertexOutput) -> @location(0) vec4<f32> {
@@ -148,8 +141,10 @@ fn fs_main(@builtin(primitive_index) prim_index: u32, in: VertexOutput) -> @loca
 
         // Apply Phong illumination model.
         return selected_t * SELECTED_COLOR + (1.0 - selected_t) * out_color;
+
     } else {
-        // We're use alpha transparency when lighting is disabled; this is experimental.
+        // We're use alpha transparency when lighting is disabled. This is experimental
+        // because we aren't depth sorting our primitives, so it won't be correct.
         return selected_t * SELECTED_COLOR + (1.0 - selected_t) * vec4<f32>(in.color, 0.8);
     }
 }

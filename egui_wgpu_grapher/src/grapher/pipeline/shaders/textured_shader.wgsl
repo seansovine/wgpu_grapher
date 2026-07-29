@@ -1,33 +1,30 @@
-// Shader to render meshes with a texture sampler. Vertex color is obtained
-// from the bound texture by sampling from the texture using vertex texture
-// coordinates.
+// Shader to render meshes with a texture sampler and vertex texture coordinates.
 
 struct MatrixUniform {
     matrix: mat4x4<f32>,
 }
 
-@group(0) @binding(0)
-var<uniform> camera: MatrixUniform;
-
 struct PreferencesUniform {
     flags: u32,
 }
-
-@group(0) @binding(1)
-var<uniform> preferences: PreferencesUniform;
-
-@group(1) @binding(0)
-var<uniform> model_matrix: MatrixUniform;
 
 struct LightUniform {
     position: vec3<f32>,
     color: vec3<f32>,
 }
 
+// Vertex shader.
+
+@group(0) @binding(0)
+var<uniform> camera: MatrixUniform;
+@group(0) @binding(1)
+var<uniform> preferences: PreferencesUniform;
+
+@group(1) @binding(0)
+var<uniform> model_matrix: MatrixUniform;
+
 @group(2) @binding(0)
 var<uniform> light: LightUniform;
-
-// buffer structs
 
 struct VertexInput {
     @location(0) position: vec3<f32>,
@@ -45,8 +42,6 @@ struct VertexOutput {
     @location(4) world_position: vec4<f32>,
 }
 
-// vertex shader
-
 @vertex
 fn vs_main(
     vertex: VertexInput,
@@ -57,23 +52,20 @@ fn vs_main(
 
     // Position modified by camera transformation, for display.
     out.view_position = camera.matrix * model_matrix.matrix * vec4<f32>(vertex.position, 1.0);
-
     // Rotate normal with body without translating.
     out.normal = normalize((model_matrix.matrix * vec4<f32>(vertex.normal, 0.0)).xyz);
     // World coordinates of vertex, after applying model transformation.
     out.world_position = (model_matrix.matrix * vec4<f32>(vertex.position, 1.0));
-
     // Direction from point to light in world space.
     out.light_direction = normalize(light.position - out.world_position.xyz);
 
     return out;
 }
 
-// fragment shader
+// Fragment shader.
 
 @group(3) @binding(0)
 var diffuse_tex: texture_2d<f32>;
-
 @group(3) @binding(1)
 var diffuse_samp: sampler;
 
@@ -86,12 +78,12 @@ var<uniform> light_view: MatrixUniform;
 
 // Modified from the Wgpu shadow example.
 fn get_shadow(world_position: vec4<f32>) -> f32 {
-    // To convert device coords to texture coords;
-    //  reverse is done automatically when rendering to depth buffer.
+    // To convert device coords to texture coords; reverse is done
+    // automatically when rendering to depth buffer.
     const flip_correction = vec2<f32>(0.5, -0.5);
 
-    // To normalize homogenous coords so that w = 1.0;
-    //  light view projection may leave them un-normalized.
+    // To normalize homogenous coords so that w = 1.0; light view
+    // projection may leave them un-normalized.
     let proj_correction = 1.0 / world_position.w;
 
     // Coordinates in depth buffer corresponding to this point.
@@ -102,14 +94,15 @@ fn get_shadow(world_position: vec4<f32>) -> f32 {
         shadow_tex_coords, world_position.z * proj_correction);
 }
 
-const LIGHT_BIT: u32 = 1u;
+// Preference bits.
+
+const LIGHT_BIT:   u32 = 1u;
 const TEXTURE_BIT: u32 = 2u;
-const SHADOW_BIT: u32 = 4u;
+const SHADOW_BIT:  u32 = 4u;
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    let use_light = (preferences.flags & LIGHT_BIT) > 0u;
-    // TODO: Add correct handling for this in application.
+    let use_light   = (preferences.flags & LIGHT_BIT) > 0u;
     let use_texture = (preferences.flags & TEXTURE_BIT) > 0u;
 
     var color: vec3<f32>;
@@ -123,12 +116,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
         let shadow = select(get_shadow(light_view.matrix * in.world_position), 1.0, (preferences.flags & SHADOW_BIT) == 0);
         let ambient_strength = 0.05;
         let diffuse_strength = 0.95 * max(0.0, dot(in.light_direction, in.normal)) * shadow;
-        let out_color = light.color * color;
 
         // Only ambient and diffuse lighting here for now.
-        return vec4<f32>((ambient_strength + diffuse_strength) * out_color, 1.0);
-    } else {
+        return vec4<f32>((ambient_strength + diffuse_strength) * light.color * color, 1.0);
 
+    } else {
         return vec4<f32>(color, 1.0);
     }
 }
