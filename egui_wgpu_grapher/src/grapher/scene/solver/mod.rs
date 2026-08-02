@@ -280,16 +280,16 @@ impl SolverScene {
             device,
             get_solver_compute_shader(),
             &[
-                &data_texture.compute_bind_group_layout,
-                &uniform.compute_bind_group_layout,
+                Some(&data_texture.compute_bind_group_layout),
+                Some(&uniform.compute_bind_group_layout),
             ],
         );
         let render_pipeline = create_solver_pipeline(
             device,
             surface_config,
             &[
-                &uniform.render_bind_group_layout,
-                &data_texture.render_bind_group_layout,
+                Some(&uniform.render_bind_group_layout),
+                Some(&data_texture.render_bind_group_layout),
             ],
         );
 

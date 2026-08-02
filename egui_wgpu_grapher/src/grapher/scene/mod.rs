@@ -44,7 +44,7 @@ fn debug_data(
         device,
         surface_config,
         pipeline::get_debug_shader(),
-        &[camera_layout, LightState::light_bgl(device)],
+        &[Some(camera_layout), Some(LightState::light_bgl(device))],
         wgpu::PolygonMode::Fill,
     )
 }

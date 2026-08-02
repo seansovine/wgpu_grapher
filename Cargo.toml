@@ -5,9 +5,9 @@ default-members = ["egui_wgpu_grapher"]
 
 [workspace.dependencies]
 bytemuck = "1.23.2"
-egui = "0.33.3"
-egui-wgpu = { version = "0.33.3", features = ["winit"] }
-egui-winit = "0.33.3"
+egui = "0.35"
+egui-wgpu = { version = "0.35", features = ["winit"] }
+egui-winit = "0.35"
 pollster = "0.4.0"
 winit = "0.30.12"
 

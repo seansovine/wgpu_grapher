@@ -188,8 +188,8 @@ impl ShadowState {
         let shadow_pass_pipeline = create_shadow_pipeline::<Vertex>(
             device,
             &[
-                &light.light_view_bind_group_layout,
-                model_matrix_bind_group_layout,
+                Some(&light.light_view_bind_group_layout),
+                Some(model_matrix_bind_group_layout),
             ],
         );
 
@@ -216,7 +216,7 @@ impl ShadowState {
             address_mode_w: wgpu::AddressMode::ClampToBorder,
             mag_filter: wgpu::FilterMode::Linear,
             min_filter: wgpu::FilterMode::Linear,
-            mipmap_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::MipmapFilterMode::Nearest,
             compare: Some(wgpu::CompareFunction::LessEqual),
             border_color: Some(wgpu::SamplerBorderColor::OpaqueBlack),
             ..Default::default()

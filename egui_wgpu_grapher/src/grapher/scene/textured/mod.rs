@@ -113,11 +113,11 @@ pub fn build_scene(
         surface_config,
         pipeline::get_textured_shader(),
         &[
-            &state.bind_group_layout,
-            TexturedMeshRenderData::matrix_bgl(device),
-            LightState::light_bgl(device),
-            TextureData::bind_group_layout(device),
-            &shadow.render_pass_bind_group_layout,
+            Some(&state.bind_group_layout),
+            Some(TexturedMeshRenderData::matrix_bgl(device)),
+            Some(LightState::light_bgl(device)),
+            Some(TextureData::bind_group_layout(device)),
+            Some(&shadow.render_pass_bind_group_layout),
         ],
         wgpu::PolygonMode::Fill,
     );

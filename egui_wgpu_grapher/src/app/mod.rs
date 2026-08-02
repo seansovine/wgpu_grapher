@@ -9,7 +9,7 @@ use crate::{
 };
 use egui_wgpu::{
     ScreenDescriptor,
-    wgpu::{self, SurfaceError},
+    wgpu::{self, CurrentSurfaceTexture},
 };
 use std::{
     sync::Arc,
@@ -54,7 +54,8 @@ impl App {
     const REPORT_FRAMES_INTERVAL: usize = 100;
 
     pub fn new(initial_scene: Option<GrapherSceneMode>) -> Self {
-        let instance = egui_wgpu::wgpu::Instance::new(&wgpu::InstanceDescriptor::default());
+        let instance =
+            egui_wgpu::wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
         let window_attributes = Window::default_attributes().with_title("Wgpu Grapher");
 
         let last_update_time = time::Instant::now();
@@ -124,17 +125,13 @@ impl App {
         let state = self.state.as_mut().unwrap();
 
         let surface_texture = match state.surface.get_current_texture() {
-            Err(SurfaceError::Outdated) => {
+            CurrentSurfaceTexture::Outdated => {
                 panic!("Surface texture outdated in redraw.")
             }
-            Err(SurfaceError::Other) => {
-                // Sometimes happens when window is in background on Linux.
-                return;
+            CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
+            other => {
+                panic!("Error getting surface swap chain texture: {:#?}", other);
             }
-            Err(err) => {
-                panic!("Error getting surface swap chain texture: {:#?}", err);
-            }
-            Ok(surface_texture) => surface_texture,
         };
         let surface_view = surface_texture
             .texture
@@ -182,7 +179,7 @@ impl App {
         // File chooser.
         match state.file_input_state {
             FileInputState::NeedsInput => {
-                let context = &state.egui_renderer.context();
+                let context = state.egui_renderer.context();
                 state.file_dialog.update(context);
 
                 // Check if the user picked a file.
@@ -307,7 +304,7 @@ impl ApplicationHandler for App {
 
         // Only process event if GUI does not have focus.
         let context = state.egui_renderer.context();
-        if !(context.wants_keyboard_input() || context.wants_pointer_input())
+        if !(context.egui_wants_keyboard_input() || context.egui_wants_pointer_input())
             && state.grapher_state.handle_user_input(&event)
         {
             return;

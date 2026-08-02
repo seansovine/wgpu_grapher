@@ -45,7 +45,7 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
     device: &Device,
     config: &SurfaceConfiguration,
     shader: wgpu::ShaderSource<'static>,
-    bind_group_layouts: &[&BindGroupLayout],
+    bind_group_layouts: &[Option<&BindGroupLayout>],
     polygon_mode: wgpu::PolygonMode,
 ) -> RenderPipeline {
     let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -56,7 +56,7 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("a render pipeline layout"),
         bind_group_layouts,
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -89,8 +89,8 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
         },
         depth_stencil: Some(wgpu::DepthStencilState {
             format: DepthBuffer::DEPTH_FORMAT,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Less),
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         }),
@@ -98,7 +98,7 @@ pub fn create_render_pipeline<Vertex: Bufferable>(
             count: 4,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -110,7 +110,7 @@ pub fn create_debug_pipeline(
     device: &Device,
     config: &SurfaceConfiguration,
     shader: wgpu::ShaderSource<'static>,
-    bind_group_layouts: &[&BindGroupLayout],
+    bind_group_layouts: &[Option<&BindGroupLayout>],
     polygon_mode: wgpu::PolygonMode,
 ) -> RenderPipeline {
     let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -121,7 +121,7 @@ pub fn create_debug_pipeline(
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("a debug pipeline layout"),
         bind_group_layouts,
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -154,8 +154,8 @@ pub fn create_debug_pipeline(
         },
         depth_stencil: Some(wgpu::DepthStencilState {
             format: DepthBuffer::DEPTH_FORMAT,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::Less,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::Less),
             stencil: wgpu::StencilState::default(),
             bias: wgpu::DepthBiasState::default(),
         }),
@@ -163,7 +163,7 @@ pub fn create_debug_pipeline(
             count: 4,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -173,7 +173,7 @@ pub fn create_debug_pipeline(
 
 pub fn create_shadow_pipeline<Vertex: Bufferable>(
     device: &Device,
-    bind_group_layouts: &[&BindGroupLayout],
+    bind_group_layouts: &[Option<&BindGroupLayout>],
 ) -> RenderPipeline {
     let shader = get_shadow_shader();
     let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
@@ -184,7 +184,7 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("shadow pipeline layout"),
         bind_group_layouts,
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -208,8 +208,8 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
         },
         depth_stencil: Some(wgpu::DepthStencilState {
             format: DepthBuffer::DEPTH_FORMAT,
-            depth_write_enabled: true,
-            depth_compare: wgpu::CompareFunction::LessEqual,
+            depth_write_enabled: Some(true),
+            depth_compare: Some(wgpu::CompareFunction::LessEqual),
             stencil: wgpu::StencilState::default(),
             // parameters from wgpu official example
             bias: wgpu::DepthBiasState {
@@ -222,7 +222,7 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
             count: 1,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -233,7 +233,7 @@ pub fn create_shadow_pipeline<Vertex: Bufferable>(
 pub fn create_solver_pipeline(
     device: &Device,
     config: &SurfaceConfiguration,
-    bind_group_layouts: &[&BindGroupLayout],
+    bind_group_layouts: &[Option<&BindGroupLayout>],
 ) -> RenderPipeline {
     let shader_module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("a shader"),
@@ -243,7 +243,7 @@ pub fn create_solver_pipeline(
     let render_pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         label: Some("a render pipeline layout"),
         bind_group_layouts,
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
 
     device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
@@ -279,7 +279,7 @@ pub fn create_solver_pipeline(
             count: 4,
             ..Default::default()
         },
-        multiview: None,
+        multiview_mask: None,
         cache: None,
     })
 }
@@ -290,12 +290,12 @@ pub fn create_solver_pipeline(
 pub fn create_compute_pipeline(
     device: &Device,
     shader_source: ShaderSource,
-    bind_group_layouts: &[&BindGroupLayout],
+    bind_group_layouts: &[Option<&BindGroupLayout>],
 ) -> ComputePipeline {
     let pipeline_layout = device.create_pipeline_layout(&PipelineLayoutDescriptor {
         label: None,
         bind_group_layouts,
-        push_constant_ranges: &[],
+        immediate_size: 0,
     });
     let module = device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("A Compute Shader"),

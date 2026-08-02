@@ -1,5 +1,7 @@
 // Shader to render meshes with vertex color given by vertex color properties.
 
+enable primitive_index;
+
 struct MatrixUniform {
     matrix: mat4x4<f32>,
 }

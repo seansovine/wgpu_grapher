@@ -9,7 +9,7 @@ bytemuck = { workspace = true }
 cgmath = "0.18.0"
 clap = { version = "4.5.45", features = ["derive"] }
 egui = { workspace = true }
-egui-file-dialog = "0.12.0"
+egui-file-dialog = "0.14.1"
 egui-typed-input = "0.1.1"
 egui-wgpu = { workspace = true }
 egui-winit = { workspace = true }

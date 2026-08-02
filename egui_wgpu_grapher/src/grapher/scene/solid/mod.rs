@@ -113,10 +113,10 @@ pub fn build_scene(
         surface_config,
         pipeline::get_shader(),
         &[
-            &state.bind_group_layout,
-            MeshRenderData::matrix_bgl(device),
-            LightState::light_bgl(device),
-            &shadow.render_pass_bind_group_layout,
+            Some(&state.bind_group_layout),
+            Some(MeshRenderData::matrix_bgl(device)),
+            Some(LightState::light_bgl(device)),
+            Some(&shadow.render_pass_bind_group_layout),
         ],
         state.render_preferences.polygon_mode,
     );

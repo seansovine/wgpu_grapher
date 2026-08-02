@@ -41,6 +41,7 @@ impl RenderState {
                 }),
                 timestamp_writes: None,
                 occlusion_query_set: None,
+                ..Default::default()
             });
             pass.set_pipeline(&shadow_state.shadow_pass_pipeline);
             pass.set_bind_group(0, &scene.light.light_view_bind_group, &[]);
@@ -90,6 +91,7 @@ impl RenderState {
             }),
             occlusion_query_set: None,
             timestamp_writes: None,
+            ..Default::default()
         });
 
         if let Some(pipeline) = &scene.pipeline
@@ -181,6 +183,7 @@ pub fn render_2d(
         depth_stencil_attachment: None,
         occlusion_query_set: None,
         timestamp_writes: None,
+        ..Default::default()
     });
     render_pass.set_pipeline(&scene.render_pipeline);
     render_pass.set_bind_group(0, &scene.uniform.render_bind_group, &[]);
