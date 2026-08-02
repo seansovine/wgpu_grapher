@@ -74,6 +74,8 @@ impl RenderState {
     }
 
     pub fn handle_user_input(&mut self, event: &WindowEvent) -> bool {
+        println!("Received event: {:#?}", event);
+
         // All currently handled events affect the camera.
         self.camera_state.controller.process_events(event)
     }

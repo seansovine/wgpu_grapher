@@ -20,7 +20,7 @@ use winit::{
     application::ApplicationHandler,
     dpi::PhysicalSize,
     event::{ElementState, KeyEvent, WindowEvent},
-    event_loop::ActiveEventLoop,
+    event_loop::{ActiveEventLoop, OwnedDisplayHandle},
     keyboard::{KeyCode, PhysicalKey},
     window::{Window, WindowAttributes, WindowId},
 };
@@ -53,9 +53,13 @@ impl App {
     // How often to update average framerate.
     const REPORT_FRAMES_INTERVAL: usize = 100;
 
-    pub fn new(initial_scene: Option<GrapherSceneMode>) -> Self {
-        let instance =
-            egui_wgpu::wgpu::Instance::new(wgpu::InstanceDescriptor::new_without_display_handle());
+    pub fn new(
+        initial_scene: Option<GrapherSceneMode>,
+        display_handle: Box<OwnedDisplayHandle>,
+    ) -> Self {
+        let instance = egui_wgpu::wgpu::Instance::new(
+            wgpu::InstanceDescriptor::new_with_display_handle(display_handle),
+        );
         let window_attributes = Window::default_attributes().with_title("Wgpu Grapher");
 
         let last_update_time = time::Instant::now();
@@ -217,7 +221,7 @@ impl App {
         // Main controls window.
         egui::Window::new("Settings")
             .resizable(true)
-            .default_size([200.0, 310.0])
+            .default_size([200.0, 385.0])
             .default_pos([15.0, 15.0])
             .vscroll(true)
             .default_open(true)
@@ -299,14 +303,19 @@ impl ApplicationHandler for App {
             return;
         };
 
-        // Let egui process event first.
-        state.egui_renderer.handle_input(window, &event);
+        // Let egui_winit process event first.
+        let _ = state.egui_renderer.handle_input(window, &event);
 
         // Only process event if GUI does not have focus.
         let context = state.egui_renderer.context();
-        if !(context.egui_wants_keyboard_input() || context.egui_wants_pointer_input())
-            && state.grapher_state.handle_user_input(&event)
-        {
+        let wants_pointer = context.egui_wants_pointer_input();
+        let wants_keyboard = context.egui_wants_keyboard_input();
+
+        // TODO: After upgrade to egui 35.0, wants_pointer is true over entire winit window.
+        println!("Wants mouse:    {:?}", wants_pointer);
+        println!("Wants keyboard: {:?}", wants_keyboard);
+
+        if !wants_keyboard && state.grapher_state.handle_user_input(&event) {
             return;
         }
 

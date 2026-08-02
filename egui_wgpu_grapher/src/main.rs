@@ -18,7 +18,8 @@ async fn run() {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Wait);
 
-    let mut app = app::App::new(args.scene);
+    let display_handle = Box::from(event_loop.owned_display_handle());
+    let mut app = app::App::new(args.scene, display_handle);
     event_loop
         .run_app(&mut app)
         .expect("Winit event loop failed to start.");
